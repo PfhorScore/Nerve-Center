@@ -30,7 +30,7 @@ trap cleanup EXIT
 
 # ── Defaults ──────────────────────────────────────────────────────────
 INSTALL_DIR="${NERVE_INSTALL_DIR:-${HOME}/nerve}"
-BRANCH="master"
+BRANCH="main"
 BRANCH_EXPLICIT=false
 VERSION=""
 REPO="https://github.com/PfhorScore/Nerve-Center.git"
