@@ -83,6 +83,8 @@ export type ChatMsgRole = 'user' | 'assistant' | 'tool' | 'toolResult' | 'system
 
 /** Whether a message should default to collapsed state */
 export function isMessageCollapsible(msg: ChatMsg): boolean {
+  // Don't collapse messages with embed markers — they need to be visible
+  if (/<!--\s*nerve-app\s+/.test(msg.rawText)) return false;
   const isTool = msg.role === 'tool' || msg.role === 'toolResult';
   const isSystem = msg.role === 'system' || msg.role === 'event';
   return isTool || isSystem;

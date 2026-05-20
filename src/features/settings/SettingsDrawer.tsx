@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { X, Settings, LogOut, Mic, Monitor, Shield } from 'lucide-react';
+import { X, Settings, LogOut, Mic, Monitor, Shield, Plug } from 'lucide-react';
 import { ConnectionSettings } from './ConnectionSettings';
 import { AudioSettings } from './AudioSettings';
 import { AppearanceSettings } from './AppearanceSettings';
+import { McpSettings } from './McpSettings';
 import type { TTSProvider } from '@/features/tts/useTTS';
 import type { STTInputMode, STTProvider } from '@/contexts/SettingsContext';
 
@@ -42,7 +43,7 @@ interface SettingsDrawerProps {
   gatewayRestarting?: boolean;
 }
 
-type SettingsCategory = 'advanced' | 'audio' | 'appearance';
+type SettingsCategory = 'advanced' | 'audio' | 'appearance' | 'mcp';
 type LegacySettingsCategory = SettingsCategory | 'audio-input' | 'voice-output';
 
 const SETTINGS_CATEGORY_KEY = 'nerve:settings-category';
@@ -51,7 +52,7 @@ function normalizeSavedCategory(value: string | null): SettingsCategory | null {
   const raw = value as LegacySettingsCategory | null;
   if (!raw) return null;
   if (raw === 'audio-input' || raw === 'voice-output') return 'audio';
-  if (raw === 'advanced' || raw === 'audio' || raw === 'appearance') return raw;
+  if (raw === 'advanced' || raw === 'audio' || raw === 'appearance' || raw === 'mcp') return raw;
   return null;
 }
 
@@ -59,6 +60,7 @@ const SETTINGS_CATEGORIES = [
   { key: 'advanced', label: 'Connection', icon: Shield },
   { key: 'audio', label: 'Audio', icon: Mic },
   { key: 'appearance', label: 'Appearance', icon: Monitor },
+  { key: 'mcp', label: 'Integrations', icon: Plug },
 ] as const satisfies ReadonlyArray<{ key: SettingsCategory; label: string; icon: typeof Mic }>;
 
 /** Slide-in drawer containing connection, audio, and appearance settings. */
@@ -245,6 +247,8 @@ export function SettingsDrawer({
             )}
 
             {currentCategory === 'appearance' && <AppearanceSettings />}
+
+            {currentCategory === 'mcp' && <McpSettings />}
 
             {currentCategory === 'advanced' && (
               <ConnectionSettings

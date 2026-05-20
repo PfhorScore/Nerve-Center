@@ -248,11 +248,19 @@ export function useVoiceInput(
     browserTranscriptRef.current = '';
   }, []);
 
-  // Start or restart the single recognition instance
-  const ensureRecognition = useCallback((mode: 'wake' | 'stop') => {
+  /**
+   * Create and start a SpeechRecognition instance in the given mode.
+   *
+   * Set `gesture=true` when called from a user-initiated action (toggle click)
+   * so the SpeechRecognition constructor runs synchronously within the user
+   * gesture context, satisfying browser transient-activation requirements.
+   */
+  const startRecognition = useCallback((mode: 'wake' | 'stop', gesture = false) => {
     modeRef.current = mode;
 
-    // If we already have a running instance, abort it first
+    // If we already have a running instance, abort it first.
+    // When called from a user gesture (gesture=true), we abort synchronously
+    // before creating the new instance to stay within the gesture context.
     if (recognitionRef.current) {
       intentionalStopRef.current = true;
       try { recognitionRef.current.abort(); } catch { /* already stopped */ }
@@ -272,96 +280,183 @@ export function useVoiceInput(
       return;
     }
 
-    // Small delay to let the previous instance fully release
-    trackedTimeout(() => {
-      // Re-check state — might have changed during the delay
-      if (mode === 'wake' && !wakeWordEnabledRef.current) return;
-      if (mode === 'stop' && stateRef.current !== 'recording') return;
+    if (gesture) {
+      // Synchronous start within user gesture context.
+      // Some browsers (Chrome 116+) require transient activation for
+      // SpeechRecognition.start() — a setTimeout would lose the gesture.
+      const doStart = () => {
+        if (mode === 'wake' && !wakeWordEnabledRef.current) return;
+        if (mode === 'stop' && stateRef.current !== 'recording') return;
 
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = resolveRecognitionLang(languageRef.current);
-      recognitionRef.current = recognition;
-      intentionalStopRef.current = false;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = resolveRecognitionLang(languageRef.current);
+        recognitionRef.current = recognition;
+        intentionalStopRef.current = false;
 
-      recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const currentMode = modeRef.current;
-        if (currentMode === 'stop') {
-          let full = '';
-          for (let j = 0; j < event.results.length; j++) {
-            full += event.results[j][0].transcript;
-          }
-          const cleaned = cleanTranscript(full, stopPhrasesRegexRef.current);
-          browserTranscriptRef.current = cleaned;
-          setInterimTranscript(cleaned);
-        }
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          const currentMode = modeRef.current;
           if (currentMode === 'stop') {
-            if (matchesPhrase(transcript, phrasesRef.current.cancelPhrases, languageRef.current)) {
-              playCancelPing();
-              doDiscard();
-              return;
+            let full = '';
+            for (let j = 0; j < event.results.length; j++) {
+              full += event.results[j][0].transcript;
             }
-            if (matchesPhrase(transcript, phrasesRef.current.stopPhrases, languageRef.current)) {
-              playSubmitPing();
-              doStopAndTranscribe();
-              return;
-            }
-          } else if (currentMode === 'wake') {
-            if (matchesPhrase(transcript, wakePhrasesRef.current, languageRef.current)) {
-              // Guard against double-trigger from interim + final results
-              if (wakeTriggeredRef.current) return;
-              wakeTriggeredRef.current = true;
-              // Stop recognition immediately — no longer needed and it uses the audio pipeline
-              intentionalStopRef.current = true;
-              try { recognitionRef.current?.abort(); } catch { /* already stopped */ }
-              recognitionRef.current = null;
-              playWakePing();
-              // Delay mic acquisition until wake chime finishes (~0.35s)
-              trackedTimeout(() => doStartRecording(), 370);
-              return;
+            const cleaned = cleanTranscript(full, stopPhrasesRegexRef.current);
+            browserTranscriptRef.current = cleaned;
+            setInterimTranscript(cleaned);
+          }
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (currentMode === 'stop') {
+              if (matchesPhrase(transcript, phrasesRef.current.cancelPhrases, languageRef.current)) {
+                playCancelPing();
+                doDiscard();
+                return;
+              }
+              if (matchesPhrase(transcript, phrasesRef.current.stopPhrases, languageRef.current)) {
+                playSubmitPing();
+                doStopAndTranscribe();
+                return;
+              }
+            } else if (currentMode === 'wake') {
+              if (matchesPhrase(transcript, wakePhrasesRef.current, languageRef.current)) {
+                if (wakeTriggeredRef.current) return;
+                wakeTriggeredRef.current = true;
+                intentionalStopRef.current = true;
+                try { recognitionRef.current?.abort(); } catch { /* already stopped */ }
+                recognitionRef.current = null;
+                playWakePing();
+                trackedTimeout(() => doStartRecording(), 370);
+                return;
+              }
             }
           }
+        };
+
+        recognition.onerror = (event: { error: string }) => {
+          console.warn('[VOICE] error:', event.error, 'mode:', modeRef.current, 'intentional:', intentionalStopRef.current);
+          if (intentionalStopRef.current) return;
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') return;
+          if (event.error === 'aborted') return;
+          scheduleRestart();
+        };
+
+        recognition.onend = () => {
+          console.debug('[VOICE] onend, mode:', modeRef.current, 'intentional:', intentionalStopRef.current, 'state:', stateRef.current);
+          if (intentionalStopRef.current) return;
+          scheduleRestart();
+        };
+
+        try {
+          recognition.start();
+          console.debug('[VOICE] started in mode:', mode);
+        } catch (e) {
+          console.warn('[VOICE] failed to start:', e);
+          trackedTimeout(() => {
+            if (wakeWordEnabledRef.current || stateRef.current === 'recording') {
+              restartRecognitionRef.current(modeRef.current);
+            }
+          }, 2000);
         }
       };
 
-      recognition.onerror = (event: { error: string }) => {
-        console.warn('[VOICE] error:', event.error, 'mode:', modeRef.current, 'intentional:', intentionalStopRef.current);
-        if (intentionalStopRef.current) return;
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') return;
-        if (event.error === 'aborted') return;
-        // Transient error — restart
-        scheduleRestart();
-      };
-
-      recognition.onend = () => {
-        console.debug('[VOICE] onend, mode:', modeRef.current, 'intentional:', intentionalStopRef.current, 'state:', stateRef.current);
-        if (intentionalStopRef.current) return;
-        // Unexpected end — restart
-        scheduleRestart();
-      };
-
+      // Try synchronous start first. If this throws (e.g. browser needs a
+      // gesture but the gesture window already closed), fall back to delayed.
       try {
-        recognition.start();
-        console.debug('[VOICE] started in mode:', mode);
-      } catch (e) {
-        console.warn('[VOICE] failed to start:', e);
-        // Try again after a delay
-        trackedTimeout(() => {
-          if (wakeWordEnabledRef.current || stateRef.current === 'recording') {
-            ensureRecognitionRef.current(modeRef.current);
-          }
-        }, 2000);
+        doStart();
+      } catch {
+        scheduleRestart();
       }
-    }, 200);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- refs are stable, deps are intentionally minimal to avoid recreation
+    } else {
+      // Delayed start (e.g. error recovery / auto-restart).
+      // Small delay to let any previous instance fully release.
+      trackedTimeout(() => {
+        if (mode === 'wake' && !wakeWordEnabledRef.current) return;
+        if (mode === 'stop' && stateRef.current !== 'recording') return;
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = resolveRecognitionLang(languageRef.current);
+        recognitionRef.current = recognition;
+        intentionalStopRef.current = false;
+
+        recognition.onresult = (event: SpeechRecognitionEvent) => {
+          const currentMode = modeRef.current;
+          if (currentMode === 'stop') {
+            let full = '';
+            for (let j = 0; j < event.results.length; j++) {
+              full += event.results[j][0].transcript;
+            }
+            const cleaned = cleanTranscript(full, stopPhrasesRegexRef.current);
+            browserTranscriptRef.current = cleaned;
+            setInterimTranscript(cleaned);
+          }
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (currentMode === 'stop') {
+              if (matchesPhrase(transcript, phrasesRef.current.cancelPhrases, languageRef.current)) {
+                playCancelPing();
+                doDiscard();
+                return;
+              }
+              if (matchesPhrase(transcript, phrasesRef.current.stopPhrases, languageRef.current)) {
+                playSubmitPing();
+                doStopAndTranscribe();
+                return;
+              }
+            } else if (currentMode === 'wake') {
+              if (matchesPhrase(transcript, wakePhrasesRef.current, languageRef.current)) {
+                if (wakeTriggeredRef.current) return;
+                wakeTriggeredRef.current = true;
+                intentionalStopRef.current = true;
+                try { recognitionRef.current?.abort(); } catch { /* already stopped */ }
+                recognitionRef.current = null;
+                playWakePing();
+                trackedTimeout(() => doStartRecording(), 370);
+                return;
+              }
+            }
+          }
+        };
+
+        recognition.onerror = (event: { error: string }) => {
+          console.warn('[VOICE] error:', event.error, 'mode:', modeRef.current, 'intentional:', intentionalStopRef.current);
+          if (intentionalStopRef.current) return;
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') return;
+          if (event.error === 'aborted') return;
+          scheduleRestart();
+        };
+
+        recognition.onend = () => {
+          console.debug('[VOICE] onend, mode:', modeRef.current, 'intentional:', intentionalStopRef.current, 'state:', stateRef.current);
+          if (intentionalStopRef.current) return;
+          scheduleRestart();
+        };
+
+        try {
+          recognition.start();
+          console.debug('[VOICE] started in mode:', mode);
+        } catch (e) {
+          console.warn('[VOICE] failed to start:', e);
+          trackedTimeout(() => {
+            if (wakeWordEnabledRef.current || stateRef.current === 'recording') {
+              restartRecognitionRef.current(modeRef.current);
+            }
+          }, 2000);
+        }
+      }, 200);
+    }
   }, [trackedTimeout]);
 
-  const ensureRecognitionRef = useRef(ensureRecognition);
-  ensureRecognitionRef.current = ensureRecognition;
+  const restartRecognition = useCallback((mode: 'wake' | 'stop') => {
+    startRecognition(mode, false);
+  }, []);
+  const restartRecognitionRef = useRef(restartRecognition);
+  restartRecognitionRef.current = restartRecognition;
 
   const scheduleRestart = useCallback(() => {
     const mode = modeRef.current;
@@ -371,9 +466,9 @@ export function useVoiceInput(
       if (mode === 'wake' && wakeWordEnabledRef.current && (stateRef.current === 'listening' || stateRef.current === 'idle')) {
         stateRef.current = 'listening';
         setState('listening');
-        ensureRecognitionRef.current('wake');
+        restartRecognitionRef.current('wake');
       } else if (mode === 'stop' && stateRef.current === 'recording' && wakeTriggeredRef.current) {
-        ensureRecognitionRef.current('stop');
+        restartRecognitionRef.current('stop');
       }
     }, delay);
   }, [trackedTimeout]);
@@ -400,7 +495,7 @@ export function useVoiceInput(
       setError(null);
       setVoiceState('recording');
       // Now start listening for stop phrases
-      ensureRecognitionRef.current('stop');
+      restartRecognitionRef.current('stop');
     } catch (err) {
       console.error('Mic access denied:', err);
       const msg = err instanceof DOMException && err.name === 'NotAllowedError'
@@ -409,7 +504,7 @@ export function useVoiceInput(
       setError(msg);
       if (wakeWordEnabledRef.current) {
         setVoiceState('listening');
-        ensureRecognitionRef.current('wake');
+        restartRecognitionRef.current('wake');
       }
     }
   }, [resetBrowserTranscript, setVoiceState]);
@@ -429,7 +524,7 @@ export function useVoiceInput(
     stopStream();
     if (wakeWordEnabledRef.current) {
       setVoiceState('listening');
-      ensureRecognitionRef.current('wake');
+      restartRecognitionRef.current('wake');
     } else {
       setVoiceState('idle');
     }
@@ -503,7 +598,7 @@ export function useVoiceInput(
       // Resume wake word listener
       if (wakeWordEnabledRef.current) {
         setVoiceState('listening');
-        ensureRecognitionRef.current('wake');
+        restartRecognitionRef.current('wake');
       } else {
         setVoiceState('idle');
       }
@@ -511,7 +606,7 @@ export function useVoiceInput(
     mr.stop();
   }, [resetBrowserTranscript, stopStream, setVoiceState, transcribeWithBackend, waitForBrowserTranscript]);
 
-  const startWakeWordListener = useCallback(() => {
+  const startWakeWordListener = useCallback((fromGesture = false) => {
     if (!wakeWordSupported) {
       wakeWordEnabledRef.current = false;
       if (stateRef.current === 'listening') {
@@ -534,7 +629,12 @@ export function useVoiceInput(
     wakeWordEnabledRef.current = true;
     setStoredWakeWordEnabled(true);
     setVoiceState('listening');
-    ensureRecognitionRef.current('wake');
+    if (fromGesture) {
+      // Start recognition synchronously within the user gesture context
+      startRecognition('wake', true);
+    } else {
+      restartRecognitionRef.current('wake');
+    }
   }, [setVoiceState, wakeWordSupported]);
 
   const stopWakeWordListener = useCallback(() => {
@@ -552,13 +652,13 @@ export function useVoiceInput(
 
   const toggleWakeWord = useCallback(() => {
     if (wakeWordEnabledRef.current) stopWakeWordListener();
-    else startWakeWordListener();
+    else startWakeWordListener(true);
   }, [startWakeWordListener, stopWakeWordListener]);
 
   // Restart recognition when language changes (so Web Speech API uses new locale)
   useEffect(() => {
     if (wakeWordEnabledRef.current && stateRef.current === 'listening') {
-      ensureRecognitionRef.current('wake');
+      restartRecognitionRef.current('wake');
     }
   }, [language]);
 

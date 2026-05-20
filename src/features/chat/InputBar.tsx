@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
-import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command } from 'lucide-react';
+import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff } from 'lucide-react';
 import type { TreeEntry } from '@/features/file-browser';
 import { useVoiceInput } from '@/features/voice/useVoiceInput';
 import { useTabCompletion } from '@/hooks/useTabCompletion';
@@ -44,6 +44,8 @@ interface InputBarProps {
   showCommandPaletteButton?: boolean;
   /** Open the command palette from the compact composer launcher. */
   onOpenCommandPalette?: () => void;
+  /** Send the current conversation to the Research tab with an auto-generated brief. */
+  onResearch?: () => void;
 }
 
 export interface InputBarHandle {
@@ -272,6 +274,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   agentName = 'Agent',
   showCommandPaletteButton = false,
   onOpenCommandPalette,
+  onResearch,
 }, ref) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -301,7 +304,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
 
   // Tab completion for session names
   const { sessions, agentName: ctxAgentName } = useSessionContext();
-  const { liveTranscriptionPreview, sttInputMode, sttProvider } = useSettings();
+  const { liveTranscriptionPreview, sttInputMode, sttProvider, ttsEnabled, toggleTts } = useSettings();
   const getSessionLabels = useMemo(() => {
     // Build a closure that returns current session labels
     const labels = sessions.map((s) => {
@@ -1280,6 +1283,17 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
           rows={1}
           className="flex-1 font-mono text-[13px] bg-transparent text-foreground border-none px-2.5 py-3 resize-none outline-none min-h-[42px] max-h-[160px]"
         />
+        {onResearch && (
+          <button
+            type="button"
+            onClick={onResearch}
+            className="bg-transparent border-none text-muted-foreground hover:text-primary text-xs cursor-pointer px-2.5 self-stretch h-full flex items-center justify-center"
+            title="Send conversation to deep research"
+            aria-label="Send to deep research"
+          >
+            🔬
+          </button>
+        )}
         {showCommandPaletteButton && onOpenCommandPalette && (
           <button
             type="button"
@@ -1300,6 +1314,15 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
           aria-label={uploadsEnabled ? 'Attach files' : 'Uploads disabled by configuration'}
         >
           <Paperclip size={16} />
+        </button>
+        <button
+          type="button"
+          onClick={toggleTts}
+          className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 self-stretch h-full flex items-center"
+          title={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
+          aria-label={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
+        >
+          {ttsEnabled ? <Volume2 size={16} /> : <VolumeOff size={16} className="text-destructive/70" />}
         </button>
         <button
           onClick={() => { void handleSend(); }}

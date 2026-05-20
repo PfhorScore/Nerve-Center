@@ -6,14 +6,13 @@ interface ChatHeaderProps {
   onReset?: () => void;
   onAbort: () => void;
   isGenerating: boolean;
-  /** File explorer toggle button shown on smaller layouts. */
   onToggleFileBrowser?: () => void;
-  /** Whether the file explorer is currently collapsed. */
   isFileBrowserCollapsed?: boolean;
-  /** Mobile top bar toggle handler. */
   onToggleMobileTopBar?: () => void;
-  /** Whether the mobile top bar is currently hidden. */
   isMobileTopBarHidden?: boolean;
+  /** Toggle agent activity visibility */
+  showAgentActivity?: boolean;
+  onToggleAgentActivity?: () => void;
 }
 
 /**
@@ -30,6 +29,8 @@ export function ChatHeader({
   isFileBrowserCollapsed = true,
   onToggleMobileTopBar,
   isMobileTopBarHidden = false,
+  showAgentActivity,
+  onToggleAgentActivity,
 }: ChatHeaderProps) {
   const {
     modelOptions,
@@ -131,6 +132,22 @@ export function ChatHeader({
             options={effortOptions}
           />
         </div>
+        {onToggleAgentActivity && (
+          <button
+            onClick={onToggleAgentActivity}
+            className={`shell-icon-button min-h-6 px-1.5 ${showAgentActivity !== false ? 'text-muted-foreground/50' : 'text-muted-foreground/30'}`}
+            title={showAgentActivity !== false ? 'Hide agent activity' : 'Show agent activity'}
+          >
+            <span className="relative">
+              {showAgentActivity === false && isGenerating && (
+                <span className="absolute -inset-1 animate-ping rounded-full bg-primary/30" />
+              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+              </svg>
+            </span>
+          </button>
+        )}
         {isGenerating && (
           <button
             onClick={onAbort}

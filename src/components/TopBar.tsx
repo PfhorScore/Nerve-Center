@@ -17,6 +17,7 @@ import {
   Brain,
   MessageSquare,
   LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 import type { ViewMode } from "@/features/command-palette/commands";
 import type { AgentLogEntry, EventEntry, TokenData } from "@/types";
@@ -276,6 +277,17 @@ export function TopBar({
                 <span>Tasks</span>
               </button>
             )}
+            <button
+              onClick={() => onViewModeChange("research")}
+              title="Research View"
+              aria-label="Switch to research view"
+              aria-pressed={viewMode === "research"}
+              data-active={viewMode === "research"}
+              className="shell-chip min-h-11 flex-1 justify-center text-[0.733rem] uppercase tracking-[0.14em] max-[371px]:min-h-[38px] max-[371px]:gap-1 max-[371px]:px-2 max-[371px]:text-[0.667rem] max-[371px]:tracking-[0.08em] max-[371px]:[&_svg]:size-3 sm:min-h-10 sm:flex-none"
+            >
+              <Sparkles size={13} aria-hidden="true" />
+              <span>Research</span>
+            </button>
           </div>
         )}
         <div ref={buttonsRef} className="ml-auto flex min-w-0 max-w-full items-center justify-end gap-1.5 overflow-x-auto pb-1 max-[371px]:gap-0.5 sm:max-w-none sm:gap-2 sm:overflow-visible sm:pb-0">

@@ -1,5 +1,5 @@
 import React, { useMemo, memo } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Plug } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Card, CardContent } from '@/components/ui/card';
 import { sanitizeHtml } from '@/lib/sanitize';
@@ -8,6 +8,7 @@ import { escapeRegex } from '@/lib/constants';
 import { DiffView } from './DiffView';
 import { FileContentView } from './FileContentView';
 import { extractEditBlocks, extractWriteBlocks } from './edit-blocks';
+import { matchMcpToolCallSync } from '@/lib/mcp-tools';
 import type { ChatMsg } from './types';
 
 interface ToolCallBlockProps {
@@ -16,6 +17,10 @@ interface ToolCallBlockProps {
   isCollapsed: boolean;
   onToggleCollapse: (idx: number) => void;
   searchQuery?: string;
+  /** List of configured MCP server names, for MCP tool badge detection */
+  mcpServerNames?: string[];
+  /** Whether MCP tool call blocks are visible in chat */
+  mcpVisible?: boolean;
 }
 
 // Highlight search terms in text
@@ -34,7 +39,7 @@ function highlightText(text: string, query?: string): React.ReactNode {
   );
 }
 
-function ToolCallBlockInner({ msg, index, isCollapsed, onToggleCollapse, searchQuery }: ToolCallBlockProps) {
+function ToolCallBlockInner({ msg, index, isCollapsed, onToggleCollapse, searchQuery, mcpServerNames, mcpVisible = true }: ToolCallBlockProps) {
   const timeStr = msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   // Use html (description from describeToolUse) for preview, fall back to rawText
   const htmlText = msg.html.replace(/<[^>]*>/g, '').trim();
@@ -44,6 +49,17 @@ function ToolCallBlockInner({ msg, index, isCollapsed, onToggleCollapse, searchQ
   const writeBlocks = useMemo(() => extractWriteBlocks(msg.rawText), [msg.rawText]);
   const sanitizedHtml = useMemo(() => sanitizeHtml(msg.html), [msg.html]);
 
+  // Detect MCP tool calls
+  const mcpMatch = useMemo(
+    () => (mcpServerNames ? matchMcpToolCallSync(toolPreview, mcpServerNames) : null),
+    [toolPreview, mcpServerNames],
+  );
+
+  // Hide MCP tool blocks when visibility is off
+  const isMcp = mcpMatch !== null;
+  const hidden = isMcp && !mcpVisible;
+  if (hidden) return null;
+
   return (
     <div className="msg msg-tool relative max-w-full break-words mx-4 my-1.5">
       <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse(index)}>
@@ -51,6 +67,12 @@ function ToolCallBlockInner({ msg, index, isCollapsed, onToggleCollapse, searchQ
           <CollapsibleTrigger className="flex w-full items-center gap-2 px-3.5 py-3 text-left transition-colors cursor-pointer hover:bg-primary/[0.04]">
             <ChevronRight size={14} className={`text-muted-foreground shrink-0 transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`} />
             <span className="cockpit-badge shrink-0">Tool</span>
+            {mcpMatch && (
+              <span className="cockpit-badge shrink-0" data-tone="info">
+                <Plug size={8} className="mr-0.5" />
+                {mcpMatch.serverName}
+              </span>
+            )}
             <span className="flex-1 truncate text-[0.8rem] text-foreground/78">{highlightText(toolPreview, searchQuery)}</span>
             <span className="shrink-0 font-mono text-[0.667rem] text-muted-foreground">{timeStr}</span>
           </CollapsibleTrigger>

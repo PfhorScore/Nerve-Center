@@ -56,6 +56,7 @@ const WorkspacePanel = lazy(() => import('@/features/workspace/WorkspacePanel').
 
 // Lazy-loaded view modes
 const KanbanPanel = lazy(() => import('@/features/kanban/KanbanPanel').then(m => ({ default: m.KanbanPanel })));
+const ResearchPanel = lazy(() => import('@/features/research/ResearchPanel').then(m => ({ default: m.ResearchPanel })));
 
 interface AppProps {
   onLogout?: () => void;
@@ -429,6 +430,38 @@ export default function App({ onLogout }: AppProps) {
     if (kanbanVisible || viewMode !== 'kanban') return;
     setViewMode('chat');
   }, [kanbanVisible, setViewMode, viewMode]);
+
+  // Listen for nerve:send-to-chat events from ResearchPanel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { text?: string } | undefined;
+      if (detail?.text) {
+        handleSend(detail.text);
+      }
+    };
+    window.addEventListener('nerve:send-to-chat', handler);
+    return () => window.removeEventListener('nerve:send-to-chat', handler);
+  }, [handleSend]);
+
+  // Send conversation to Research tab
+  const handleSendToResearch = useCallback(() => {
+    // Skip tool calls/results, only keep user messages and actual assistant text
+    const meaningful = messages.filter(m => {
+      if (m.role === 'user') return true;
+      if (m.role === 'assistant' && !m.isThinking && !m.intermediate) return true;
+      return false;
+    });
+
+    const transcript = meaningful
+      .slice(-15)
+      .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.rawText.slice(0, 2000)}`)
+      .join('\n\n');
+
+    if (transcript) {
+      try { sessionStorage.setItem('nerve:research-transcript', transcript); } catch {}
+    }
+    setViewMode('research');
+  }, [messages, setViewMode]);
 
   const openBeadId = useCallback((target: BeadLinkTarget) => {
     const normalizedBeadId = target.beadId.trim();
@@ -814,6 +847,7 @@ export default function App({ onLogout }: AppProps) {
             isFileBrowserCollapsed={fileBrowserCollapsed}
             onToggleMobileTopBar={isCompactLayout ? toggleMobileTopBar : undefined}
             isMobileTopBarHidden={isMobileTopBarHidden}
+            onSendToResearch={handleSendToResearch}
             onOpenWorkspacePath={openWorkspacePath}
             pathLinkPrefixes={chatPathLinkPrefixes}
             pathLinkAliases={chatPathLinkAliases}
@@ -906,7 +940,7 @@ export default function App({ onLogout }: AppProps) {
     </Suspense>
   );
 
-  const showCompactFileBrowser = isCompactLayout && viewMode !== 'kanban' && !fileBrowserCollapsed;
+  const showCompactFileBrowser = isCompactLayout && viewMode !== 'kanban' && viewMode !== 'research' && !fileBrowserCollapsed;
 
   return (
     <div className="scan-lines relative h-screen flex flex-col overflow-hidden" data-booted={booted}>
@@ -1089,12 +1123,19 @@ export default function App({ onLogout }: AppProps) {
             </Suspense>
           </div>
         )}
+        {viewMode === 'research' && (
+          <div className="shell-panel boot-panel flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden rounded-[28px]">
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading…</div>}>
+              <ResearchPanel />
+            </Suspense>
+          </div>
+        )}
         {isCompactLayout ? (
-          <div className={`shell-panel flex-1 min-w-0 min-h-0 overflow-hidden rounded-[28px] boot-panel${viewMode === 'kanban' ? ' hidden' : ''}`}>
+          <div className={`shell-panel flex-1 min-w-0 min-h-0 overflow-hidden rounded-[28px] boot-panel${viewMode === 'kanban' || viewMode === 'research' ? ' hidden' : ''}`}>
             {chatContent}
           </div>
         ) : (
-          <div style={{ display: viewMode === 'kanban' ? 'none' : 'contents' }}>
+          <div style={{ display: viewMode === 'kanban' || viewMode === 'research' ? 'none' : 'contents' }}>
             <ResizablePanels
               leftPercent={panelRatio}
               onResize={setPanelRatio}

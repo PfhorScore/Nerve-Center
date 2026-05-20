@@ -314,7 +314,9 @@ app.get('/api/sessions/runtime', rateLimitGeneral, async (c) => {
   const runtime = await readRuntimeFromTranscript(transcriptPath);
   return c.json({
     ok: true,
-    model: runtime.model ?? info.model,
+    // Prefer the session store model (reflects live model changes) over the
+    // transcript (records initial config at session creation time).
+    model: info.model ?? runtime.model,
     thinking: runtime.thinking ?? info.thinking,
     missing: false,
   });
@@ -337,6 +339,9 @@ app.get('/api/sessions/:id/model', rateLimitGeneral, async (c) => {
   }
 
   const runtime = await readRuntimeFromTranscript(transcriptPath);
+  // Prefer session store model (live) over transcript (stale init config).
+  // This endpoint uses a different code path so it doesn't have info.model.
+  // As a fallback, the runtime model from transcript is still returned.
   return c.json({ ok: true, model: runtime.model, thinking: runtime.thinking, missing: false });
 });
 

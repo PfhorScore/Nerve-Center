@@ -54,6 +54,8 @@ interface ChatPanelProps {
   showCommandPaletteButton?: boolean;
   /** Open the command palette from the compact composer launcher. */
   onOpenCommandPalette?: () => void;
+  /** Send current conversation to the Research tab with an auto-generated brief. */
+  onSendToResearch?: () => void;
 }
 
 export interface ChatPanelHandle {
@@ -62,6 +64,48 @@ export interface ChatPanelHandle {
 }
 
 /** Main chat panel with message list, infinite scroll, search, and input bar. */
+// Fetch MCP server names and visibility for MCP tool badge detection
+function useMcpState(): { serverNames: string[]; visible: boolean } {
+  const [serverNames, setServerNames] = useState<string[]>([]);
+  const [visible, setVisible] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nerve:mcp:show-in-chat');
+      return stored === null ? true : stored === 'true';
+    } catch { return true; }
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchNames = async () => {
+      try {
+        const resp = await fetch('/api/mcp/servers', { signal: AbortSignal.timeout(5000) });
+        if (!resp.ok) return;
+        const data = await resp.json() as { servers?: { name: string }[] };
+        if (!cancelled) {
+          setServerNames(data.servers?.map(s => s.name) || []);
+        }
+      } catch {
+        // servers not available, no badges shown
+      }
+    };
+    fetchNames();
+
+    // Listen for visibility changes from settings
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { visible: boolean } | undefined;
+      if (detail) setVisible(detail.visible);
+    };
+    window.addEventListener('nerve:mcp-visibility-changed', handler);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('nerve:mcp-visibility-changed', handler);
+    };
+  }, []);
+
+  return { serverNames, visible };
+}
+
 export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function ChatPanel({
   messages,
   onSend, onAbort, isGenerating, stream,
@@ -76,7 +120,10 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   onOpenBeadId,
   showCommandPaletteButton = false,
   onOpenCommandPalette,
+  onSendToResearch,
 }, ref) {
+  const { serverNames: mcpServerNames, visible: mcpVisible } = useMcpState();
+  const [showAgentActivity, setShowAgentActivity] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const inputBarRef = useRef<InputBarHandle>(null);
@@ -264,6 +311,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         isFileBrowserCollapsed={isFileBrowserCollapsed}
         onToggleMobileTopBar={onToggleMobileTopBar}
         isMobileTopBarHidden={isMobileTopBarHidden}
+        showAgentActivity={showAgentActivity}
+        onToggleAgentActivity={() => setShowAgentActivity(!showAgentActivity)}
       />
 
       {/* Search Bar */}
@@ -302,7 +351,14 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const isCurrentMatch = search.currentMatch?.messageIndex === i;
           const stableKey = msg.msgId || msg.tempId || `${msg.role}-${msg.timestamp.getTime()}-${i}`;
 
-          if (isTool) {
+          // Tool/toolResult messages with embed markers go through MessageBubble
+          // so AppEmbed components render properly
+          const hasEmbed = isTool && /<!--\s*nerve-app\s+/.test(msg.rawText);
+
+          // Hide tool calls and thinking messages when agent activity is toggled off
+          if (!showAgentActivity && (isTool || msg.isThinking)) return <div key={stableKey} />;
+
+          if (isTool && !hasEmbed) {
             // Grouped tool bubble (multiple consecutive tool calls)
             if (msg.toolGroup) {
               return (
@@ -330,6 +386,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
                   index={i}
                   isCollapsed={isCollapsed}
                   onToggleCollapse={toggleCollapse}
+                  mcpServerNames={mcpServerNames}
+                  mcpVisible={mcpVisible}
                 />
               </div>
             );
@@ -401,6 +459,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         agentName={agentName}
         showCommandPaletteButton={showCommandPaletteButton}
         onOpenCommandPalette={onOpenCommandPalette}
+        onResearch={onSendToResearch}
       />
 
     </div>

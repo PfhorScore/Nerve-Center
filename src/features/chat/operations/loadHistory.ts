@@ -514,8 +514,11 @@ export function groupToolMessages(msgs: ChatMsg[]): ChatMsg[] {
     toolBuffer = [];
   };
 
+  // Don't group tool results that contain embed markers — they need to render inline
+  const HAS_EMBED_RE = /<!--\s*nerve-app\s+/;
+
   for (const msg of msgs) {
-    if (msg.role === 'tool' || msg.role === 'toolResult') {
+    if ((msg.role === 'tool' || msg.role === 'toolResult') && !HAS_EMBED_RE.test(msg.rawText)) {
       toolBuffer.push(msg);
     } else {
       flushTools();

@@ -10,6 +10,8 @@ export type STTInputMode = 'browser' | 'local' | 'hybrid';
 interface SettingsContextValue {
   soundEnabled: boolean;
   toggleSound: () => void;
+  ttsEnabled: boolean;
+  toggleTts: () => void;
   ttsProvider: TTSProvider;
   ttsModel: string;
   setTtsProvider: (provider: TTSProvider) => void;
@@ -111,6 +113,10 @@ function resolveInitialFont(): FontName {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [soundEnabled, setSoundEnabled] = useState(localStorage.getItem('oc-sound') === 'true');
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    const saved = localStorage.getItem('nerve:ttsEnabled');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [ttsProvider, setTtsProvider] = useState<TTSProvider>(() => migrateTTSProvider(localStorage.getItem('oc-tts-provider') || 'edge'));
   const [ttsModel, setTtsModelState] = useState(() => localStorage.getItem('oc-tts-model') || '');
   const [sttProvider, setSttProviderState] = useState<STTProvider>(() => {
@@ -164,7 +170,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem(KANBAN_VISIBILITY_STORAGE_KEY);
     return saved !== 'false';
   });
-  const { speak } = useTTS(soundEnabled, ttsProvider, ttsModel || undefined);
+  const { speak } = useTTS(ttsEnabled, ttsProvider, ttsModel || undefined);
   const wakeWordToggleRef = useRef<(() => void) | null>(null);
 
   // Apply theme on mount and when it changes
@@ -191,6 +197,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSoundEnabled(prev => {
       const next = !prev;
       localStorage.setItem('oc-sound', String(next));
+      return next;
+    });
+  }, []);
+
+  const toggleTts = useCallback(() => {
+    setTtsEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('nerve:ttsEnabled', String(next));
       return next;
     });
   }, []);
@@ -368,6 +382,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SettingsContextValue>(() => ({
     soundEnabled,
     toggleSound,
+    ttsEnabled,
+    toggleTts,
     ttsProvider,
     ttsModel,
     setTtsProvider: changeTtsProvider,
@@ -409,7 +425,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     kanbanVisible,
     toggleKanbanVisible,
   }), [
-    soundEnabled, toggleSound, ttsProvider, ttsModel, changeTtsProvider, changeTtsModel, toggleTtsProvider,
+    soundEnabled, toggleSound, ttsEnabled, toggleTts, ttsProvider, ttsModel, changeTtsProvider, changeTtsModel, toggleTtsProvider,
     sttProvider, changeSttProvider, sttInputMode, changeSttInputMode, sttModel, changeSttModel,
     wakeWordEnabled, handleToggleWakeWord, handleWakeWordState,
     liveTranscriptionPreview, toggleLiveTranscriptionPreview,

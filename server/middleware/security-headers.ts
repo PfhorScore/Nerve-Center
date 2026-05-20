@@ -54,9 +54,9 @@ function getCspDirectives(): string {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     `connect-src ${connectSrc}`,
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://icons.duckduckgo.com https://www.google.com",
     "media-src 'self' blob:",  // Allow blob: URLs for TTS audio playback
-    "frame-src 'self' https://s3.tradingview.com https://www.tradingview.com https://www.tradingview-widget.com https://s.tradingview.com",
+    "frame-src 'self' http://127.0.0.1:* http://localhost:* https://s3.tradingview.com https://www.tradingview.com https://www.tradingview-widget.com https://s.tradingview.com",
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'self'",

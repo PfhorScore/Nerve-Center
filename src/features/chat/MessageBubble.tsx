@@ -1,9 +1,11 @@
-import { useState, useCallback, lazy, Suspense, memo } from 'react';
+import { useState, useCallback, useMemo, lazy, Suspense, memo } from 'react';
 import { MemoriesSection } from './MemoriesSection';
 import { ImageLightbox } from './ImageLightbox';
 import { isMessageCollapsible } from './types';
 import { decodeHtmlEntities } from '@/lib/formatting';
 import { isStructuredMarkdown } from '@/lib/text/isStructuredMarkdown';
+import { extractAppEmbeds, stripAppEmbeds } from '@/lib/nerve-app';
+import { AppEmbed } from '@/features/chat/components/AppEmbed';
 import type { ChatMsg } from './types';
 import type { BeadLinkTarget } from '@/features/beads';
 
@@ -143,6 +145,14 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
     return text;
   })();
 
+  // Parse app embeds from message
+  const appEmbeds = useMemo(() => extractAppEmbeds(msg.rawText), [msg.rawText]);
+  // Strip app markers from display content
+  const cleanDisplayContent = useMemo(() => {
+    if (appEmbeds.length > 0) return stripAppEmbeds(displayContent);
+    return displayContent;
+  }, [appEmbeds, displayContent]);
+
   // Generate preview: first non-empty line, truncated, for system/event messages
   const systemPreview = isSystem && msg.rawText
     ? (() => {
@@ -261,6 +271,10 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
       >
         <span className={`text-muted-foreground text-xs shrink-0 w-3 transition-transform ${!isCollapsed ? 'rotate-90' : ''} ${isUser ? 'rotate-180' : ''} ${!isCollapsed && isUser ? '-rotate-90' : ''}`}>›</span>
         <RoleBadge role={msg.role} agentName={agentName} />
+        {/* ✏️ Canvas badge — visible even when collapsed, helps locate canvases in chat history */}
+        {appEmbeds.length > 0 && (
+          <span className="cockpit-badge" data-tone="info" title="Contains embedded canvas">✏️ Canvas</span>
+        )}
         {isCollapsed && preview && (
           <span className="text-muted-foreground text-[0.667rem] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0">
             {isSystem && msg.rawText && /```/.test(msg.rawText) && (
@@ -294,10 +308,44 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
                 Voice
               </span>
             )}
-            {displayContent && (
+            {cleanDisplayContent && (
               <Suspense fallback={<div className="text-muted-foreground text-xs">Loading…</div>}>
-                <MarkdownRenderer content={displayContent} searchQuery={searchQuery} suppressImages={isAssistant} onOpenWorkspacePath={onOpenWorkspacePath} pathLinkPrefixes={pathLinkPrefixes} pathLinkAliases={pathLinkAliases} onOpenBeadId={onOpenBeadId} />
+                <MarkdownRenderer content={cleanDisplayContent} searchQuery={searchQuery} suppressImages={isAssistant} onOpenWorkspacePath={onOpenWorkspacePath} pathLinkPrefixes={pathLinkPrefixes} pathLinkAliases={pathLinkAliases} onOpenBeadId={onOpenBeadId} />
               </Suspense>
+            )}
+
+            {/* Embedded apps */}
+            {appEmbeds.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {appEmbeds.map((embedConfig: import('@/lib/nerve-app').AppEmbedConfig, idx: number) => (
+                  <AppEmbed key={idx} config={embedConfig} onExtract={(extractedData: unknown) => {
+                    // Save extracted canvas data back to the tldraw server
+                    try {
+                      const src = embedConfig.src;
+                      if (src) {
+                        const url = new URL(src);
+                        const sessionId = url.searchParams.get('session');
+                        const origin = url.origin;
+                        if (sessionId && origin) {
+                          // Extract the tldraw snapshot from the postMessage payload
+                          const payload = (extractedData && typeof extractedData === 'object')
+                            ? (extractedData as Record<string, unknown>)
+                            : {};
+                          const snapshot = ((payload as { data?: unknown }).data) || payload;
+                          const summary = typeof (payload as { summary?: string }).summary === 'string'
+                            ? (payload as { summary: string }).summary
+                            : 'extracted from canvas';
+                          fetch(`${origin}/api/canvas/${encodeURIComponent(sessionId)}/state`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ snapshot, summary }),
+                          }).catch(() => {/* best-effort */});
+                        }
+                      }
+                    } catch {/* ignore */}
+                  }} />
+                ))}
+              </div>
             )}
           </div>
           {msg.charts && msg.charts.length > 0 && (

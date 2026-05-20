@@ -88,7 +88,9 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       const h = await currentRpc('status', {}) as Record<string, unknown>;
       const agent = h?.agent as Record<string, unknown> | undefined;
       const config = h?.config as Record<string, unknown> | undefined;
-      let clean = normalizeModel(String(agent?.model || h?.model || config?.model || h?.defaultModel || '--'));
+      // Prefer the actual running model (h.model) over the agent's configured default (agent?.model)
+      // to avoid showing a stale default when the session is using a different model.
+      let clean = normalizeModel(String(h?.model || agent?.model || config?.model || h?.defaultModel || '--'));
 
       // Extract thinking/effort level from status response
       const rawThinking = String(
