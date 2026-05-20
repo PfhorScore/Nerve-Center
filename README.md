@@ -9,14 +9,14 @@
 *OpenClaw is powerful. Nerve is the interface that makes people say “oh, now I get it."*
 
 
-[![Star Nerve on GitHub](https://img.shields.io/github/stars/daggerhashimoto/openclaw-nerve?style=for-the-badge&logo=github&label=Star%20Nerve%20on%20GitHub&color=0f172a)](https://github.com/daggerhashimoto/openclaw-nerve)
+[![Star Nerve on GitHub](https://img.shields.io/github/stars/PfhorScore/Nerve-Center?style=for-the-badge&logo=github&label=Star%20Nerve%20on%20GitHub&color=0f172a)](https://github.com/PfhorScore/Nerve-Center)
 [![MIT License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 [![Discord](https://img.shields.io/discord/1474924531683688478?style=for-the-badge&color=5865F2&logo=discord&logoColor=white&label=Discord)](https://discord.gg/Sh9ZGtctva)
 
 </div>
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 ```
 > *Run the installer, live in 60 seconds*
 
@@ -96,7 +96,7 @@ Charts, diffs, previews, syntax-highlighted code, structured tool rendering, and
 ### One command
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 ```
 
 > *The installer handles dependencies, clone, build, and then usually hands off straight into the setup wizard. Guided access modes include localhost, LAN, Tailscale tailnet IP, and Tailscale Serve.*
@@ -111,8 +111,8 @@ curl -fsSL https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/mast
 <details><summary><strong>Manual install</strong></summary>
 
 ```bash
-git clone https://github.com/daggerhashimoto/openclaw-nerve.git
-cd openclaw-nerve
+git clone https://github.com/PfhorScore/Nerve-Center.git
+cd Nerve-Center
 npm install
 npm run setup
 npm run prod
@@ -190,7 +190,7 @@ Join the **[Nerve Discord](https://discord.gg/Sh9ZGtctva)** to get help, discuss
 
 ### People building Nerve
 
-[![Contributors](https://contrib.rocks/image?repo=daggerhashimoto/openclaw-nerve)](https://github.com/daggerhashimoto/openclaw-nerve/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=PfhorScore/Nerve-Center)](https://github.com/PfhorScore/Nerve-Center/graphs/contributors)
 
 ## License
 
