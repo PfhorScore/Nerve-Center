@@ -28,7 +28,7 @@ All the power of Nerve, plus enhancements you won't find anywhere else:
 
 ### 🧠 AI-Powered Research Tab
 Full Perplexity-class research experience built right in:
-- **Quick & Deep search modes** using your Perplexity API key
+- **Quick & Deep search modes** using OpenClaw-compatible providers
 - **Rich markdown answers** with inline citation links `[1]`
 - **Hover previews** — favicon, title, and snippet on any source
 - **Tabbed results**: All, Sources, Images, Links
