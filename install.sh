@@ -3,7 +3,7 @@
 # Nerve Installer — one-command setup for the Nerve web interface
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --dir ~/nerve --version v1.4.4
@@ -33,7 +33,7 @@ INSTALL_DIR="${NERVE_INSTALL_DIR:-${HOME}/nerve}"
 BRANCH="master"
 BRANCH_EXPLICIT=false
 VERSION=""
-REPO="https://github.com/daggerhashimoto/openclaw-nerve.git"
+REPO="https://github.com/PfhorScore/Nerve-Center.git"
 NODE_MIN=22
 SKIP_SETUP=false
 DRY_RUN=false
