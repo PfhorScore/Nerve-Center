@@ -182,6 +182,25 @@ export function ResearchPanel() {
     return () => clearTimeout(timer);
   }, [activeThreadId]);
 
+  // Handle chat handoff transcript (send to research)
+  useEffect(() => {
+    let transcript: string | null = null;
+    try { transcript = sessionStorage.getItem('nerve:research-transcript'); sessionStorage.removeItem('nerve:research-transcript'); } catch {}
+    if (!transcript) return;
+
+    fetch('/api/research/brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transcript }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok && data.data?.brief) setQuery(data.data.brief.slice(0, 500));
+        else setQuery(transcript!.slice(0, 300));
+      })
+      .catch(() => { if (transcript) setQuery(transcript.slice(0, 300)); });
+  }, []);
+
   // Rotating placeholder text
   useEffect(() => {
     const texts = [
@@ -750,34 +769,33 @@ export function ResearchPanel() {
                         <MarkdownRenderer content={ci === conversation.length - 1 ? boldLead(linkCitations(entry.answer, entry.citations, ci)) : linkCitations(entry.answer, entry.citations, ci)} />
                       </Suspense>
                     </div>
-                    <div className="mt-3 flex items-center gap-2">
+                    <div className="mt-6 flex items-center justify-end gap-1">
+                      <span className="text-[0.5rem] text-muted-foreground/30 mr-auto">{entry.provider}</span>
                       <button
                         onClick={() => sendToChat(entry.answer)}
-                        className="shell-icon-button min-h-7 px-2.5 text-[0.667rem]"
+                        className="shell-icon-button min-h-4 px-1"
+                        title="Send to chat"
                       >
-                        <MessageSquare size={11} className="mr-1" />
-                        Send to Chat
+                        <MessageSquare size={9} />
                       </button>
                       <button
                         onClick={() => copyAnswer(entry.answer)}
-                        className="shell-icon-button min-h-7 px-2.5 text-[0.667rem]"
+                        className="shell-icon-button min-h-4 px-1"
+                        title={copied ? 'Copied' : 'Copy answer'}
                       >
-                        {copied ? <Check size={11} className="mr-1 text-green-500" /> : <Copy size={11} className="mr-1" />}
-                        {copied ? 'Copied' : 'Copy'}
+                        {copied ? <Check size={9} className="text-green-500" /> : <Copy size={9} />}
                       </button>
                       {ci === conversation.length - 1 && (
                         <button
                           onClick={() => rewriteLast(entry)}
-                          className="shell-icon-button min-h-7 px-2.5 text-[0.667rem]"
-                          title="Remove last answer and regenerate"
+                          className="shell-icon-button min-h-4 px-1"
+                          title="Rewrite"
                         >
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                           </svg>
-                          Rewrite
                         </button>
                       )}
-                      <span className="text-[0.6rem] text-muted-foreground/50">via {entry.provider}</span>
                     </div>
 
                     {/* Tab bar */}
@@ -964,26 +982,24 @@ export function ResearchPanel() {
           </div>
         )}
 
-        {/* Scroll buttons */}
+        {/* Scroll buttons — icon only */}
         {conversation.length > 0 && (
-          <div className="absolute bottom-3 right-4 flex gap-1.5 z-10">
+          <div className="absolute bottom-3 right-4 flex gap-1 z-10">
             <button
               onClick={() => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="shell-icon-button min-h-7 px-2.5 text-[0.6rem] shadow-md bg-card/90 backdrop-blur-sm"
+              className="shell-icon-button min-h-5 px-1.5 opacity-40 hover:opacity-100 transition-opacity shadow-sm bg-card/80 backdrop-blur-sm"
               title="Scroll to top"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="18 15 12 9 6 15" />
               </svg>
-              <span className="ml-1">Top</span>
             </button>
             <button
               onClick={() => resultsEndRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="shell-icon-button min-h-7 px-2.5 text-[0.6rem] shadow-md bg-card/90 backdrop-blur-sm"
+              className="shell-icon-button min-h-5 px-1.5 opacity-40 hover:opacity-100 transition-opacity shadow-sm bg-card/80 backdrop-blur-sm"
               title="Scroll to bottom"
             >
-              <span className="mr-1">Bottom</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="6 9 12 15 18 9" />
               </svg>
             </button>

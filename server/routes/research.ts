@@ -450,4 +450,117 @@ app.post('/api/research/split-thread', rateLimitGeneral, async (c) => {
   return c.json({ ok: true, data: { groups: [[0], entries.slice(1).map((_, i) => i + 1)] } });
 });
 
+/**
+ * POST /api/research/images
+ *
+ * Fetches image results from DuckDuckGo for a given query.
+ */
+app.post('/api/research/images', rateLimitGeneral, async (c) => {
+  const body: { query?: string } = await c.req.json().catch(() => ({}));
+  const query = body.query?.trim();
+  if (!query) {
+    return c.json({ ok: false, error: 'Query is required' }, 400);
+  }
+
+  const images: Array<{ url: string; title: string }> = [];
+
+  // Fetch images from Wikipedia (free, reliable, no key)
+  try {
+    const wikiResp = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrlimit=12&gsrsearch=${encodeURIComponent(query)}&prop=pageimages&pithumbsize=300`,
+      { headers: { 'User-Agent': 'NerveCenter/1.0 (research; https://github.com/PfhorScore/Nerve-Center)' }, signal: AbortSignal.timeout(6000) }
+    );
+    if (wikiResp.ok) {
+      const wikiData = await wikiResp.json() as Record<string, unknown>;
+      const pages = (wikiData?.query as Record<string, unknown> | undefined)?.pages as Record<string, { title?: string; thumbnail?: { source?: string } }> | undefined;
+      if (pages) {
+        for (const page of Object.values(pages)) {
+          if (page.thumbnail?.source && images.length < 12) {
+            images.push({ url: page.thumbnail.source, title: page.title || '' });
+          }
+        }
+      }
+    }
+  } catch {}
+
+  return c.json({ ok: true, data: { images } });
+});
+
+// ── Streaming search ────────────────────────────────────────────────
+
+/**
+ * GET /api/research/search/stream
+ * Streams research answer tokens from Perplexity.
+ * Query: q=...&mode=quick|deep
+ */
+app.get('/api/research/search/stream', rateLimitGeneral, async (c) => {
+  const query = c.req.query('q')?.trim();
+  const mode = c.req.query('mode') === 'deep' ? 'deep' : 'quick';
+  if (!query) return c.json({ ok: false, error: 'Query required' }, 400);
+
+  try {
+    const { readFileSync } = await import('node:fs');
+    const cfgPath = process.env.HOME + '/.openclaw/openclaw.json';
+    const cfg = JSON.parse(readFileSync(cfgPath, 'utf8'));
+    const pplxKey = cfg?.plugins?.entries?.perplexity?.config?.webSearch?.apiKey || '';
+    if (!pplxKey) return c.json({ ok: false, error: 'No Perplexity key' }, 400);
+
+    const isQuick = mode === 'quick';
+    const model = mode === 'deep' ? 'sonar-pro' : 'sonar';
+    const sysP = isQuick
+      ? 'You are a research assistant. Provide concise answers with citations [1], [2].'
+      : 'You are a research assistant. Write thorough research reports with citations [1], [2]. Use ## headers, bullet lists. Write as much as needed.';
+
+    const pplx = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + pplxKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'system', content: sysP }, { role: 'user', content: query }],
+        max_tokens: isQuick ? 2048 : 16384,
+        stream: true,
+      }),
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!pplx.ok) return c.json({ ok: false, error: 'Perplexity ' + pplx.status }, 502);
+
+    c.header('Content-Type', 'text/event-stream');
+    c.header('Cache-Control', 'no-cache');
+    c.header('Connection', 'keep-alive');
+
+    const reader = pplx.body?.getReader();
+    if (!reader) return c.json({ ok: false, error: 'No reader' }, 500);
+
+    const dec = new TextDecoder();
+    let buf = '';
+
+    const stream = new ReadableStream({
+      async pull(ctl) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) { ctl.close(); break; }
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() || '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const d = line.slice(6).trim();
+            if (d === '[DONE]') { ctl.close(); return; }
+            try {
+              const j = JSON.parse(d);
+              const t = j?.choices?.[0]?.delta?.content || '';
+              if (t) ctl.enqueue(new TextEncoder().encode(t));
+            } catch {}
+          }
+        }
+      },
+    });
+
+    return new Response(stream);
+  } catch (err) {
+    console.warn('[research] stream err:', (err as Error).message);
+    return c.json({ ok: false, error: (err as Error).message }, 500);
+  }
+});
+
 export default app;

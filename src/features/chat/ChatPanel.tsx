@@ -356,7 +356,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           const hasEmbed = isTool && /<!--\s*nerve-app\s+/.test(msg.rawText);
 
           // Hide tool calls and thinking messages when agent activity is toggled off
-          if (!showAgentActivity && (isTool || msg.isThinking)) return <div key={stableKey} />;
+          if (!showAgentActivity && (isTool || msg.isThinking)) return null;
 
           if (isTool && !hasEmbed) {
             // Grouped tool bubble (multiple consecutive tool calls)
