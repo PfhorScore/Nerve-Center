@@ -69,7 +69,11 @@ function parseFollowUps(text: string): string[] {
   return results;
 }
 
-/** Convert [N] citation markers to anchor links with hover tooltips */
+/**
+ * Convert [N] citation markers in research answers into clickable markdown anchor links.
+ * Each [N] becomes a link to #cite-{convIdx+1}-{N} so clicking scrolls to the source card.
+ * Includes a hover tooltip with the source title when available.
+ */
 function linkCitations(text: string, citations: Citation[], convIdx?: number): string {
   const prefix = convIdx !== undefined ? `${convIdx + 1}-` : '';
   return text.replace(/\[(\d+)\]/g, (_, num) => {
@@ -103,6 +107,7 @@ const THREADS_KEY = 'nerve:research-threads';
 const ACTIVE_KEY = 'nerve:research-active';
 const MAX_THREADS = 50;
 
+/** A single research thread containing a title and ordered list of Q&A entries */
 interface ResearchThread {
   id: string;
   title: string;
@@ -111,6 +116,7 @@ interface ResearchThread {
   entries: SearchResult[];
 }
 
+/** Load all saved threads from localStorage */
 function loadThreads(): ResearchThread[] {
   try {
     const raw = localStorage.getItem(THREADS_KEY);
@@ -118,14 +124,17 @@ function loadThreads(): ResearchThread[] {
   } catch { return []; }
 }
 
+/** Persist threads array to localStorage (capped to MAX_THREADS) */
 function saveThreads(threads: ResearchThread[]) {
   try { localStorage.setItem(THREADS_KEY, JSON.stringify(threads.slice(0, MAX_THREADS))); } catch {}
 }
 
+/** Read the last-active thread ID from localStorage */
 function loadActiveId(): string | null {
   try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; }
 }
 
+/** Save the active thread ID so it persists across sessions */
 function saveActiveId(id: string | null) {
   try {
     if (id) localStorage.setItem(ACTIVE_KEY, id);
@@ -133,10 +142,24 @@ function saveActiveId(id: string | null) {
   } catch {}
 }
 
+/** Generate a short unique ID for new threads */
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
+/**
+ * ResearchPanel — Full Perplexity-like research interface built into Nerve.
+ *
+ * Features:
+ * - Thread sidebar with AI-generated titles
+ * - Quick & Deep search modes (sonar / sonar-pro)
+ * - Streaming answer display
+ * - Citation hover cards with favicon, title, and snippet
+ * - Tabbed results (All, Sources, Images, Links)
+ * - Follow-up suggestion chips
+ * - AI auto-sort conversations by topic
+ * - Conversation persistence via localStorage
+ */
 export function ResearchPanel() {
   const [query, setQuery] = useState('');
   const [threads, setThreads] = useState<ResearchThread[]>(() => loadThreads());
@@ -286,7 +309,11 @@ export function ResearchPanel() {
     prevConvoLen.current = len;
   }, [conversation.length]);
 
-  // Reset to fresh thread if away for more than 30 minutes
+  /**
+   * On mount: restore the last active thread from localStorage.
+   * If the user was away longer than AWAY_THRESHOLD (10 min), start a fresh thread
+   * instead of resuming the old one. Old threads remain accessible in the sidebar.
+   */
   const AWAY_THRESHOLD_MS = 10 * 60 * 1000;
   const LAST_SEEN_KEY = 'nerve:research-last-seen';
 
@@ -296,8 +323,8 @@ export function ResearchPanel() {
     const lastSeen = (() => { try { return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0', 10); } catch { return 0; } })();
     const away = Date.now() - lastSeen > AWAY_THRESHOLD_MS;
 
-    // If away for a while, start fresh
     if (away || (!savedId && savedThreads.length === 0)) {
+      // Start a fresh thread — user was away or has no saved threads
       const id = generateId();
       const thread: ResearchThread = {
         id, title: 'New Research', createdAt: Date.now(), updatedAt: Date.now(), entries: [],
@@ -307,16 +334,22 @@ export function ResearchPanel() {
       setActiveThreadId(id);
       saveActiveId(id);
     } else if (savedId && savedThreads.some((t) => t.id === savedId)) {
+      // Resume the last active thread
       setActiveThreadId(savedId);
       saveActiveId(savedId);
     } else if (savedThreads.length > 0) {
+      // Fallback: pick the first available thread
       setActiveThreadId(savedThreads[0].id);
       saveActiveId(savedThreads[0].id);
       setThreads(savedThreads);
     }
   }, []);
 
-  // Save last-seen timestamp when leaving the tab
+  /**
+   * Track when the user last looked at the Research tab.
+   * Uses visibilitychange so we know when they switch tabs or minimize.
+   * On next visit, if enough time passed, we start fresh (see above).
+   */
   useEffect(() => {
     const save = () => {
       try { localStorage.setItem(LAST_SEEN_KEY, String(Date.now())); } catch {}
@@ -328,6 +361,7 @@ export function ResearchPanel() {
     };
   }, []);
 
+  /** Create a brand new empty research thread and switch to it */
   const newThread = useCallback(() => {
     const id = generateId();
     const thread: ResearchThread = {
@@ -349,12 +383,18 @@ export function ResearchPanel() {
     inputRef.current?.focus();
   }, []);
 
+  /** Switch the active view to a different thread by ID */
   const switchThread = useCallback((id: string) => {
     setActiveThreadId(id);
     saveActiveId(id);
     setError(null);
   }, []);
 
+  /**
+   * Execute a web search via the backend search API.
+   * For deep mode, also streams the answer tokens in real-time.
+   * Creates a new thread if none is active, appends results to the current thread.
+   */
   const handleSearch = useCallback(async () => {
     const q = query.trim();
     if (!q) return;
@@ -429,6 +469,7 @@ export function ResearchPanel() {
     [handleSearch, loading],
   );
 
+  /** Copy answer text to clipboard with visual feedback */
   const copyAnswer = useCallback((text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
@@ -436,6 +477,7 @@ export function ResearchPanel() {
     });
   }, []);
 
+  /** Remove the last answer and populate the search bar with its query to regenerate */
   const rewriteLast = useCallback((entry: SearchResult) => {
     // Remove the last entry and re-run the search
     setThreads((prev) => {
@@ -453,6 +495,11 @@ export function ResearchPanel() {
     }, 50);
   }, [activeThreadId]);
 
+  /**
+   * AI-powered thread sorting: sends all conversation entries to Perplexity,
+   * which groups them by topic. Each group becomes its own thread.
+   * This is a novel feature — no other AI service offers it.
+   */
   const autoSortThread = useCallback(async () => {
     if (!activeThreadId) return;
     const thread = threads.find((t) => t.id === activeThreadId);
@@ -497,6 +544,7 @@ export function ResearchPanel() {
     } catch {}
   }, [activeThreadId, threads]);
 
+  /** Split a thread at a specific entry — everything from entryIndex onward becomes a new thread */
   const splitThreadAt = useCallback((entryIndex: number) => {
     if (!activeThreadId) return;
     const thread = threads.find((t) => t.id === activeThreadId);

@@ -51,13 +51,16 @@ app.post('/api/research/search', rateLimitGeneral, async (c) => {
     const isQuick = mode === 'quick';
 
     if (!hasPerplexity) {
-      // Generic path: search via gateway web_search tool
+      // Generic fallback path: search via the gateway's web_search tool.
+      // This works with any OpenClaw-compatible search provider (not just Perplexity).
+      // Returns raw search snippets rather than an LLM-synthesized answer.
       const raw = await invokeGatewayTool('web_search', { query }) as Record<string, unknown>;
       const details = (raw as Record<string, unknown>).details as Record<string, unknown> | undefined;
       let resultsList: Array<{ title: string; url: string; description?: string }> = [];
       if (details?.results && Array.isArray(details.results)) {
         resultsList = details.results as Array<{ title: string; url: string; description?: string }>;
       }
+      // Strip the safety wrapping that gateway adds to untrusted external content
       const strip = (s: string) => s.replace(/<<<EXTERNAL_UNTRUSTED_CONTENT[^>]*>>>/g, '').replace(/<<<END_EXTERNAL_UNTRUSTED_CONTENT[^>]*>>>/g, '').replace(/Source: Web Search\n---\n/, '').trim();
       const answer = resultsList.slice(0, 5).map((r, i) => `[${i+1}] ${strip(r.title)}: ${strip((r.description || '').replace(/<[^>]*>/g, '')).slice(0, 300)}`).join('\n\n') || 'No results.';
       return c.json({
@@ -524,6 +527,7 @@ app.get('/api/research/search/stream', rateLimitGeneral, async (c) => {
     });
     if (!pplx.ok) return c.json({ ok: false, error: 'Perplexity ' + pplx.status }, 502);
 
+    // Stream Perplexity's SSE response back to the client token-by-token
     c.header('Content-Type', 'text/event-stream');
     c.header('Cache-Control', 'no-cache');
     c.header('Connection', 'keep-alive');
