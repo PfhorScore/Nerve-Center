@@ -207,6 +207,15 @@ export function ResearchPanel() {
 
   // Handle chat handoff transcript (send to research)
   useEffect(() => {
+    // Check for direct query first (from "Research this?" tooltip)
+    let directQuery: string | null = null;
+    try { directQuery = sessionStorage.getItem('nerve:research-direct-query'); sessionStorage.removeItem('nerve:research-direct-query'); } catch {}
+    if (directQuery) {
+      setQuery(directQuery.slice(0, 500));
+      return;
+    }
+
+    // Otherwise check for chat transcript (from 🔬 button)
     let transcript: string | null = null;
     try { transcript = sessionStorage.getItem('nerve:research-transcript'); sessionStorage.removeItem('nerve:research-transcript'); } catch {}
     if (!transcript) return;

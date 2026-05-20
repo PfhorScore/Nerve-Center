@@ -45,6 +45,7 @@ import { isImageFile } from '@/features/file-browser/utils/fileTypes';
 import { buildAgentRootSessionKey, getSessionDisplayLabel } from '@/features/sessions/sessionKeys';
 import { shouldGuardWorkspaceSwitch } from '@/features/workspace/workspaceSwitchGuard';
 import { getWorkspaceAgentId, getWorkspaceRootSessionKey } from '@/features/workspace/workspaceScope';
+import { SelectionTooltip } from '@/components/SelectionTooltip';
 
 // Lazy-loaded features (not needed in initial bundle)
 const SettingsDrawer = lazy(() => import('@/features/settings/SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
@@ -462,6 +463,19 @@ export default function App({ onLogout }: AppProps) {
     }
     setViewMode('research');
   }, [messages, setViewMode]);
+
+  // Listen for "Research this?" selection tooltip events
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.text) {
+        try { sessionStorage.setItem('nerve:research-direct-query', detail.text.slice(0, 500)); } catch {}
+        setViewMode('research');
+      }
+    };
+    window.addEventListener('nerve:send-to-research', handler);
+    return () => window.removeEventListener('nerve:send-to-research', handler);
+  }, [setViewMode]);
 
   const openBeadId = useCallback((target: BeadLinkTarget) => {
     const normalizedBeadId = target.beadId.trim();
@@ -1214,6 +1228,7 @@ export default function App({ onLogout }: AppProps) {
         onOpenChange={setSpawnDialogOpen}
         onSpawn={handleSpawnSession}
       />
+      <SelectionTooltip />
     </div>
   );
 }
