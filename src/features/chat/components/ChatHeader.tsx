@@ -10,7 +10,9 @@ interface ChatHeaderProps {
   isFileBrowserCollapsed?: boolean;
   onToggleMobileTopBar?: () => void;
   isMobileTopBarHidden?: boolean;
-  /** Toggle agent activity visibility */
+  /** When false, tool calls and thinking messages are filtered from the chat
+   *  so it reads like a clean text conversation. Toggle button shows as
+   *  a wrench icon in the header next to the model/effort controls. */
   showAgentActivity?: boolean;
   onToggleAgentActivity?: () => void;
 }

@@ -123,6 +123,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   onSendToResearch,
 }, ref) {
   const { serverNames: mcpServerNames, visible: mcpVisible } = useMcpState();
+  // When false, tool calls and thinking messages are hidden from the chat.
+  // The chat becomes a clean text-only conversation like a normal messenger.
   const [showAgentActivity, setShowAgentActivity] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());

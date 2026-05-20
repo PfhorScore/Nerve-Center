@@ -253,7 +253,11 @@ export function ResearchPanel() {
     return () => el.removeEventListener('scroll', save);
   }, [activeThreadId]);
 
-  // Hover card for citation links [1] [2] in answer text
+  /**
+   * Hover card for citation links: when the user hovers over [1] or a source pill,
+   * show a floating card with the favicon, source title, domain, and snippet.
+   * Uses event delegation on the scroll container to avoid per-link event handlers.
+   */
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -278,6 +282,9 @@ export function ResearchPanel() {
       const entry = conversation[convIdx];
       const cite = entry?.citations[citeIdx];
       if (!cite) return;
+      // Position the card below the link by default. If it would overflow
+      // the bottom of the viewport, flip it above instead. Clamp left edge
+      // so the card (260px wide + 8px margin) stays on-screen.
       const rect = target.getBoundingClientRect();
       const below = rect.bottom + 2;
       const above = rect.top - 128;
@@ -287,6 +294,9 @@ export function ResearchPanel() {
         left: Math.max(2, Math.min(rect.left, Math.max(2, window.innerWidth - 268))),
       });
     };
+    // 250ms hide delay so the user can move from the citation link to the
+    // hover card without it disappearing. The card's own onMouseEnter
+    // clears this timer to keep it visible.
     const scheduleHide = () => {
       if (citeHideTimer.current !== null) clearTimeout(citeHideTimer.current);
       citeHideTimer.current = setTimeout(() => setCiteCard(null), 250);
