@@ -25,8 +25,8 @@ Thanks for wanting to help! This guide covers everything you need to start contr
 
 1. **Fork and clone** the repository:
    ```bash
-   git clone https://github.com/<your-username>/openclaw-nerve.git
-   cd openclaw-nerve
+   git clone https://github.com/<your-username>/Nerve-Center.git
+   cd Nerve-Center
    ```
 
 2. **Install dependencies:**
@@ -56,7 +56,7 @@ Thanks for wanting to help! This guide covers everything you need to start contr
 ## Project Structure
 
 ```
-openclaw-nerve/
+Nerve-Center/
 ├── src/                        # Frontend (React + TypeScript)
 │   ├── features/               # Product surfaces and feature-local helpers
 │   │   ├── activity/           # Agent log and event log panels
@@ -198,8 +198,8 @@ test(voice): add wake-word persistence tests
 ## Pull Request Process
 
 1. **Open an issue first** for non-trivial changes. Discuss the approach before writing code.
-2. **Create a branch from `master`**: `git checkout -b feat/my-feature`, then open your PR back into `master`.
-3. **Use branches even if you have GitHub Write access**. `master` is protected, so direct pushes there are not the normal workflow.
+2. **Create a branch from `main`**: `git checkout -b feat/my-feature`, then open your PR back into `main`.
+3. **Use branches even if you have GitHub Write access**. `main` is protected, so direct pushes there are not the normal workflow.
 4. **Keep PRs focused** — one feature or fix per PR.
 5. **Ensure all checks pass** before requesting review:
    ```bash
