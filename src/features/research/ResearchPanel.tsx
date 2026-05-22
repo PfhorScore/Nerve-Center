@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
-import { Search, Loader2, MessageSquare, Sparkles, ChevronRight, Copy, Check, Download } from 'lucide-react';
+import { Search, Loader2, MessageSquare, Sparkles, ChevronRight, Copy, Check, Download, FileJson } from 'lucide-react';
+import { downloadResearchFile, researchThreadToJson, researchThreadToMarkdown, safeResearchFilename } from './export';
 
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
@@ -618,18 +619,29 @@ export function ResearchPanel() {
               <>
                 <button
                   onClick={() => {
-                    const md = `# ${activeThread.title}\n\n_Research thread — ${new Date(activeThread.createdAt).toLocaleString()}_\n\n---\n\n${activeThread.entries.map((e) => `## Q: ${e.query}\n\n${e.answer}\n\n### Sources\n${e.citations.map((c, i) => `${i + 1}. [${c.title || 'Untitled'}](${c.url})`).join('\n')}`).join('\n\n---\n\n')}`;
-                    const blob = new Blob([md], { type: 'text/markdown' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `research-${activeThread.title.replace(/[^a-zA-Z0-9]+/g, '-').slice(0, 40)}.md`;
-                    a.click();
-                    URL.revokeObjectURL(a.href);
+                    downloadResearchFile(
+                      safeResearchFilename(activeThread.title, 'md'),
+                      researchThreadToMarkdown(activeThread),
+                      'text/markdown',
+                    );
                   }}
                   className="shell-icon-button min-h-7 px-2"
                   title="Export thread as markdown"
                 >
                   <Download size={13} />
+                </button>
+                <button
+                  onClick={() => {
+                    downloadResearchFile(
+                      safeResearchFilename(activeThread.title, 'json'),
+                      researchThreadToJson(activeThread),
+                      'application/json',
+                    );
+                  }}
+                  className="shell-icon-button min-h-7 px-2"
+                  title="Export thread as JSON"
+                >
+                  <FileJson size={13} />
                 </button>
                 <button
                   onClick={newThread}
