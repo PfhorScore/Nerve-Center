@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { Search, Loader2, MessageSquare, Sparkles, ChevronRight, Copy, Check, Download } from 'lucide-react';
+import { generateId, loadActiveId, loadThreads, saveActiveId, saveThreads, type Citation, type ResearchThread, type SearchResult } from './storage';
 
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
@@ -85,66 +86,6 @@ function linkCitations(text: string, citations: Citation[], convIdx?: number): s
     if (title) return `[${displayText}](#cite-${prefix}${num} "${title}") `;
     return `[${displayText}](#cite-${prefix}${num}) `;
   });
-}
-
-interface Citation {
-  title: string;
-  url: string;
-  snippet?: string;
-}
-
-interface SearchResult {
-  query: string;
-  answer: string;
-  citations: Citation[];
-  provider: 'perplexity' | 'vane';
-  timestamp?: number;
-  context?: Array<{ role: string; content: string }>;
-  images?: Array<{ url: string; title?: string }>;
-}
-
-const THREADS_KEY = 'nerve:research-threads';
-const ACTIVE_KEY = 'nerve:research-active';
-const MAX_THREADS = 50;
-
-/** A single research thread containing a title and ordered list of Q&A entries */
-interface ResearchThread {
-  id: string;
-  title: string;
-  createdAt: number;
-  updatedAt: number;
-  entries: SearchResult[];
-}
-
-/** Load all saved threads from localStorage */
-function loadThreads(): ResearchThread[] {
-  try {
-    const raw = localStorage.getItem(THREADS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-/** Persist threads array to localStorage (capped to MAX_THREADS) */
-function saveThreads(threads: ResearchThread[]) {
-  try { localStorage.setItem(THREADS_KEY, JSON.stringify(threads.slice(0, MAX_THREADS))); } catch {}
-}
-
-/** Read the last-active thread ID from localStorage */
-function loadActiveId(): string | null {
-  try { return localStorage.getItem(ACTIVE_KEY); } catch { return null; }
-}
-
-/** Save the active thread ID so it persists across sessions */
-function saveActiveId(id: string | null) {
-  try {
-    if (id) localStorage.setItem(ACTIVE_KEY, id);
-    else localStorage.removeItem(ACTIVE_KEY);
-  } catch {}
-}
-
-/** Generate a short unique ID for new threads */
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
 /**
