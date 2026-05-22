@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { Search, Loader2, MessageSquare, Sparkles, ChevronRight, Copy, Check, Download } from 'lucide-react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
@@ -594,6 +595,34 @@ export function ResearchPanel() {
   const sendToChat = useCallback((text: string) => {
     window.dispatchEvent(new CustomEvent('nerve:send-to-chat', { detail: { text } }));
   }, []);
+
+  useKeyboardShortcuts([
+    {
+      key: 'k',
+      meta: true,
+      handler: () => inputRef.current?.focus(),
+      preventDefault: true,
+      skipInEditor: true,
+    },
+    {
+      key: 'n',
+      meta: true,
+      handler: newThread,
+      preventDefault: true,
+      skipInEditor: true,
+    },
+    {
+      key: 'Escape',
+      handler: () => {
+        if (citeCard) {
+          setCiteCard(null);
+        } else if (showSidebar) {
+          setShowSidebar(false);
+        }
+      },
+      preventDefault: Boolean(citeCard || showSidebar),
+    },
+  ]);
 
   return (
     <div className="flex h-full flex-col">
