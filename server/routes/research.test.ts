@@ -11,7 +11,8 @@ const gatewayMock = vi.hoisted(() => ({
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
-  return { ...actual, readFileSync: fsMock.readFileSync };
+  const mock = { ...actual, readFileSync: fsMock.readFileSync };
+  return { ...mock, default: mock };
 });
 
 vi.mock('../lib/gateway-client.js', () => ({
