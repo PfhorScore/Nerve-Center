@@ -45,7 +45,7 @@ export function ProcessingIndicator({
   const secondsSinceEvent = lastEventTimestamp
     ? Math.floor((now - lastEventTimestamp) / 1000)
     : null;
-  const isStale = secondsSinceEvent !== null && secondsSinceEvent > 30;
+  const isStale = secondsSinceEvent !== null && secondsSinceEvent > 15;
 
   // Description line: tool description during tool_use, "Reasoning..." during thinking
   const descriptionText =
@@ -119,13 +119,14 @@ export function ProcessingIndicator({
       {/* Stale warning */}
       {isStale && (
         <div
-          className="text-orange text-[0.733rem]"
+          className="text-orange text-[0.733rem] font-medium"
           style={{
             paddingLeft: '2rem',
-            animation: 'stale-pulse 2s ease-in-out infinite',
+            animation: 'stale-pulse 1.5s ease-in-out infinite',
           }}
         >
-          Still working… last update {secondsSinceEvent}s ago
+          <span className="inline-block mr-1.5 animate-pulse">⏳</span>
+          Still thinking… last update {secondsSinceEvent}s ago
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Cpu, Gauge, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, Cpu, Gauge, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { InlineSelect } from '@/components/ui/InlineSelect';
 import { useModelEffort } from './useModelEffort';
 
@@ -8,6 +8,8 @@ interface ChatHeaderProps {
   isGenerating: boolean;
   onToggleFileBrowser?: () => void;
   isFileBrowserCollapsed?: boolean;
+  onToggleRightPanel?: () => void;
+  isRightPanelCollapsed?: boolean;
   onToggleMobileTopBar?: () => void;
   isMobileTopBarHidden?: boolean;
   /** When false, tool calls and thinking messages are filtered from the chat
@@ -29,6 +31,8 @@ export function ChatHeader({
   isGenerating,
   onToggleFileBrowser,
   isFileBrowserCollapsed = true,
+  onToggleRightPanel,
+  isRightPanelCollapsed = true,
   onToggleMobileTopBar,
   isMobileTopBarHidden = false,
   showAgentActivity,
@@ -134,6 +138,14 @@ export function ChatHeader({
             options={effortOptions}
           />
         </div>
+        <button
+          onClick={onToggleRightPanel}
+          className="shell-icon-button size-11 shrink-0 px-0 sm:size-10"
+          title={isRightPanelCollapsed ? 'Open side panels (Ctrl+.)' : 'Close side panels'}
+          aria-label={isRightPanelCollapsed ? 'Open side panels' : 'Close side panels'}
+        >
+          {isRightPanelCollapsed ? <PanelRightOpen size={17} /> : <PanelRightClose size={17} />}
+        </button>
         {onToggleAgentActivity && (
           <button
             onClick={onToggleAgentActivity}
@@ -144,15 +156,9 @@ export function ChatHeader({
               {showAgentActivity === false && isGenerating && (
                 <span className="absolute -inset-1 animate-ping rounded-full bg-primary/30" />
               )}
-              {showAgentActivity !== false ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                </svg>
-              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+              </svg>
             </span>
           </button>
         )}

@@ -17,7 +17,7 @@ import {
   Brain,
   MessageSquare,
   LayoutGrid,
-  Sparkles,
+  Search,
 } from "lucide-react";
 import type { ViewMode } from "@/features/command-palette/commands";
 import type { AgentLogEntry, EventEntry, TokenData } from "@/types";
@@ -136,6 +136,7 @@ export function TopBar({
   showKanbanView = true,
 }: TopBarProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(null);
+  const [hoveredView, setHoveredView] = useState<ViewMode | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
 
@@ -242,7 +243,7 @@ export function TopBar({
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="truncate text-sm font-semibold uppercase tracking-[0.34em] text-primary max-[371px]:text-xs max-[371px]:tracking-[0.22em] sm:text-base">
-                Nerve
+                Nerve Center
               </span>
             </div>
             <div className="hidden xl:block text-[0.733rem] text-muted-foreground/80">
@@ -252,10 +253,11 @@ export function TopBar({
         </div>
         {/* View mode toggle */}
         {onViewModeChange && (
-          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:ml-2 sm:w-auto">
+          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:ml-2 sm:w-auto relative">
             <button
               onClick={() => onViewModeChange("chat")}
-              title="Chat View"
+              onMouseEnter={() => setHoveredView("chat")}
+              onMouseLeave={() => setHoveredView(null)}
               aria-label="Switch to chat view"
               aria-pressed={viewMode === "chat"}
               data-active={viewMode === "chat"}
@@ -266,19 +268,21 @@ export function TopBar({
             </button>
             <button
               onClick={() => onViewModeChange("research")}
-              title="Research View"
+              onMouseEnter={() => setHoveredView("research")}
+              onMouseLeave={() => setHoveredView(null)}
               aria-label="Switch to research view"
               aria-pressed={viewMode === "research"}
               data-active={viewMode === "research"}
               className="shell-chip min-h-11 flex-1 justify-center text-[0.733rem] uppercase tracking-[0.14em] max-[371px]:min-h-[38px] max-[371px]:gap-1 max-[371px]:px-2 max-[371px]:text-[0.667rem] max-[371px]:tracking-[0.08em] max-[371px]:[&_svg]:size-3 sm:min-h-10 sm:flex-none"
             >
-              <Sparkles size={13} aria-hidden="true" />
+              <Search size={13} aria-hidden="true" />
               <span>Research</span>
             </button>
             {showKanbanView && (
               <button
                 onClick={() => onViewModeChange("kanban")}
-                title="Tasks View"
+                onMouseEnter={() => setHoveredView("kanban")}
+                onMouseLeave={() => setHoveredView(null)}
                 aria-label="Switch to tasks view"
                 aria-pressed={viewMode === "kanban"}
                 data-active={viewMode === "kanban"}
@@ -287,6 +291,59 @@ export function TopBar({
                 <LayoutGrid size={13} aria-hidden="true" />
                 <span>Tasks</span>
               </button>
+            )}
+
+            {/* Hover preview card */}
+            {hoveredView && (
+              <div
+                className="absolute top-full left-0 mt-2 z-50 w-56 rounded-2xl border border-border/40 bg-card shadow-xl p-3 pointer-events-none"
+                onMouseEnter={() => setHoveredView(null)}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  {hoveredView === 'chat' && <MessageSquare size={12} className="text-primary/60" />}
+                  {hoveredView === 'research' && <Search size={12} className="text-primary/60" />}
+                  {hoveredView === 'kanban' && <LayoutGrid size={12} className="text-primary/60" />}
+                  <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {hoveredView === 'chat' ? 'Chat' : hoveredView === 'research' ? 'Research' : 'Tasks'}
+                  </span>
+                </div>
+                {hoveredView === 'chat' && (
+                  <svg width="100%" height="80" viewBox="0 0 200 80" className="opacity-70">
+                    <rect x="10" y="10" width="140" height="20" rx="10" fill="var(--color-primary)" opacity="0.15" />
+                    <rect x="50" y="14" width="90" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="50" y="22" width="60" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.15" />
+                    <rect x="40" y="40" width="150" height="24" rx="10" fill="var(--color-muted)" opacity="0.3" />
+                    <rect x="50" y="46" width="110" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="50" y="54" width="80" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.15" />
+                  </svg>
+                )}
+                {hoveredView === 'research' && (
+                  <svg width="100%" height="80" viewBox="0 0 200 80" className="opacity-70">
+                    <rect x="20" y="6" width="160" height="28" rx="8" fill="var(--color-primary)" opacity="0.12" />
+                    <circle cx="34" cy="20" r="6" fill="none" stroke="var(--color-muted-foreground)" strokeWidth="1.5" opacity="0.4" />
+                    <line x1="38" y1="24" x2="44" y2="30" stroke="var(--color-muted-foreground)" strokeWidth="1.5" opacity="0.4" />
+                    <rect x="52" y="14" width="90" height="4" rx="2" fill="var(--color-foreground)" opacity="0.25" />
+                    <rect x="20" y="46" width="160" height="24" rx="8" fill="var(--color-muted)" opacity="0.25" />
+                    <rect x="30" y="52" width="60" height="4" rx="2" fill="var(--color-foreground)" opacity="0.25" />
+                    <rect x="100" y="52" width="50" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.12" />
+                  </svg>
+                )}
+                {hoveredView === 'kanban' && (
+                  <svg width="100%" height="80" viewBox="0 0 200 80" className="opacity-70">
+                    <rect x="10" y="8" width="52" height="64" rx="8" fill="var(--color-primary)" opacity="0.1" />
+                    <rect x="18" y="16" width="36" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="18" y="28" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.3" />
+                    <rect x="18" y="48" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.2" />
+                    <rect x="74" y="8" width="52" height="64" rx="8" fill="var(--color-primary)" opacity="0.1" />
+                    <rect x="82" y="16" width="36" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="82" y="28" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.3" />
+                    <rect x="82" y="48" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.2" />
+                    <rect x="138" y="8" width="52" height="64" rx="8" fill="var(--color-primary)" opacity="0.1" />
+                    <rect x="146" y="16" width="36" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="146" y="28" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.15" />
+                  </svg>
+                )}
+              </div>
             )}
           </div>
         )}

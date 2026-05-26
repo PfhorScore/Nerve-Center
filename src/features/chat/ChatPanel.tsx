@@ -38,6 +38,8 @@ interface ChatPanelProps {
   onToggleFileBrowser?: () => void;
   /** Whether the mobile file browser is currently collapsed. */
   isFileBrowserCollapsed?: boolean;
+  onToggleRightPanel?: () => void;
+  isRightPanelCollapsed?: boolean;
   /** Mobile top bar toggle handler. */
   onToggleMobileTopBar?: () => void;
   /** Whether the mobile top bar is currently hidden. */
@@ -113,6 +115,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   lastEventTimestamp = 0, currentToolDescription = null, activityLog = [],
   onWakeWordState, onReset, searchOpen, onSearchClose, id, agentName = 'Agent',
   loadMore, hasMore = false, onToggleFileBrowser, isFileBrowserCollapsed = true,
+  onToggleRightPanel, isRightPanelCollapsed = true,
   onToggleMobileTopBar, isMobileTopBarHidden = false,
   onOpenWorkspacePath,
   pathLinkPrefixes,
@@ -311,6 +314,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         isGenerating={isGenerating}
         onToggleFileBrowser={onToggleFileBrowser}
         isFileBrowserCollapsed={isFileBrowserCollapsed}
+        onToggleRightPanel={onToggleRightPanel}
+        isRightPanelCollapsed={isRightPanelCollapsed}
         onToggleMobileTopBar={onToggleMobileTopBar}
         isMobileTopBarHidden={isMobileTopBarHidden}
         showAgentActivity={showAgentActivity}

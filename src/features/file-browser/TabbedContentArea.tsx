@@ -51,6 +51,7 @@ interface TabbedContentAreaProps {
   pathLinkAliases?: Record<string, string>;
   saveToast?: SaveToast | null;
   onDismissToast?: () => void;
+  onNewFile?: () => void;
   /** The chat panel rendered as-is (never unmounted). */
   chatPanel: ReactNode;
 }
@@ -72,6 +73,7 @@ export function TabbedContentArea({
   pathLinkAliases,
   saveToast,
   onDismissToast,
+  onNewFile,
   chatPanel,
 }: TabbedContentAreaProps) {
   const hasOpenTabs = openFiles.length > 0 || openBeads.length > 0;
@@ -81,16 +83,15 @@ export function TabbedContentArea({
 
   return (
     <div className="h-full flex flex-col min-h-0 min-w-0">
-      {/* Tab bar — only shown when files are open */}
-      {hasOpenTabs && (
-        <EditorTabBar
-          activeTab={activeTab}
-          openFiles={openFiles}
-          openBeads={openBeads}
-          onSelectTab={onSelectTab}
-          onCloseTab={onCloseTab}
-        />
-      )}
+      {/* Tab bar — always visible (Chat tab + new file button) */}
+      <EditorTabBar
+        activeTab={activeTab}
+        openFiles={openFiles}
+        openBeads={openBeads}
+        onSelectTab={onSelectTab}
+        onCloseTab={onCloseTab}
+        onNewFile={onNewFile}
+      />
 
       {/* Content area */}
       <div className="flex-1 min-h-0 relative">

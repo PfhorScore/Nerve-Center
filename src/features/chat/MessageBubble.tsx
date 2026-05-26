@@ -182,15 +182,15 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
   if (msg.isThinking) {
     return (
       <div className="group msg msg-assistant relative max-w-full break-words mx-4 my-0.5">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-expanded={!isCollapsed}
-          className="flex items-start gap-2 rounded-2xl border border-primary/10 bg-primary/[0.03] px-3 py-2 transition-colors cursor-pointer select-none hover:border-primary/18 hover:bg-primary/[0.05]"
-          onClick={() => onToggleCollapse(index)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
-        >
-          <span className={`mt-0.5 w-3 shrink-0 text-[0.667rem] text-primary/60 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`}>›</span>
+        <div className="flex items-start gap-2 rounded-2xl border border-primary/10 bg-primary/[0.03] px-3 py-2 transition-colors select-none hover:border-primary/18 hover:bg-primary/[0.05]">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-expanded={!isCollapsed}
+            className={`mt-0.5 w-3 shrink-0 text-[0.667rem] text-primary/60 transition-transform cursor-pointer hover:text-primary ${!isCollapsed ? 'rotate-90' : ''}`}
+            onClick={() => onToggleCollapse(index)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+          >›</span>
           <span className="mt-0.5 shrink-0 text-[0.667rem] text-primary/60">💭</span>
           <span className="shrink-0 text-[0.733rem] font-medium text-primary/78">Thinking</span>
           {msg.thinkingDurationMs && (
@@ -222,15 +222,15 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
   if (isIntermediate) {
     return (
       <div className="group msg msg-assistant relative max-w-full break-words mx-4 my-0.5">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-expanded={!isCollapsed}
-          className="flex items-start gap-2 cursor-pointer select-none hover:bg-foreground/[0.02] transition-colors py-1 px-2 rounded"
-          onClick={() => onToggleCollapse(index)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
-        >
-          <span className={`text-muted-foreground text-[0.667rem] shrink-0 w-3 mt-0.5 transition-transform ${!isCollapsed ? 'rotate-90' : ''}`}>›</span>
+        <div className="flex items-start gap-2 select-none hover:bg-foreground/[0.02] transition-colors py-1 px-2 rounded">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-expanded={!isCollapsed}
+            className={`text-muted-foreground text-[0.667rem] shrink-0 w-3 mt-0.5 transition-transform cursor-pointer hover:text-foreground/70 ${!isCollapsed ? 'rotate-90' : ''}`}
+            onClick={() => onToggleCollapse(index)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+          >›</span>
           <span className="text-muted-foreground/50 text-[0.667rem] shrink-0 mt-0.5">💬</span>
           {isCollapsed ? (
             <span className="text-muted-foreground/70 text-[0.733rem] truncate flex-1 min-w-0 italic">
@@ -260,16 +260,18 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
           onToggle={() => onToggleMemory(memoryCollapsedKey)}
         />
       )}
-      {/* Message header — click to collapse/expand */}
+      {/* Message header */}
       <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={!isCollapsed}
-        className={`flex items-center py-1.5 gap-2 cursor-pointer select-none hover:bg-foreground/[0.02] transition-colors ${isUser ? 'px-3 sm:px-4 flex-row-reverse' : 'px-3 sm:px-4'}`}
-        onClick={() => onToggleCollapse(index)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+        className={`flex items-center py-1.5 gap-2 select-none ${isUser ? 'px-3 sm:px-4 flex-row-reverse' : 'px-3 sm:px-4'}`}
       >
-        <span className={`text-muted-foreground text-xs shrink-0 w-3 transition-transform ${!isCollapsed ? 'rotate-90' : ''} ${isUser ? 'rotate-180' : ''} ${!isCollapsed && isUser ? '-rotate-90' : ''}`}>›</span>
+        <span
+          role="button"
+          tabIndex={0}
+          aria-expanded={!isCollapsed}
+          className={`text-muted-foreground text-xs shrink-0 w-3 cursor-pointer transition-transform hover:text-foreground/70 ${!isCollapsed ? 'rotate-90' : ''} ${isUser ? 'rotate-180' : ''} ${!isCollapsed && isUser ? '-rotate-90' : ''}`}
+          onClick={() => onToggleCollapse(index)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+        >›</span>
         <RoleBadge role={msg.role} agentName={agentName} />
         {/* ✏️ Canvas badge — visible even when collapsed, helps locate canvases in chat history */}
         {appEmbeds.length > 0 && (
@@ -387,16 +389,24 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
               ))}
             </div>
           )}
-          {/* Action buttons — visible on hover */}
+          {/* Action buttons — visible on hover with delay */}
           {!msg.streaming && (
-            <div className="absolute top-0 right-3 hidden gap-1 opacity-0 transition-opacity group-hover:opacity-100 sm:right-4 sm:flex">
+            <div className="absolute top-0 right-3 hidden gap-1 opacity-0 transition-all duration-200 delay-300 group-hover:opacity-40 hover:!opacity-100 sm:right-4 sm:flex">
               {/* Copy button */}
               <button
-                className="cockpit-toolbar-button min-h-7 px-2 text-[0.667rem]"
+                className="cockpit-toolbar-button min-h-6 px-1.5"
                 aria-label="Copy message to clipboard"
                 onClick={handleCopy}
               >
-                {copied ? '✓' : 'COPY'}
+                {copied ? (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                )}
               </button>
             </div>
           )}

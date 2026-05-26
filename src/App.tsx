@@ -55,9 +55,40 @@ const CommandPalette = lazy(() => import('@/features/command-palette/CommandPale
 const SessionList = lazy(() => import('@/features/sessions/SessionList').then(m => ({ default: m.SessionList })));
 const WorkspacePanel = lazy(() => import('@/features/workspace/WorkspacePanel').then(m => ({ default: m.WorkspacePanel })));
 
+// ── Panel System Types ──
+type PanelId = 'workspace' | 'agents' | 'memory' | 'thoughts';
+type PanelSide = 'left' | 'right';
+
+interface PanelLayout {
+  left: PanelId[];
+  right: PanelId[];
+  collapsed: Partial<Record<PanelId, boolean>>;
+  flex: Partial<Record<PanelId, number>>;
+}
+
+const DEFAULT_LAYOUT: PanelLayout = {
+  left: ['workspace'],
+  right: ['agents', 'memory', 'thoughts'],
+  collapsed: { workspace: false, agents: false, memory: false, thoughts: true },
+  flex: { workspace: 1, agents: 1, memory: 1, thoughts: 1 },
+};
+
+function loadPanelLayout(): PanelLayout {
+  try {
+    const raw = localStorage.getItem('nerve-panel-layout');
+    if (raw) return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_LAYOUT;
+}
+
+function savePanelLayout(layout: PanelLayout) {
+  try { localStorage.setItem('nerve-panel-layout', JSON.stringify(layout)); } catch {}
+}
+
 // Lazy-loaded view modes
 const KanbanPanel = lazy(() => import('@/features/kanban/KanbanPanel').then(m => ({ default: m.KanbanPanel })));
 const ResearchPanel = lazy(() => import('@/features/research/ResearchPanel').then(m => ({ default: m.ResearchPanel })));
+const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
 interface AppProps {
   onLogout?: () => void;
@@ -167,6 +198,51 @@ export default function App({ onLogout }: AppProps) {
     initialCompactLayout ? true : initialDesktopFileBrowserCollapsed
   ));
   const [desktopFileBrowserCollapsed, setDesktopFileBrowserCollapsed] = useState(initialDesktopFileBrowserCollapsed);
+
+  // ── Panel layout state ──
+  const [panelLayout, setPanelLayout] = useState<PanelLayout>(() => loadPanelLayout());
+
+  const togglePanelCollapse = useCallback((id: PanelId) => {
+    setPanelLayout(prev => {
+      const next: PanelLayout = {
+        ...prev,
+        collapsed: { ...prev.collapsed, [id]: !prev.collapsed[id] },
+      };
+      savePanelLayout(next);
+      return next;
+    });
+  }, []);
+
+  // Drag state for panel reordering
+  const [dragPanelId, setDragPanelId] = useState<PanelId | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ side: PanelSide; index: number } | null>(null);
+
+  const handlePanelDrop = useCallback(() => {
+    if (!dragPanelId || !dropTarget) {
+      setDragPanelId(null);
+      setDropTarget(null);
+      return;
+    }
+    const { side, index } = dropTarget;
+    setPanelLayout(prev => {
+      const left = prev.left.filter(p => p !== dragPanelId);
+      const right = prev.right.filter(p => p !== dragPanelId);
+      const target = side === 'left' ? left : right;
+      target.splice(Math.min(index, target.length), 0, dragPanelId);
+      const next: PanelLayout = {
+        ...prev,
+        left: side === 'left' ? left : prev.left.filter(p => p !== dragPanelId),
+        right: side === 'right' ? right : prev.right.filter(p => p !== dragPanelId),
+      };
+      savePanelLayout(next);
+      return next;
+    });
+    setDragPanelId(null);
+    setDropTarget(null);
+  }, [dragPanelId, dropTarget]);
+
+  // Flex resize is handled inline in the panel render (inline mousedown handler)
+
 
   // Responsive layout state (chat-first on smaller viewports)
   const [isCompactLayout, setIsCompactLayout] = useState(initialCompactLayout);
@@ -301,6 +377,14 @@ export default function App({ onLogout }: AppProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [logGlow, setLogGlow] = useState(false);
+  const [scratchPadContent, setScratchPadContent] = useState(() => {
+    try { return localStorage.getItem('nerve-scratch-pad') || ''; } catch { return ''; }
+  });
+  const persistScratchPad = useCallback((content: string) => {
+    setScratchPadContent(content);
+    try { localStorage.setItem('nerve-scratch-pad', content); } catch {}
+  }, []);
+  const [scratchPadPreview, setScratchPadPreview] = useState(false);
   const [isMobileTopBarHidden, setIsMobileTopBarHidden] = useState(false);
   const [desktopRightPanelWidth, setDesktopRightPanelWidth] = useState<number | null>(null);
   const prevLogCount = useRef(0);
@@ -526,6 +610,25 @@ export default function App({ onLogout }: AppProps) {
     closeFile(tabId);
   }, [activeTab, closeFile, setActiveTab]);
 
+  const handleNewFile = useCallback(async () => {
+    const name = window.prompt('New file name:', '');
+    if (!name?.trim()) return;
+    const filename = name.trim().endsWith('.md') ? name.trim() : `${name.trim()}.md`;
+    const content = `# ${filename.replace('.md', '')}\n\n`;
+    try {
+      const res = await fetch('/api/files/write', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filename, content, agentId: workspaceAgentId }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setFileBrowserCollapsed(false);
+        setRevealRequest({ id: Date.now(), path: data.path || filename, kind: 'file', agentId: workspaceAgentId });
+      }
+    } catch {}
+  }, [workspaceAgentId]);
+
   const openWorkspacePath = useCallback(async (targetPath: string, basePath?: string) => {
     const params = new URLSearchParams({ path: targetPath, agentId: workspaceAgentId });
     if (basePath) {
@@ -581,9 +684,18 @@ export default function App({ onLogout }: AppProps) {
     onRefreshMemory: refreshMemories,
     onSetViewMode: setViewMode,
     canShowKanban: kanbanVisible,
+    onToggleFileBrowser: isCompactLayout ? handleToggleFileBrowser : fileBrowserCollapsed ? handleToggleFileBrowser : undefined,
+    isFileBrowserCollapsed: fileBrowserCollapsed,
+    onToggleRightPanel: undefined,
+    isRightPanelCollapsed: false,
+    onNewFile: handleNewFile,
+    onTogglePanel: (id) => togglePanelCollapse(id as any),
+    panelStates: Object.fromEntries(panelLayout.right.map(p => [p, !panelLayout.collapsed[p]])),
   }), [openSpawnDialog, handleReset, toggleSound, handleAbort, openSettings, openSearch,
     setTheme, setFont, setTtsProvider, handleToggleWakeWord, toggleEvents, toggleLog, toggleTelemetry,
-    refreshSessions, refreshMemories, setViewMode, kanbanVisible]);
+    refreshSessions, refreshMemories, setViewMode, kanbanVisible,
+    fileBrowserCollapsed, isCompactLayout, handleToggleFileBrowser, handleNewFile,
+    togglePanelCollapse, panelLayout]);
 
   // Keyboard shortcut handlers with useCallback
   const handleOpenPalette = useCallback(() => setPaletteOpen(true), []);
@@ -836,6 +948,7 @@ export default function App({ onLogout }: AppProps) {
       onOpenBeadId={openBeadId}
       pathLinkPrefixes={chatPathLinkPrefixes}
       pathLinkAliases={chatPathLinkAliases}
+      onNewFile={handleNewFile}
       chatPanel={
         <PanelErrorBoundary name="Chat">
           <ChatPanel
@@ -859,6 +972,8 @@ export default function App({ onLogout }: AppProps) {
             hasMore={hasMore}
             onToggleFileBrowser={isCompactLayout ? handleToggleFileBrowser : fileBrowserCollapsed ? handleToggleFileBrowser : undefined}
             isFileBrowserCollapsed={fileBrowserCollapsed}
+            onToggleRightPanel={undefined}
+            isRightPanelCollapsed={false}
             onToggleMobileTopBar={isCompactLayout ? toggleMobileTopBar : undefined}
             isMobileTopBarHidden={isMobileTopBarHidden}
             onSendToResearch={handleSendToResearch}
@@ -874,43 +989,138 @@ export default function App({ onLogout }: AppProps) {
     />
   );
 
+  const panelName: Record<string, string> = {
+    workspace: 'Workspace', agents: 'Agents', memory: 'Memory', thoughts: 'Thoughts',
+  };
+
+  const renderPanelSide = (side: 'left' | 'right', onSelect: ((key: string) => Promise<void> | void) | null) => {
+    const ids = side === 'left' ? panelLayout.left : panelLayout.right;
+    const flexSum = ids.reduce((s, id) => s + (panelLayout.flex[id] ?? 1), 0);
+
+    return (
+      <div className="flex-1 flex flex-col gap-3 min-h-0"
+        onDragOver={(e) => { e.preventDefault(); }}
+        onDrop={handlePanelDrop}
+      >
+        {ids.map((id, idx) => {
+          const collapsed = panelLayout.collapsed[id] ?? false;
+          const flexVal = (panelLayout.flex[id] ?? 1) / flexSum;
+          return (
+            <div key={id}
+              className={`shell-panel flex flex-col min-h-0 overflow-hidden rounded-[28px] relative transition-all duration-200 ${collapsed ? 'shrink-0' : 'flex-1'} ${dragPanelId === id ? 'opacity-50 scale-[0.98] ring-2 ring-primary/30' : ''} ${dropTarget?.side === side && dropTarget.index === idx ? 'ring-2 ring-primary/50' : ''}`}
+              style={collapsed ? {} : { flex: `${flexVal} 1 0%` }}
+              onDragOver={(e) => { e.preventDefault(); setDropTarget({ side, index: idx }); }}
+            >
+              {/* Drop indicator above */}
+              {dragPanelId && dragPanelId !== id && dropTarget?.side === side && dropTarget.index === idx && (
+                <div className="absolute -top-[3px] left-4 right-4 h-[3px] rounded-full bg-primary/60 z-20 animate-pulse" />
+              )}
+              <div
+                draggable
+                onDragStart={() => setDragPanelId(id)}
+                onDragEnd={() => { setDragPanelId(null); setDropTarget(null); }}
+                className={`flex items-center gap-2 w-full px-3 py-2 cursor-grab active:cursor-grabbing select-none transition-colors ${dragPanelId === id ? 'bg-primary/5' : 'hover:bg-foreground/[0.02]'}`}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); togglePanelCollapse(id); }}
+                  className="text-muted-foreground/40 hover:text-foreground/70 transition-colors shrink-0"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+                <span className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted-foreground/50 flex-1 min-w-0">{panelName[id]}</span>
+                {side === 'right' && idx === 0 && ids.some(p => !panelLayout.collapsed[p]) && (
+                  <button onClick={(e) => { e.stopPropagation(); setPanelLayout(prev => {
+                    const newCollapsed = { ...prev.collapsed };
+                    prev.right.forEach(p => { newCollapsed[p] = true; });
+                    const next = { ...prev, collapsed: newCollapsed };
+                    savePanelLayout(next);
+                    return next;
+                  }); }} className="text-muted-foreground/30 hover:text-foreground/60 transition-colors shrink-0 mr-1" title="Collapse right bar">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                  </button>
+                )}
+                {side === 'right' && idx === 0 && ids.every(p => panelLayout.collapsed[p]) && (
+                  <button onClick={(e) => { e.stopPropagation(); setPanelLayout(prev => {
+                    const newCollapsed = { ...prev.collapsed };
+                    prev.right.forEach(p => { newCollapsed[p] = false; });
+                    const next = { ...prev, collapsed: newCollapsed };
+                    savePanelLayout(next);
+                    return next;
+                  }); }} className="text-muted-foreground/30 hover:text-foreground/60 transition-colors shrink-0 mr-1" title="Expand right bar">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                  </button>
+                )}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-muted-foreground/20 shrink-0">
+                  <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+                </svg>
+                {id === 'thoughts' && !collapsed && (
+                  <button onClick={(e) => { e.stopPropagation(); setScratchPadPreview(!scratchPadPreview); }}
+                    className="text-[0.5rem] px-2 py-0.5 rounded-md bg-muted/30 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
+                  >{scratchPadPreview ? 'Edit' : 'Preview'}</button>
+                )}
+              </div>
+              {!collapsed && (
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <PanelErrorBoundary name={panelName[id]}>
+                    {id === 'workspace' ? (
+                      <FileTreePanel workspaceAgentId={workspaceAgentId} onOpenFile={openFile}
+                        onAddToChat={(path, kind, agentId) => chatPanelRef.current?.addWorkspacePath(path, kind, agentId ?? workspaceAgentId)}
+                        addToChatEnabled={addToChatEnabled} lastChangedEvent={lastChangedEvent}
+                        revealRequest={revealRequest} onRemapOpenPaths={remapOpenPaths}
+                        onCloseOpenPaths={closeOpenPathsByPrefix} isCompactLayout={false} hideHeader
+                        collapsed={false} onCollapseChange={() => {}}
+                      />
+                    ) : id === 'agents' ? (
+                      <SessionList sessions={sessions} currentSession={currentSession}
+                        busyState={busyState} agentStatus={agentStatus} unreadSessions={unreadSessions}
+                        onSelect={onSelect!} onRefresh={refreshSessions} onDelete={deleteSession}
+                        onSpawn={handleSpawnSession} onRename={renameSession} onAbort={abortSession}
+                        isLoading={sessionsLoading} agentName={agentName}
+                      />
+                    ) : id === 'memory' ? (
+                      <WorkspacePanel workspaceAgentId={workspaceAgentId} memories={memories}
+                        onRefreshMemories={refreshMemories} memoriesLoading={memoriesLoading}
+                        remoteWorkspace={remoteWorkspace} onOpenBoard={() => setViewMode('kanban')}
+                        onOpenTask={openTaskInBoard}
+                      />
+                    ) : (
+                      scratchPadPreview ? (
+                        <Suspense fallback={<div className="flex-1 p-3 text-xs text-muted-foreground/50">Loading preview…</div>}>
+                          <div className="flex-1 overflow-y-auto p-3 prose prose-zinc dark:prose-invert max-w-none prose-headings:text-foreground/90 prose-strong:text-foreground/90 prose-p:text-xs prose-p:leading-relaxed">
+                            <MarkdownRenderer content={scratchPadContent || '*Nothing yet...*'} />
+                          </div>
+                        </Suspense>
+                      ) : (
+                        <textarea value={scratchPadContent}
+                          onChange={(e) => persistScratchPad(e.target.value)}
+                          placeholder="Jot down notes for your next prompt..."
+                          className="flex-1 w-full bg-transparent border-none outline-none resize-none p-3 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono"
+                        />
+                      )
+                    )}
+                  </PanelErrorBoundary>
+                </div>
+              )}
+              {idx < ids.length - 1 && (
+                <div onMouseDown={(e) => { e.preventDefault(); const startY = e.clientY; const p1 = (panelLayout.flex[id] ?? 1); const initP1 = p1; const nextId = ids[idx + 1]; const p2 = (panelLayout.flex[nextId] ?? 1); const onMove = (ev: MouseEvent) => { const delta = (ev.clientY - startY) / 30; setPanelLayout(prev => ({ ...prev, flex: { ...prev.flex, [id]: Math.max(0.2, initP1 + delta), [nextId]: Math.max(0.2, p2 - delta) } })); }; const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); }}
+                  className="absolute bottom-0 left-2 right-2 h-1 cursor-row-resize z-10 rounded-full hover:bg-primary/30 transition-colors"
+                />
+              )}
+            </div>
+          );
+        })}
+        {dragPanelId && dropTarget?.side === side && dropTarget.index >= ids.length && <div className="h-1 rounded-full bg-primary/40 mx-2" />}
+      </div>
+    );
+  };
+
   const renderRightPanels = (onSelect: (key: string) => Promise<void> | void) => (
     <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading…</div>}>
-      {/* Sessions + Memory stacked vertically */}
-      <div className="flex-1 flex flex-col gap-3 min-h-0">
-        <div className="shell-panel flex-1 flex flex-col min-h-0 overflow-hidden rounded-[28px]">
-          <PanelErrorBoundary name="Sessions">
-            <SessionList
-              sessions={sessions}
-              currentSession={currentSession}
-              busyState={busyState}
-              agentStatus={agentStatus}
-              unreadSessions={unreadSessions}
-              onSelect={onSelect}
-              onRefresh={refreshSessions}
-              onDelete={deleteSession}
-              onSpawn={handleSpawnSession}
-              onRename={renameSession}
-              onAbort={abortSession}
-              isLoading={sessionsLoading}
-              agentName={agentName}
-            />
-          </PanelErrorBoundary>
-        </div>
-        <div className="shell-panel flex-1 flex flex-col min-h-0 overflow-hidden rounded-[28px]">
-          <PanelErrorBoundary name="Workspace">
-            <WorkspacePanel
-              workspaceAgentId={workspaceAgentId}
-              memories={memories}
-              onRefreshMemories={refreshMemories}
-              memoriesLoading={memoriesLoading}
-              remoteWorkspace={remoteWorkspace}
-              onOpenBoard={() => setViewMode('kanban')}
-              onOpenTask={openTaskInBoard}
-            />
-          </PanelErrorBoundary>
-        </div>
-      </div>
+      {renderPanelSide('right', onSelect)}
     </Suspense>
   );
 
@@ -1073,24 +1283,10 @@ export default function App({ onLogout }: AppProps) {
       </PanelErrorBoundary>
       
       <div className="flex-1 flex gap-3 overflow-hidden min-h-0 px-2 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-2">
-        {/* File tree — desktop inline, mobile drawer */}
-        {!isCompactLayout && (
-          <div className={viewMode === 'kanban' ? 'hidden' : fileBrowserCollapsed ? 'contents' : 'h-full min-h-0'}>
-            <PanelErrorBoundary name="File Explorer">
-              <FileTreePanel
-                workspaceAgentId={workspaceAgentId}
-                onOpenFile={openFile}
-                onAddToChat={(path, kind, agentId) => chatPanelRef.current?.addWorkspacePath(path, kind, agentId ?? workspaceAgentId)}
-                addToChatEnabled={addToChatEnabled}
-                lastChangedEvent={lastChangedEvent}
-                revealRequest={revealRequest}
-                onRemapOpenPaths={remapOpenPaths}
-                onCloseOpenPaths={closeOpenPathsByPrefix}
-                isCompactLayout={false}
-                collapsed={fileBrowserCollapsed}
-                onCollapseChange={setFileBrowserCollapsed}
-              />
-            </PanelErrorBoundary>
+        {/* Left bar — dynamic panels */}
+        {!isCompactLayout && !fileBrowserCollapsed && (
+          <div className="h-full min-h-0 w-72 shrink-0">
+            {renderPanelSide('left', null)}
           </div>
         )}
 
@@ -1155,8 +1351,8 @@ export default function App({ onLogout }: AppProps) {
               onResize={setPanelRatio}
               minLeftPercent={30}
               maxLeftPercent={85}
-              rightWidthPx={fileBrowserCollapsed ? desktopRightPanelWidth : null}
-              onRightWidthChange={fileBrowserCollapsed ? undefined : setDesktopRightPanelWidth}
+              rightWidthPx={panelLayout.right.every(p => panelLayout.collapsed[p]) ? 0 : (fileBrowserCollapsed ? desktopRightPanelWidth : null)}
+              onRightWidthChange={panelLayout.right.every(p => panelLayout.collapsed[p]) ? undefined : (fileBrowserCollapsed ? undefined : setDesktopRightPanelWidth)}
               leftClassName="shell-panel boot-panel rounded-[28px] overflow-hidden"
               rightClassName="boot-panel flex flex-col"
               left={chatContent}

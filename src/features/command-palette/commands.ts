@@ -24,6 +24,13 @@ export interface CommandActions {
   onRefreshMemory: () => void;
   onSetViewMode?: (mode: ViewMode) => void;
   canShowKanban?: boolean;
+  onToggleFileBrowser?: () => void;
+  isFileBrowserCollapsed?: boolean;
+  onToggleRightPanel?: () => void;
+  isRightPanelCollapsed?: boolean;
+  onNewFile?: () => void;
+  onTogglePanel?: (panel: string) => void;
+  panelStates?: Record<string, boolean>;
 }
 
 const THEME_LABELS: Record<ThemeName, string> = {
@@ -207,11 +214,77 @@ export function createCommands(actions: CommandActions): Command[] {
         keywords: ['chat', 'conversation', 'view'],
       },
       {
+        id: 'open-research',
+        label: 'Open Research View',
+        action: () => actions.onSetViewMode!('research'),
+        category: 'kanban' as const,
+        keywords: ['research', 'search', 'browser', 'view'],
+      },
+      {
         id: 'create-kanban-task',
         label: 'Create Task',
         action: () => actions.onSetViewMode!('kanban'),
         category: 'kanban' as const,
         keywords: ['kanban', 'task', 'create', 'new', 'add'],
+      },
+    ] : []),
+    // Panel toggle commands
+    ...(actions.onToggleFileBrowser ? [
+      {
+        id: 'toggle-file-browser',
+        label: `${actions.isFileBrowserCollapsed ? 'Open' : 'Close'} File Browser`,
+        shortcut: '⌘B',
+        action: actions.onToggleFileBrowser,
+        category: 'navigation' as const,
+        keywords: ['file', 'browser', 'workspace', 'explorer', 'toggle'],
+      },
+    ] : []),
+    ...(actions.onToggleRightPanel ? [
+      {
+        id: 'toggle-right-panel',
+        label: `${actions.isRightPanelCollapsed ? 'Open' : 'Close'} Side Panels`,
+        action: actions.onToggleRightPanel,
+        category: 'navigation' as const,
+        keywords: ['side', 'panel', 'right', 'agents', 'memory', 'toggle'],
+      },
+    ] : []),
+    ...(actions.onTogglePanel ? [
+      {
+        id: 'toggle-panel-workspace',
+        label: `${actions.panelStates?.workspace ? 'Expand' : 'Collapse'} Workspace Panel`,
+        action: () => actions.onTogglePanel!('workspace'),
+        category: 'navigation' as const,
+        keywords: ['workspace', 'file', 'panel', 'toggle', 'collapse'],
+      },
+      {
+        id: 'toggle-panel-agents',
+        label: `${actions.panelStates?.agents ? 'Expand' : 'Collapse'} Agents Panel`,
+        action: () => actions.onTogglePanel!('agents'),
+        category: 'navigation' as const,
+        keywords: ['agents', 'sessions', 'panel', 'toggle', 'collapse'],
+      },
+      {
+        id: 'toggle-panel-memory',
+        label: `${actions.panelStates?.memory ? 'Expand' : 'Collapse'} Memory Panel`,
+        action: () => actions.onTogglePanel!('memory'),
+        category: 'navigation' as const,
+        keywords: ['memory', 'panel', 'toggle', 'collapse'],
+      },
+      {
+        id: 'toggle-panel-thoughts',
+        label: `${actions.panelStates?.thoughts ? 'Expand' : 'Collapse'} Thoughts Panel`,
+        action: () => actions.onTogglePanel!('thoughts'),
+        category: 'navigation' as const,
+        keywords: ['thoughts', 'scratch', 'notes', 'panel', 'toggle', 'collapse'],
+      },
+    ] : []),
+    ...(actions.onNewFile ? [
+      {
+        id: 'new-file',
+        label: 'Create New Markdown File',
+        action: actions.onNewFile,
+        category: 'actions' as const,
+        keywords: ['file', 'new', 'create', 'document', 'markdown', 'md'],
       },
     ] : []),
     ...themeCommands,

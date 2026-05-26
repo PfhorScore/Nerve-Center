@@ -24,11 +24,18 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 ## What makes Nerve Center different
 
-All the power of Nerve, plus enhancements you won't find anywhere else:
+All the power of Nerve, plus a whole lot more:
+
+### 🧩 Drag-and-Drop Panel System
+Your workspace, your layout:
+- **Drag panels** to reorder left/right — no settings, just grab and go
+- **Collapse individually** or nuke the whole right sidebar with one button
+- **Resize vertically** with slick drag handles
+- Everything **persists** across sessions (localStorage, no DB required)
 
 ### 🧠 AI-Powered Research Tab
 Full Perplexity-class research experience built right in:
-- **Quick & Deep search modes** using OpenClaw-compatible providers
+- **Quick & Deep search modes** using any OpenClaw-compatible provider
 - **Rich markdown answers** with inline citation links `[1]`
 - **Hover previews** — favicon, title, and snippet on any source
 - **Tabbed results**: All, Sources, Images, Links
@@ -37,11 +44,25 @@ Full Perplexity-class research experience built right in:
 - **Thread sidebar** with AI-generated titles
 - **Smart persistence** — fresh start after inactivity, old threads accessible
 
+### 📝 Scratch Pad (Thoughts Panel)
+Your brain while the AI is thinking:
+- **Markdown editor** with live preview toggle
+- Notes auto-save to localStorage — never lose a thought
+- Collapsible, lives in the right panel bar
+
 ### 🔧 Clean Chat Mode
 Toggle agent activity visibility with the wrench icon:
 - **Visible** — see tool calls, thinking, and agent actions
 - **Hidden** — clean text-only conversation, like a normal chat app
 - Pulsing dot when hidden and model is generating
+
+### 🎯 Quality-of-Life
+- **Copy button** on messages (subtle icon, appears on hover)
+- **"Still thinking…"** indicator at 15s with hourglass pulse
+- **Collapse only chevron** — no more accidentally collapsing messages
+- **Cmd+K** command palette with panel toggles, file creation, and navigation
+- **Research This?** tooltip — select text anywhere, send to research with one click
+- **NERVE CENTER** branding — it's not just a fork, it's its own thing
 
 ### 🎨 And everything Nerve already gives you
 Multi-agent fleet control, voice I/O, kanban workflows, workspace management, session trees, crons, charts, and more.
@@ -71,18 +92,21 @@ npm run build
 
 ## What's new
 
-See the full **[changelog](NERVE-CHANGELOG.md)** for detailed changes.
+### v0.1.0 — May 26, 2026 — The Big One 🚀
 
-### May 19, 2026 — Research Tab Full Overhaul 🚀
-- AI-powered Research tab with Quick/Deep modes
-- Citation hover cards, inline `[1]` links, source pills
-- Thread sidebar with AI-generated titles
-- AI auto-sort conversations by topic
-- Tabbed results (All, Sources, Images, Links)
-- Follow-up suggestion chips
-- Agent activity toggle (clean chat mode)
-- Provider-agnostic search backend
-- Full Nerve fork with MIT license
+**Panel System** — Workspace, Agents, Memory, and Thoughts are now fully draggable, collapsible, resizable, and persistent. Move panels between left/right bars, stack them however you want, and it remembers your layout.
+
+**Research Tab v2** — Hero empty state with suggestion chips, history search filtering, icon-only search buttons, and no more phantom empty threads on refresh.
+
+**Chat UX** — Only the chevron collapses messages (no more rage-clicks), copy button with feedback, "Still thinking…" at 15s, always-wrench activity toggle with pulsing dot.
+
+**Thoughts Panel** — Markdown scratch pad that saves its content. Edit, preview, collapse. Perfect for jotting ideas while the AI works.
+
+**Cmd+K** — Command palette packed with panel controls, view switching, and file creation.
+
+**v0.1.0** marks Nerve Center's first independent version — no longer tracking upstream v1.5.x.
+
+See the full **[changelog](NERVE-CHANGELOG.md)** for detailed changes.
 
 ---
 

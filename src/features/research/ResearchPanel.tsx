@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
-import { Search, Loader2, MessageSquare, Sparkles, ChevronRight, Copy, Check, Download } from 'lucide-react';
+import { Search, Loader2, MessageSquare, Sparkles, Copy, Check, Download } from 'lucide-react';
 
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
@@ -175,6 +175,7 @@ export function ResearchPanel() {
   const [placeholder, setPlaceholder] = useState('Ask anything...');
   const [resultTab, setResultTab] = useState<'all' | 'sources' | 'images' | 'links'>('all');
   const [expandedQuery, setExpandedQuery] = useState<number | null>(null);
+  const [historyQuery, setHistoryQuery] = useState('');
   const citeHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -330,29 +331,14 @@ export function ResearchPanel() {
 
   /**
    * On mount: restore the last active thread from localStorage.
-   * If the user was away longer than AWAY_THRESHOLD (10 min), start a fresh thread
-   * instead of resuming the old one. Old threads remain accessible in the sidebar.
+   * Empty threads are never persisted — only threads with search results
+   * get saved to localStorage. If no saved threads exist, show the empty state.
    */
-  const AWAY_THRESHOLD_MS = 10 * 60 * 1000;
-  const LAST_SEEN_KEY = 'nerve:research-last-seen';
-
   useEffect(() => {
     const savedId = loadActiveId();
     const savedThreads = loadThreads();
-    const lastSeen = (() => { try { return parseInt(localStorage.getItem(LAST_SEEN_KEY) || '0', 10); } catch { return 0; } })();
-    const away = Date.now() - lastSeen > AWAY_THRESHOLD_MS;
 
-    if (away || (!savedId && savedThreads.length === 0)) {
-      // Start a fresh thread — user was away or has no saved threads
-      const id = generateId();
-      const thread: ResearchThread = {
-        id, title: 'New Research', createdAt: Date.now(), updatedAt: Date.now(), entries: [],
-      };
-      setThreads([thread, ...savedThreads.slice(0, 9)]);
-      saveThreads([thread, ...savedThreads.slice(0, 9)]);
-      setActiveThreadId(id);
-      saveActiveId(id);
-    } else if (savedId && savedThreads.some((t) => t.id === savedId)) {
+    if (savedId && savedThreads.some((t) => t.id === savedId)) {
       // Resume the last active thread
       setActiveThreadId(savedId);
       saveActiveId(savedId);
@@ -360,24 +346,8 @@ export function ResearchPanel() {
       // Fallback: pick the first available thread
       setActiveThreadId(savedThreads[0].id);
       saveActiveId(savedThreads[0].id);
-      setThreads(savedThreads);
     }
-  }, []);
-
-  /**
-   * Track when the user last looked at the Research tab.
-   * Uses visibilitychange so we know when they switch tabs or minimize.
-   * On next visit, if enough time passed, we start fresh (see above).
-   */
-  useEffect(() => {
-    const save = () => {
-      try { localStorage.setItem(LAST_SEEN_KEY, String(Date.now())); } catch {}
-    };
-    document.addEventListener('visibilitychange', save);
-    return () => {
-      document.removeEventListener('visibilitychange', save);
-      save();
-    };
+    // else: no threads — show empty state. Thread created on first search.
   }, []);
 
   /** Create a brand new empty research thread and switch to it */
@@ -390,11 +360,7 @@ export function ResearchPanel() {
       updatedAt: Date.now(),
       entries: [],
     };
-    setThreads((prev) => {
-      const updated = [thread, ...prev];
-      saveThreads(updated);
-      return updated;
-    });
+    setThreads((prev) => [thread, ...prev]);
     setActiveThreadId(id);
     saveActiveId(id);
     setQuery('');
@@ -429,11 +395,7 @@ export function ResearchPanel() {
         updatedAt: Date.now(),
         entries: [],
       };
-      setThreads((prev) => {
-        const updated = [thread, ...prev];
-        saveThreads(updated);
-        return updated;
-      });
+      setThreads((prev) => [thread, ...prev]);
       setActiveThreadId(targetId);
       saveActiveId(targetId);
     }
@@ -669,7 +631,14 @@ export function ResearchPanel() {
                   <p className="text-xs text-muted-foreground/50">No threads yet</p>
                 </div>
               )}
-              {threads.map((thread) => (
+              {threads
+                .filter((t) => {
+                  if (!historyQuery.trim()) return true;
+                  const q = historyQuery.toLowerCase();
+                  if (t.title.toLowerCase().includes(q)) return true;
+                  return t.entries.some((e) => e.query.toLowerCase().includes(q));
+                })
+                .map((thread) => (
                 <div key={thread.id} className="relative">
                   <button
                     onClick={() => switchThread(thread.id)}
@@ -758,7 +727,27 @@ export function ResearchPanel() {
               );
             })()}
 
-            <div className="p-2 border-t border-border/20">
+            <div className="p-2 border-t border-border/20 space-y-1.5">
+              <div className="flex items-center gap-1.5 rounded-lg border border-border/30 bg-secondary/10 px-2">
+                <Search size={10} className="shrink-0 text-muted-foreground/40" />
+                <input
+                  type="text"
+                  value={historyQuery}
+                  onChange={(e) => setHistoryQuery(e.target.value)}
+                  placeholder="Search threads..."
+                  className="min-w-0 flex-1 bg-transparent py-1.5 text-[0.6rem] text-foreground outline-none placeholder:text-muted-foreground/30"
+                />
+                {historyQuery && (
+                  <button
+                    onClick={() => setHistoryQuery('')}
+                    className="shrink-0 text-muted-foreground/30 hover:text-foreground/60"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                )}
+              </div>
               <button
                 onClick={newThread}
                 className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs text-muted-foreground/70 transition-colors hover:bg-secondary/40"
@@ -996,21 +985,104 @@ export function ResearchPanel() {
           )}
 
           {conversation.length === 0 && !loading && !error && !briefing && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Sparkles size={32} className="text-muted-foreground/20 mb-3" />
-              <p className="text-sm text-muted-foreground/60">Search the web with cited sources</p>
-              {threads.length > 0 && (
-                <div className="mt-6 w-full max-w-sm">
-                  <span className="cockpit-kicker mb-2 block text-center">Previous Threads</span>
-                  <div className="space-y-1">
-                    {threads.filter((t) => t.entries.length > 0).slice(0, 10).map((thread) => (
-                      <button key={thread.id} onClick={() => switchThread(thread.id)}
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-1.5 text-left text-xs text-muted-foreground/70 transition-colors hover:bg-secondary/50">
-                        <ChevronRight size={10} />
-                        {thread.title}
-                      </button>
-                    ))}
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              {!activeThreadId ? (
+                <>
+                  {/* Hero section — Perplexity/ChatGPT style landing */}
+                  <div className="w-full max-w-xl">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Sparkles size={20} className="text-primary/40" />
+                      <h1 className="text-lg font-semibold text-foreground/80">What would you like to know?</h1>
+                    </div>
+
+                    {/* Clean, prominent search bar */}
+                    <div className="relative mb-4">
+                      <div className="flex items-center gap-2 rounded-2xl border border-border/40 bg-card shadow-md px-4 py-3.5 has-[input:focus]:border-primary/30 has-[input:focus]:shadow-lg transition-all">
+                        <Search size={16} className="shrink-0 text-muted-foreground/30" />
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          placeholder={placeholder}
+                          className="min-w-0 flex-1 bg-transparent py-0.5 text-base text-foreground outline-none placeholder:text-muted-foreground/40"
+                          disabled={loading}
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleSearch}
+                          disabled={loading || !query.trim()}
+                          className="cockpit-chip min-h-8 px-3 text-sm shrink-0"
+                        >
+                          {loading ? <Loader2 size={14} className="animate-spin" /> : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="22 4 22 10 16 10" /><polyline points="2 20 2 14 8 14" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Quick/Deep toggle below the search bar */}
+                      <div className="flex items-center justify-center gap-1 mt-3">
+                        <button
+                          onClick={() => setMode('quick')}
+                          className={`rounded-lg px-2.5 py-1 text-[0.55rem] font-medium transition-colors ${mode === 'quick' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/50 hover:text-foreground/70'}`}
+                        >⚡ Quick</button>
+                        <button
+                          onClick={() => setMode('deep')}
+                          className={`rounded-lg px-2.5 py-1 text-[0.55rem] font-medium transition-colors ${mode === 'deep' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/50 hover:text-foreground/70'}`}
+                        >🔬 Deep</button>
+                      </div>
+                    </div>
+
+                    {/* Suggestion prompt chips */}
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                      {[
+                        { label: 'Explain a concept', icon: '💡' },
+                        { label: 'Compare two tools', icon: '⚖️' },
+                        { label: 'Plan a migration', icon: '📋' },
+                        { label: 'Research a topic', icon: '🔍' },
+                      ].map((s) => (
+                        <button
+                          key={s.label}
+                          onClick={() => { setQuery(s.label); inputRef.current?.focus(); }}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-border/30 bg-card/50 px-3 py-1.5 text-[0.6rem] text-muted-foreground/70 transition-colors hover:bg-secondary/40 hover:text-foreground/80 hover:border-border/50"
+                        >
+                          <span>{s.icon}</span>
+                          <span>{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Recent threads */}
+                  {threads.filter((t) => t.entries.length > 0).length > 0 && (
+                    <div className="w-full max-w-sm">
+                      <span className="cockpit-kicker mb-3 block text-center">Recent Threads</span>
+                      <div className="space-y-1">
+                        {threads.filter((t) => t.entries.length > 0).slice(0, 8).map((thread) => (
+                          <button key={thread.id} onClick={() => switchThread(thread.id)}
+                            className="flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-left text-xs text-muted-foreground/70 transition-colors hover:bg-secondary/40"
+                          >
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-muted-foreground/30">
+                              <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                            <span className="line-clamp-1">{thread.title}</span>
+                            <span className="ml-auto shrink-0 text-[0.5rem] text-muted-foreground/40">
+                              {thread.entries.length} Q
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Has an active thread but no entries — just show a minimal prompt */
+                <div className="flex flex-col items-center gap-4 py-8">
+                  <Sparkles size={24} className="text-muted-foreground/20" />
+                  <p className="text-sm text-muted-foreground/60">Ask something to get started</p>
                 </div>
               )}
             </div>
@@ -1074,7 +1146,8 @@ export function ResearchPanel() {
         )}
       </div>
 
-      {/* Search bar — bottom dock */}
+      {/* Search bar — bottom dock (hidden when showing hero search) */}
+      {activeThread && (
       <div className="border-t border-border/30 px-4 py-2">
         <div className="flex items-center gap-2">
           <div className="flex flex-1 items-center gap-1.5 rounded-xl border border-border/50 bg-secondary/20 px-2.5 has-[input:focus]:border-primary/50 has-[input:focus]:bg-secondary/30 transition-colors">
@@ -1106,10 +1179,10 @@ export function ResearchPanel() {
             className="cockpit-chip min-h-9 px-4 text-sm shrink-0"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-            <span className="ml-1.5">{loading ? 'Searching...' : 'Search'}</span>
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

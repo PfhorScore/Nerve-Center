@@ -67,6 +67,8 @@ interface FileTreePanelProps {
   revealRequest?: { id: number; path: string; kind: 'file' | 'directory'; agentId: string } | null;
   /** Layout hint retained for compatibility with existing callers. */
   isCompactLayout?: boolean;
+  /** When true, hides the internal header (used when rendered inside panel system). */
+  hideHeader?: boolean;
   /** Callback to notify parent of collapse state changes */
   onCollapseChange: (collapsed: boolean) => void;
   /** External control of collapsed state */
@@ -787,7 +789,10 @@ export function FileTreePanel({
           }}
           onDrop={handleRootDrop}
         >
-          <span className="text-[0.667rem] font-mono font-semibold uppercase tracking-[0.26em] text-muted-foreground">
+          <span
+            className="text-[0.667rem] font-mono font-semibold uppercase tracking-[0.26em] text-muted-foreground"
+            title="Your agent only has access to files in this workspace. Files outside this directory are not visible or editable by the agent."
+          >
             {workspaceInfo?.isCustomWorkspace ? workspaceInfo.rootPath : 'Workspace'}
           </span>
           <div className="flex items-center gap-2">
