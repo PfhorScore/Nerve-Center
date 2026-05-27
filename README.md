@@ -22,6 +22,13 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 <img src="docs/screenshot-v0.2.0.png" alt="Nerve Center v0.2.0 — Thoughts v2, Library panel, Perplexity input, and more" />
 
+<div align="center">
+  <img src="docs/screenshot-research-view.png" alt="Research view" width="45%" />
+  <img src="docs/screenshot-sidebar-collapsed.png" alt="Sidebar collapsed to strip" width="45%" />
+  <br />
+  <img src="docs/screenshot-layout-custom.png" alt="Custom layout with collapsed sidebars" width="45%" />
+</div>
+
 ---
 
 ## What makes Nerve Center different
