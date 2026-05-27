@@ -6,7 +6,7 @@
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { PanelLeftClose, RefreshCw, X } from 'lucide-react';
+import { RefreshCw, X } from 'lucide-react';
 import { FileTreeNode } from './FileTreeNode';
 import { buildFileTreeMenuActions } from './fileTreeMenuActions';
 import { useFileTree } from './hooks/useFileTree';
@@ -70,9 +70,9 @@ interface FileTreePanelProps {
   /** When true, hides the internal header (used when rendered inside panel system). */
   hideHeader?: boolean;
   /** Callback to notify parent of collapse state changes */
-  onCollapseChange: (collapsed: boolean) => void;
+  onCollapseChange?: (collapsed: boolean) => void;
   /** External control of collapsed state */
-  collapsed: boolean;
+  collapsed?: boolean;
 }
 
 interface FileOpResult {
@@ -116,7 +116,7 @@ export function FileTreePanel({
   lastChangedEvent,
   revealRequest,
   isCompactLayout = false,
-  onCollapseChange,
+  hideHeader = false,
   collapsed,
 }: FileTreePanelProps) {
   const { showHiddenWorkspaceEntries } = useSettings();
@@ -148,8 +148,8 @@ export function FileTreePanel({
   }, [revealPath, revealRequest, workspaceAgentId]);
 
   const panelRef = useRef<HTMLDivElement>(null);
-  const widthRef = useRef(loadWidth());
   const draggingRef = useRef(false);
+  const widthRef = useRef(loadWidth());
   const [width, setWidth] = useState(() => {
     return collapsed ? COLLAPSED_WIDTH : loadWidth();
   });
@@ -335,42 +335,36 @@ export function FileTreePanel({
     }
   }, [visibleContextMenu]);
 
-  const toggleCollapsed = useCallback(() => {
-    onCollapseChange(!collapsed);
-  }, [collapsed, onCollapseChange]);
-
   // Resize drag handling
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     draggingRef.current = true;
     const startX = e.clientX;
-    const startWidth = widthRef.current;
+    const startWidth = panelRef.current?.getBoundingClientRect().width ?? widthRef.current;
 
-    const onMouseMove = (ev: MouseEvent) => {
-      const delta = ev.clientX - startX;
-      const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + delta));
-      widthRef.current = newWidth;
-      if (panelRef.current) {
-        panelRef.current.style.width = `${newWidth}px`;
-      }
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!draggingRef.current) return;
+      const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth + (ev.clientX - startX)));
+      if (panelRef.current) panelRef.current.style.width = `${newWidth}px`;
     };
 
-    const onMouseUp = () => {
+    const handleMouseUp = () => {
       draggingRef.current = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
+      const finalWidth = panelRef.current?.getBoundingClientRect().width ?? DEFAULT_WIDTH;
+      widthRef.current = finalWidth;
+      try { localStorage.setItem(WIDTH_STORAGE_KEY, String(finalWidth)); } catch {}
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      try { localStorage.setItem(WIDTH_STORAGE_KEY, String(widthRef.current)); } catch { /* ignore */ }
-      setWidth(widthRef.current);
     };
 
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
   }, []);
-
   const handleDoubleClickResize = useCallback(() => {
     widthRef.current = DEFAULT_WIDTH;
     if (panelRef.current) panelRef.current.style.width = `${DEFAULT_WIDTH}px`;
@@ -767,7 +761,7 @@ export function FileTreePanel({
     <div
       ref={panelRef}
       className="relative flex h-full min-h-0 w-full shrink-0 flex-col overflow-visible"
-      style={isCompactLayout ? undefined : { width }}
+      style={isCompactLayout || hideHeader ? undefined : { width }}
     >
       <div
         className="shell-panel flex h-full min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-[28px]"
@@ -779,7 +773,8 @@ export function FileTreePanel({
           }
         }}
       >
-        {/* Header */}
+        {/* Header — hidden when rendered inside the panel system (which provides its own) */}
+        {!hideHeader && (
         <div
           className={`flex items-center justify-between border-b border-border/70 px-4 py-3 ${visibleDropTargetPath === '.' ? 'bg-primary/12 ring-1 ring-inset ring-primary/35' : 'bg-gradient-to-r from-secondary/90 to-card/85'}`}
           onDragOver={handleRootDragOver}
@@ -791,7 +786,7 @@ export function FileTreePanel({
         >
           <span
             className="text-[0.667rem] font-mono font-semibold uppercase tracking-[0.26em] text-muted-foreground"
-            title="Your agent only has access to files in this workspace. Files outside this directory are not visible or editable by the agent."
+            
           >
             {workspaceInfo?.isCustomWorkspace ? workspaceInfo.rootPath : 'Workspace'}
           </span>
@@ -805,18 +800,17 @@ export function FileTreePanel({
               <RefreshCw size={16} />
             </button>
             <button
-              onClick={toggleCollapsed}
               className="shell-icon-button size-10 px-0"
               title="Close file explorer (Ctrl+B)"
               aria-label="Close file explorer"
             >
-              <PanelLeftClose size={16} />
             </button>
           </div>
         </div>
+        )}
 
-        {/* Tree content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-1" role="tree" aria-label="File explorer">
+        {/* Tree content — remove top padding when inside panel system (header above provides it) */}
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden ${hideHeader ? 'pb-1' : 'py-1'}`} role="tree" aria-label="File explorer">
           {loading ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-muted-foreground">
               <RefreshCw className="animate-spin" size={12} />
@@ -936,8 +930,8 @@ export function FileTreePanel({
         </div>
       )}
 
-      {/* Resize handle */}
-      {!isCompactLayout && (
+      {/* Resize handle — hidden inside panel system (panel system manages its own resizing) */}
+      {!isCompactLayout && !hideHeader && (
         <div
           className="absolute top-0 -right-3 z-20 flex h-full w-3 cursor-col-resize items-stretch justify-center"
           onMouseDown={handleMouseDown}

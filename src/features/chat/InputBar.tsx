@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
-import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff } from 'lucide-react';
+import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo, lazy, Suspense } from 'react';
+import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Brain } from 'lucide-react';
 import type { TreeEntry } from '@/features/file-browser';
 import { useVoiceInput } from '@/features/voice/useVoiceInput';
 import { useTabCompletion } from '@/hooks/useTabCompletion';
@@ -33,6 +33,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
 interface InputBarProps {
   onSend: (text: string, attachments?: ImageAttachment[], uploadPayload?: OutgoingUploadPayload) => void | Promise<void>;
@@ -295,6 +297,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   const [pathPickerCustomRoot, setPathPickerCustomRoot] = useState(() => persistedComposerSnapshot.pathPickerCustomRoot);
   const [sendPulse, setSendPulse] = useState(false);
   const [sendError, setSendError] = useState(false);
+  const [previewMarkdown, setPreviewMarkdown] = useState(false);
 
   const uploadsEnabled = isUploadsEnabled(uploadConfig);
   const attachByPathEnabled = uploadConfig.fileReferenceEnabled;
@@ -655,7 +658,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
     if (e.dataTransfer.files.length > 0) processFiles(e.dataTransfer.files);
   }, [processFiles]);
 
-  // Paste images — use ref to avoid re-registering on every stagedAttachments change
+  // Paste images - use ref to avoid re-registering on every stagedAttachments change
   const processFilesRef = useRef(processFiles);
   useEffect(() => {
     processFilesRef.current = processFiles;
@@ -1079,8 +1082,24 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   ]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // In preview mode: Enter sends, Escape returns to edit, Tab/arrows navigate
+    if (previewMarkdown) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setPreviewMarkdown(false);
+        return;
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        void handleSend();
+        setPreviewMarkdown(false);
+        return;
+      }
+      return;
+    }
+
     // IME composition guard: during active CJK composition the browser may
-    // fire keydown for Enter/Escape/etc.  Let the IME handle them – acting
+    // fire keydown for Enter/Escape/etc.  Let the IME handle them — acting
     // on these events causes ghost messages (issue #65).
     if (e.nativeEvent.isComposing || e.keyCode === 229) return;
 
@@ -1146,7 +1165,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
       }
       return;
     }
-    // Down arrow — navigate to newer history or back to draft
+    // Down arrow - navigate to newer history or back to draft
     if (e.key === 'ArrowDown' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
       if (inputHistory.isNavigating()) {
         const input = inputRef.current;
@@ -1188,7 +1207,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
 
   return (
     <>
-      {/* Drag overlay — rendered by parent via dragHandlers */}
+      {/* Drag overlay - rendered by parent via dragHandlers */}
       {isDragging && (
         <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex items-center justify-center pointer-events-none">
           <span className="text-primary font-bold text-lg">Drop files here</span>
@@ -1269,11 +1288,22 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
         ) : (
           <span className="self-start text-primary text-base leading-none font-bold pl-3.5 pt-3 shrink-0 animate-prompt-pulse">›</span>
         )}
-        {/* Uncontrolled textarea — value is read/written via inputRef.
+        {/* Uncontrolled textarea - value is read/written via inputRef.
             This is intentional: useTabCompletion and history navigation
             set input.value directly, which is safe without a `value` prop.
             Do NOT add a `value={state}` prop without also passing a
             setValue callback to useTabCompletion. */}
+        {previewMarkdown ? (
+          <Suspense fallback={<div className="flex-1 px-2.5 py-3 text-xs text-muted-foreground/50">Loading preview...</div>}>
+            <div className="flex-1 overflow-y-auto px-3 py-2.5 prose prose-zinc dark:prose-invert max-w-none prose-p:text-[13px] prose-p:leading-relaxed prose-code:text-[12px] max-h-[160px] min-h-[42px]">
+              {draftText.trim() ? (
+                <MarkdownRenderer content={draftText} />
+              ) : (
+                <span className="text-muted-foreground/40 italic">Nothing to preview...</span>
+              )}
+            </div>
+          </Suspense>
+        ) : (
         <textarea
           ref={inputRef}
           onKeyDown={handleKeyDown}
@@ -1283,6 +1313,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
           rows={1}
           className="flex-1 font-mono text-[13px] bg-transparent text-foreground border-none px-2.5 py-3 resize-none outline-none min-h-[42px] max-h-[160px]"
         />
+        )}
         {onResearch && (
           <button
             type="button"
@@ -1325,21 +1356,30 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
           {ttsEnabled ? <Volume2 size={16} /> : <VolumeOff size={16} className="text-destructive/70" />}
         </button>
         <button
+          type="button"
+          onClick={() => setPreviewMarkdown((p) => !p)}
+          className={`bg-transparent border-none cursor-pointer px-2 self-stretch h-full flex items-center ${previewMarkdown ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+          title={previewMarkdown ? 'Edit message' : 'Preview markdown'}
+          aria-label={previewMarkdown ? 'Edit message' : 'Preview markdown'}
+        >
+          {previewMarkdown ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+        <button
           onClick={() => { void handleSend(); }}
           disabled={isGenerating || isPreparingInline}
           aria-label={isGenerating ? 'Generating response...' : (isPreparingInline ? 'Preparing attachments...' : 'Send message')}
           aria-busy={isGenerating || isPreparingInline}
-          className={`send-btn font-mono bg-primary text-primary-foreground border-none px-4.5 text-sm cursor-pointer font-bold self-stretch flex items-center justify-center transition-transform ${isGenerating || isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
+          className={`w-9 flex items-center justify-center self-stretch text-primary/60 hover:text-primary transition-colors ${isGenerating || isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
         >
-          {isGenerating || isPreparingInline ? <Loader2 size={14} className="animate-spin" aria-hidden="true" /> : <ArrowUp size={16} aria-hidden="true" />}
+          {isGenerating || isPreparingInline ? <Brain size={15} className="animate-pulse" aria-hidden="true" /> : <ArrowUp size={16} aria-hidden="true" />}
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground px-4 pb-1.5 pl-10 bg-card">
         <span>
           {voiceState === 'recording'
-            ? 'Recording… Left Shift to send · Double Left Shift to discard'
+            ? 'Recording... Left Shift to send · Double Left Shift to discard'
             : voiceState === 'transcribing'
-            ? 'Transcribing…'
+            ? 'Transcribing...'
             : 'Enter or ⌘Enter to send · Shift+Enter for newline · Double Left Shift for voice · ⌘K command palette'}
         </span>
       </div>
@@ -1387,7 +1427,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
                 {pathPickerLoading ? (
                   <div className="flex items-center justify-center gap-2 px-3 py-8 text-[12px] text-muted-foreground">
                     <Loader2 size={14} className="animate-spin" />
-                    Loading files…
+                    Loading files...
                   </div>
                 ) : pathPickerError ? (
                   <div className="px-3 py-8 text-center text-[12px] text-destructive">{pathPickerError}</div>

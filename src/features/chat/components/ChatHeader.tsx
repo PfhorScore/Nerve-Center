@@ -83,19 +83,14 @@ export function ChatHeader({
       ) : onToggleFileBrowser && (
         <button
           onClick={onToggleFileBrowser}
-          className="shell-icon-button size-11 shrink-0 px-0 sm:size-10"
+          className="shell-icon-button size-11 shrink-0 px-0 sm:size-10 relative"
           title="Open file explorer (Ctrl+B)"
           aria-label="Open file explorer"
         >
           <PanelLeftOpen size={17} />
         </button>
       )}
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="cockpit-badge" data-tone="primary">
-          <span className="text-[0.533rem]">◆</span>
-          Comms
-        </span>
-      </div>
+
 
       {/* Model + Effort selectors on the right */}
       <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1 whitespace-nowrap sm:gap-2">
@@ -140,7 +135,7 @@ export function ChatHeader({
         </div>
         <button
           onClick={onToggleRightPanel}
-          className="shell-icon-button size-11 shrink-0 px-0 sm:size-10"
+          className="shell-icon-button size-11 shrink-0 px-0 sm:size-10 relative"
           title={isRightPanelCollapsed ? 'Open side panels (Ctrl+.)' : 'Close side panels'}
           aria-label={isRightPanelCollapsed ? 'Open side panels' : 'Close side panels'}
         >
@@ -167,11 +162,10 @@ export function ChatHeader({
             onClick={onAbort}
             aria-label="Stop generating"
             title="Stop generating"
-            className="cockpit-toolbar-button min-h-11 px-3 sm:min-h-9 sm:px-3"
-            data-tone="danger"
+            className="shell-icon-button size-11 shrink-0 px-0 sm:size-10 relative"
           >
-            <span aria-hidden="true">⏹</span>
-            <span className="hidden sm:inline">Stop</span>
+            <span className="absolute -inset-0.5 rounded-full bg-primary/8 animate-ping" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
           </button>
         )}
         {onReset && (
@@ -179,11 +173,9 @@ export function ChatHeader({
             onClick={() => onReset()}
             title="Reset session (start fresh)"
             aria-label="Reset session"
-            className="cockpit-toolbar-button min-h-11 px-3 sm:min-h-9 sm:px-3"
-            data-tone="danger"
+            className="shell-icon-button size-11 shrink-0 px-0 sm:size-10 relative"
           >
-            <span aria-hidden="true">↺</span>
-            <span className="hidden sm:inline">Reset</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36"/></svg>
           </button>
         )}
       </div>

@@ -128,7 +128,21 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   const { serverNames: mcpServerNames, visible: mcpVisible } = useMcpState();
   // When false, tool calls and thinking messages are hidden from the chat.
   // The chat becomes a clean text-only conversation like a normal messenger.
-  const [showAgentActivity, setShowAgentActivity] = useState(true);
+  const [showAgentActivity, setShowAgentActivity] = useState(() => {
+    try {
+      const stored = localStorage.getItem('nerve-show-agent-activity');
+      return stored !== null ? stored === 'true' : true;
+    } catch { return true; }
+  });
+
+  // Persist to localStorage when toggled
+  const handleToggleAgentActivity = useCallback(() => {
+    setShowAgentActivity(prev => {
+      const next = !prev;
+      try { localStorage.setItem('nerve-show-agent-activity', String(next)); } catch {}
+      return next;
+    });
+  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const inputBarRef = useRef<InputBarHandle>(null);
@@ -221,14 +235,42 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current && autoScroll) {
-      requestAnimationFrame(() => {
-        const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
-      });
+      const el = scrollRef.current;
+      try {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      } catch {
+        el.scrollTop = el.scrollHeight;
+      }
     }
   }, [autoScroll]);
 
-  useEffect(scrollToBottom, [messages, stream.html, scrollToBottom]);
+  // Debounced scroll to bottom — skips rapid repeated calls during streaming
+  const scrollScheduledRef = useRef(false);
+  const scheduleScrollToBottom = useCallback(() => {
+    if (scrollScheduledRef.current) return;
+    scrollScheduledRef.current = true;
+    requestAnimationFrame(() => {
+      scrollScheduledRef.current = false;
+      scrollToBottom();
+    });
+  }, [scrollToBottom]);
+
+  /** Holds the last streaming HTML to prevent flash when stream transitions to final message. */
+  const lastStreamHtmlRef = useRef('');
+
+  // Clear the streaming ghost when a new non-streaming message is added.
+  // We delay slightly to let the final message render first, preventing flash.
+  const msgCountRef = useRef(messages.length);
+  useEffect(() => {
+    if (messages.length > msgCountRef.current) {
+      msgCountRef.current = messages.length;
+      const timer = setTimeout(() => { lastStreamHtmlRef.current = ''; }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length]);
+
+  useEffect(scheduleScrollToBottom, [stream.html, scheduleScrollToBottom]);
+  useEffect(scrollToBottom, [messages, scrollToBottom]);
 
   // NOTE: Cmd+F and Escape are now handled globally in App.tsx via useKeyboardShortcuts
 
@@ -319,7 +361,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         onToggleMobileTopBar={onToggleMobileTopBar}
         isMobileTopBarHidden={isMobileTopBarHidden}
         showAgentActivity={showAgentActivity}
-        onToggleAgentActivity={() => setShowAgentActivity(!showAgentActivity)}
+        onToggleAgentActivity={handleToggleAgentActivity}
       />
 
       {/* Search Bar */}
@@ -426,30 +468,40 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           );
         })}
 
-        {/* Processing indicator — visible while generating, persists during streaming */}
+        {/* Processing indicator — compact single-line status at bottom of chat */}
         {isGenerating && !stream.html && (
           <ProcessingIndicator
             stage={processingStage}
             elapsedMs={processingTime}
             lastEventTimestamp={lastEventTimestamp}
             currentToolDescription={currentToolDescription}
-            activityLog={activityLog}
             isRecovering={Boolean(stream.isRecovering)}
             recoveryReason={stream.recoveryReason}
           />
         )}
 
-        {/* Streaming message with condensed activity log */}
-        {isGenerating && stream.html && (
-          <>
-            <StreamingMessage html={stream.html} elapsedMs={processingTime} agentName={agentName} />
-            {activityLog.length > 0 && (
-              <div className="px-4 pb-2" style={{ paddingLeft: '2rem' }}>
-                <ActivityLog entries={activityLog} />
-              </div>
-            )}
-          </>
-        )}
+        {/* Streaming message — persists last content during the transition to final message */}
+        {(() => {
+          // Keep last stream.html alive while transitioning (isGenerating just turned off)
+          if (stream.html) lastStreamHtmlRef.current = stream.html;
+          // Only show streaming ghost when actively generating AND stream is temporarily empty
+          // (e.g., tool calls clearing the buffer). If generation is done AND messages exist,
+          // the final message has already landed — no ghost needed.
+          const isStreamActive = isGenerating && stream.html;
+          const isTransitioning = isGenerating && !stream.html && lastStreamHtmlRef.current;
+          const showHtml = isStreamActive ? stream.html : (isTransitioning ? lastStreamHtmlRef.current : '');
+          if (!showHtml) return null;
+          return (
+            <>
+              <StreamingMessage html={showHtml} elapsedMs={processingTime} agentName={agentName} />
+              {activityLog.length > 0 && (
+                <div className="px-4 pb-2" style={{ paddingLeft: '2rem' }}>
+                  <ActivityLog entries={activityLog} />
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* Scroll-to-bottom button */}

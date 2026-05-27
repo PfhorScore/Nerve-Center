@@ -188,7 +188,7 @@ Follow-up suggestions:
           body: JSON.stringify({
             model: 'sonar',
             messages: [
-              { role: 'system', content: 'Generate a very short title (3-7 words) summarizing this research query. Output ONLY the title, no quotes.' },
+              { role: 'system', content: 'Generate a concise, descriptive title (3-6 words) capturing the core topic of this research query. Be specific. Output ONLY the title, no quotes.' },
               { role: 'user', content: query }
             ],
             max_tokens: 20,
@@ -370,7 +370,7 @@ app.post('/api/research/title', rateLimitGeneral, async (c) => {
           messages: [
             {
               role: 'system',
-              content: 'Generate a very short title (3-7 words) that summarizes this research query. Output ONLY the title, no quotes, no punctuation at the end.'
+              content: 'Generate a concise, descriptive title (3-6 words) that captures the core topic of this research query. Be specific — include key names, technologies, or concepts. Output ONLY the title, no quotes, no markdown, no punctuation at the end.'
             },
             { role: 'user', content: query }
           ],

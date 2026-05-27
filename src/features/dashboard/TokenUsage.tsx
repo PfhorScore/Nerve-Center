@@ -225,7 +225,7 @@ function ProviderRow({
         className="flex items-center gap-2 text-[0.733rem] w-full hover:bg-muted/30 rounded px-0.5 py-0.5 transition-colors cursor-pointer group"
       >
         <span className="w-3.5 text-center shrink-0 text-xs flex items-center justify-center">{icon}</span>
-        <span className="text-foreground text-[0.733rem] font-bold w-16 shrink-0 uppercase tracking-[0.5px]">
+        <span className="text-foreground text-[0.667rem] font-bold min-w-0 truncate uppercase tracking-[0.5px]" title={entry.source}>
           {entry.source}
         </span>
         <div className="flex-1 h-2 bg-background border border-border/60 overflow-hidden">

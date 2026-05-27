@@ -39,6 +39,7 @@ import gatewayRoutes from './routes/gateway.js';
 import connectDefaultsRoutes from './routes/connect-defaults.js';
 import workspaceRoutes from './routes/workspace.js';
 import cronsRoutes from './routes/crons.js';
+import subagentsRoutes from './routes/subagents.js';
 import sessionsRoutes from './routes/sessions.js';
 import apiKeysRoutes from './routes/api-keys.js';
 import skillsRoutes from './routes/skills.js';
@@ -93,6 +94,7 @@ const routes = [
   codexLimitsRoutes, claudeCodeLimitsRoutes, versionRoutes, versionCheckRoutes,
   gatewayRoutes, connectDefaultsRoutes,
   workspaceRoutes, cronsRoutes, sessionsRoutes, skillsRoutes, filesRoutes, apiKeysRoutes,
+  subagentsRoutes,
   voicePhrasesRoutes, fileBrowserRoutes, uploadConfigRoutes, uploadReferenceRoutes, channelsRoutes, kanbanRoutes, beadsRoutes, mcpRoutes, researchRoutes,
 ];
 for (const route of routes) app.route('/', route);

@@ -1,8 +1,16 @@
+/**
+ * ProcessingIndicator — Compact one-line status shown during generation.
+ *
+ * Replaces the old multi-row version. Shows a single line at the bottom
+ * of the chat with the current stage, elapsed time, and an optional
+ * description. When stale (no events for >15s), switches to a warning.
+ *
+ * All content is on ONE line — no stacked rows, no activity log here.
+ * Activity log is shown alongside the streaming message instead.
+ */
+
 import { useState, useEffect } from 'react';
-import type { ProcessingStage, ActivityLogEntry } from '@/contexts/ChatContext';
-import { HeartbeatPulse } from './HeartbeatPulse';
-import { ThinkingDots } from './ThinkingDots';
-import { ActivityLog } from './ActivityLog';
+import type { ProcessingStage } from '@/contexts/ChatContext';
 import { formatElapsed } from '../utils';
 
 interface ProcessingIndicatorProps {
@@ -10,32 +18,18 @@ interface ProcessingIndicatorProps {
   elapsedMs: number;
   lastEventTimestamp: number;
   currentToolDescription: string | null;
-  activityLog: ActivityLogEntry[];
   isRecovering?: boolean;
   recoveryReason?: string | null;
 }
 
-/**
- * Processing status indicator shown during generation.
- *
- * Layout:
- * - Row 1: [HeartbeatPulse] [◆] [STAGE LABEL] [──] [ELAPSED] [ThinkingDots]
- * - Row 2: currentToolDescription or "Reasoning..." (indented, smaller, muted)
- * - Separator: thin dotted line (only if activityLog has entries)
- * - Activity log: scrolling feed of recent tool actions
- * - Stale warning: "Still working…" when no event for >30s
- */
 export function ProcessingIndicator({
   stage,
   elapsedMs,
   lastEventTimestamp,
   currentToolDescription,
-  activityLog,
   isRecovering = false,
   recoveryReason = null,
 }: ProcessingIndicatorProps) {
-  // Local timer for stale detection (1s resolution)
-  // Lazy initializer avoids impure Date.now() call during render
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 1000);
@@ -47,87 +41,37 @@ export function ProcessingIndicator({
     : null;
   const isStale = secondsSinceEvent !== null && secondsSinceEvent > 15;
 
-  // Description line: tool description during tool_use, "Reasoning..." during thinking
-  const descriptionText =
-    currentToolDescription ??
-    (stage === 'thinking' ? 'Reasoning...' : null);
+  const stageLabel = stage === 'thinking' ? 'Thinking'
+    : stage === 'tool_use' ? 'Using tools'
+    : stage === 'streaming' ? 'Streaming'
+    : 'Processing';
 
   return (
-    <div className="flex flex-col gap-2 px-4 py-3">
-      {/* Row 1: heartbeat + stage label + elapsed + dots */}
-      <div className="flex items-center gap-3">
-        <span className="flex items-center gap-2 text-[0.8rem] font-semibold text-foreground">
-          <HeartbeatPulse lastEventTimestamp={lastEventTimestamp} stage={stage} />
-          <span className={`text-[0.667rem] ${stage === 'tool_use' ? 'text-green' : 'text-primary'}`}>◆</span>
-          {stage === 'thinking' && (
-            <span className="cockpit-badge animate-pulse" data-tone="primary">Thinking</span>
-          )}
-          {stage === 'tool_use' && (
-            <span className="cockpit-badge" data-tone="success">Using tools</span>
-          )}
-          {(!stage || stage === 'streaming') && (
-            <span className="cockpit-badge" data-tone="primary">Processing</span>
-          )}
-          <span className="mx-1 text-muted-foreground">──</span>
-          <span className="font-mono tabular-nums text-muted-foreground">{formatElapsed(elapsedMs)}</span>
-        </span>
-        <ThinkingDots stage={stage} />
-      </div>
-
-      {/* Row 2: description line (indented to align past diamond) */}
-      {descriptionText && (
-        <div
-          className="break-all text-[0.733rem] text-muted-foreground"
-          style={{ paddingLeft: '2rem' }}
-        >
-          {descriptionText}
-        </div>
-      )}
-
-      {/* Separator: thin dotted line, only if activity log has entries */}
-      {activityLog.length > 0 && (
-        <div
-          className="border-border"
-          style={{
-            borderTop: '1px dotted var(--color-border)',
-            marginTop: '2px',
-            marginBottom: '2px',
-            marginLeft: '2rem',
-          }}
-        />
-      )}
-
-      {/* Activity log */}
-      {activityLog.length > 0 && (
-        <div style={{ paddingLeft: '2rem' }}>
-          <ActivityLog entries={activityLog} />
-        </div>
-      )}
-
-      {/* Recovery status */}
+    <div className="flex items-center gap-2 px-4 py-2">
+      <span className="flex items-center gap-1.5 text-[0.667rem] font-medium text-muted-foreground/70">
+        <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+        <span>{stageLabel}</span>
+        <span className="tabular-nums">· {formatElapsed(elapsedMs)}</span>
+        {currentToolDescription && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="truncate max-w-[200px]">{currentToolDescription}</span>
+          </>
+        )}
+        {!currentToolDescription && stage === 'thinking' && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="italic opacity-60">Reasoning...</span>
+          </>
+        )}
+      </span>
       {isRecovering && (
-        <div
-          className="text-primary text-[0.733rem]"
-          style={{
-            paddingLeft: '2rem',
-          }}
-        >
-          Resyncing transcript…{recoveryReason ? ` ${recoveryReason}` : ''}
-        </div>
+        <span className="text-[0.6rem] text-primary/60">Resyncing{recoveryReason ? `: ${recoveryReason}` : ''}</span>
       )}
-
-      {/* Stale warning */}
       {isStale && (
-        <div
-          className="text-orange text-[0.733rem] font-medium"
-          style={{
-            paddingLeft: '2rem',
-            animation: 'stale-pulse 1.5s ease-in-out infinite',
-          }}
-        >
-          <span className="inline-block mr-1.5 animate-pulse">⏳</span>
-          Still thinking… last update {secondsSinceEvent}s ago
-        </div>
+        <span className="text-[0.6rem] text-orange animate-pulse">
+          ⏳ Still thinking… {secondsSinceEvent}s
+        </span>
       )}
     </div>
   );

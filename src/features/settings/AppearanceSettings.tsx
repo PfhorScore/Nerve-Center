@@ -61,6 +61,8 @@ export function AppearanceSettings() {
     setFontSize,
     editorFontSize,
     setEditorFontSize,
+    use24hTime,
+    toggleUse24hTime,
   } = useSettings();
 
   const handleThemeChange = (next: string) => {
@@ -241,6 +243,22 @@ export function AppearanceSettings() {
           checked={kanbanVisible}
           onCheckedChange={toggleKanbanVisible}
           aria-label="Toggle workspace kanban visibility"
+        />
+      </div>
+
+      {/* 12h / 24h Time Format */}
+      <div className="cockpit-row items-start justify-between">
+        <div className="flex items-center gap-3">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={use24hTime ? 'text-primary' : 'text-muted-foreground'} aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-foreground" id="time-format-label">24-hour time</span>
+            <span className="text-xs text-muted-foreground">Use 24-hour format instead of 12-hour (AM/PM).</span>
+          </div>
+        </div>
+        <Switch
+          checked={use24hTime}
+          onCheckedChange={toggleUse24hTime}
+          aria-label="Toggle 24-hour time format"
         />
       </div>
 

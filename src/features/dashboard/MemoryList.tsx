@@ -222,7 +222,7 @@ export function MemoryList({ agentId, memories: initialMemories, onRefresh, isLo
   }
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="flex-1 min-h-0 flex flex-col">
       {/* Header — only when used standalone (not in workspace tabs) */}
       {!hideHeader && (
         <div className="panel-header border-l-[3px] border-l-purple">

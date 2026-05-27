@@ -64,7 +64,7 @@ function ToolCallBlockInner({ msg, index, isCollapsed, onToggleCollapse, searchQ
     <div className="msg msg-tool relative max-w-full break-words mx-4 my-1.5">
       <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse(index)}>
         <Card className="overflow-hidden rounded-2xl border-border/50 bg-card/62 py-0 shadow-none">
-          <CollapsibleTrigger className="flex w-full items-center gap-2 px-3.5 py-3 text-left transition-colors cursor-pointer hover:bg-primary/[0.04]">
+          <CollapsibleTrigger className="flex w-full items-center gap-2 px-3.5 py-2 text-left transition-colors cursor-pointer hover:bg-primary/[0.04]">
             <ChevronRight size={14} className={`text-muted-foreground shrink-0 transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`} />
             <span className="cockpit-badge shrink-0">Tool</span>
             {mcpMatch && (

@@ -140,6 +140,13 @@ export function useCrons() {
     }
   }, [fetchJobs]);
 
+  /** Re-fetch crons when navigator becomes visible or the window refocuses. */
+  useEffect(() => {
+    const onShow = () => { if (document.visibilityState === 'visible') fetchJobs(); };
+    document.addEventListener('visibilitychange', onShow);
+    return () => document.removeEventListener('visibilitychange', onShow);
+  }, [fetchJobs]);
+
   const toggleJob = useCallback(async (id: string, enabled: boolean) => {
     try {
       const res = await fetch(`/api/crons/${encodeURIComponent(id)}/toggle`, {

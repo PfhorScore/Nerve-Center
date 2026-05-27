@@ -121,9 +121,12 @@ async function getGatewayStartedAt(): Promise<number | null> {
   }
 }
 
+const SERVER_STARTED_AT = Date.now();
+
 app.get('/api/server-info', rateLimitGeneral, async (c) => {
   return c.json({
     serverTime: Date.now(),
+    serverStartedAt: SERVER_STARTED_AT,
     gatewayStartedAt: await getGatewayStartedAt(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     agentName: config.agentName,

@@ -76,7 +76,7 @@ function ToolGroupBlockInner({ msg, index, isCollapsed, onToggleCollapse }: Tool
     <div className="msg msg-tool relative max-w-full break-words mx-4 my-1.5">
       <Collapsible open={!isCollapsed} onOpenChange={() => onToggleCollapse(index)}>
         <Card className="overflow-hidden rounded-2xl border-border/50 bg-card/62 py-0 shadow-none">
-          <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-3 text-left transition-colors hover:bg-primary/[0.04]">
+          <CollapsibleTrigger className="flex w-full cursor-pointer items-center gap-2 px-3.5 py-2 text-left transition-colors hover:bg-primary/[0.04]">
             <ChevronRight
               size={14}
               className={`text-muted-foreground shrink-0 transition-transform duration-200 ${!isCollapsed ? 'rotate-90' : ''}`}
@@ -89,7 +89,7 @@ function ToolGroupBlockInner({ msg, index, isCollapsed, onToggleCollapse }: Tool
             <span className="shrink-0 font-mono text-[0.667rem] text-muted-foreground">{timeStr}</span>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <CardContent className="border-t border-border/40 bg-background/42 px-2 py-2">
+            <CardContent className="border-t border-border/40 bg-background/42 px-2 py-1.5">
               {entries.map((entry, i) => (
                 <ToolEntryRow key={entry.preview + '-' + i} entry={entry} />
               ))}

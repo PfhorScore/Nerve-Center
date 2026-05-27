@@ -72,8 +72,10 @@ export function UpdateBadge() {
           <DialogHeader>
             <DialogTitle>Update Available</DialogTitle>
             <DialogDescription>
-              Nerve <span className="font-mono font-semibold text-foreground">v{versionInfo.latest}</span> is
-              available. You're running <span className="font-mono text-muted-foreground">v{versionInfo.current}</span>.
+              Nerve Center{' '}
+              <span className="font-mono font-semibold text-foreground">v{versionInfo.latest}</span> is
+              available. You're running{' '}
+              <span className="font-mono text-muted-foreground">v{versionInfo.current}</span>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-2">

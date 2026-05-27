@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, Eye, Loader2, PencilLine, RotateCw } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/markdown/MarkdownRenderer';
+const MarkdownRenderer = React.lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 import type { OpenFile } from './types';
-import { FileEditor } from './FileEditor';
+const FileEditor = React.lazy(() => import('./FileEditor'));
 
 interface MarkdownDocumentViewProps {
   file: OpenFile;

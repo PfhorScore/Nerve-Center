@@ -52,6 +52,7 @@ interface TabbedContentAreaProps {
   saveToast?: SaveToast | null;
   onDismissToast?: () => void;
   onNewFile?: () => void;
+  onOpenFile?: () => void;
   /** The chat panel rendered as-is (never unmounted). */
   chatPanel: ReactNode;
 }
@@ -74,6 +75,7 @@ export function TabbedContentArea({
   saveToast,
   onDismissToast,
   onNewFile,
+  onOpenFile,
   chatPanel,
 }: TabbedContentAreaProps) {
   const hasOpenTabs = openFiles.length > 0 || openBeads.length > 0;
@@ -91,6 +93,7 @@ export function TabbedContentArea({
         onSelectTab={onSelectTab}
         onCloseTab={onCloseTab}
         onNewFile={onNewFile}
+          onOpenFile={onOpenFile}
       />
 
       {/* Content area */}

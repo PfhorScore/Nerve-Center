@@ -35,6 +35,8 @@ interface SessionListProps {
   agentName?: string;
   /** Render in compact dropdown mode (chat-first topbar panel). */
   compact?: boolean;
+  /** Hide the internal panel header (used when buttons live in the outer panel header). */
+  hideHeader?: boolean;
 }
 
 function countDescendants(node: ReturnType<typeof buildSessionTree>[number]): number {
@@ -52,7 +54,7 @@ function findNodeByKey(nodes: ReturnType<typeof buildSessionTree>, key: string):
 }
 
 /** Sidebar list of agent sessions with tree structure and context menus. */
-export function SessionList({ sessions, currentSession, busyState, agentStatus, unreadSessions, onSelect, onRefresh, onDelete, onSpawn, onRename, onAbort, isLoading, agentName = 'Agent', compact = false }: SessionListProps) {
+export function SessionList({ sessions, currentSession, busyState, agentStatus, unreadSessions, onSelect, onRefresh, onDelete, onSpawn, onRename, onAbort, isLoading, agentName = 'Agent', compact = false, hideHeader = false }: SessionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<{ key: string; label: string; descendantCount: number; isRootAgent: boolean } | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
@@ -148,6 +150,7 @@ export function SessionList({ sessions, currentSession, busyState, agentStatus, 
 
   return (
     <div className={compact ? 'flex flex-col max-h-[65vh]' : 'h-full flex flex-col min-h-0'}>
+      {!hideHeader && (
       <div className="panel-header border-l-[3px] border-l-info">
         <span className="panel-label text-info">
           <span className="panel-diamond">◆</span>
@@ -176,6 +179,7 @@ export function SessionList({ sessions, currentSession, busyState, agentStatus, 
           </button>
         </div>
       </div>
+      )}
       <div className={compact ? 'overflow-y-auto' : 'flex-1 overflow-y-auto'}>
         {isLoading && flatNodes.length === 0 ? (
           <SessionSkeletonGroup count={4} />
@@ -276,8 +280,8 @@ export function SessionList({ sessions, currentSession, busyState, agentStatus, 
         </DialogContent>
       </Dialog>
 
-      {/* Session creation dialog */}
-      {onSpawn && (
+      {/* Session creation dialog — only when header is visible */}
+      {!hideHeader && onSpawn && (
         <SpawnAgentDialog
           open={spawnOpen}
           onOpenChange={setSpawnOpen}

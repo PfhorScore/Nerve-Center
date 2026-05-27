@@ -57,9 +57,10 @@ export default defineConfig({
           
           // Utility libraries
           'utils': ['clsx', 'tailwind-merge', 'class-variance-authority', 'dompurify'],
+          'codemirror': ['@codemirror/language'],
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
   },
 })

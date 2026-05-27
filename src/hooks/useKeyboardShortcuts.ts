@@ -12,6 +12,8 @@ export interface ShortcutConfig {
   global?: boolean;
   /** If true, the shortcut is skipped when a CodeMirror editor is focused */
   skipInEditor?: boolean;
+  /** If true, the shortcut is skipped when a textarea (e.g. Thoughts) is focused */
+  skipInTextarea?: boolean;
 }
 
 /**
@@ -41,6 +43,8 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]) {
       if (shortcut.global && isInputFocused) continue;
       // Let CodeMirror handle its own shortcuts (e.g. Cmd+F for search)
       if (shortcut.skipInEditor && isInCodeMirror) continue;
+      // Let textareas (e.g. Thoughts scratch-pad) handle their own shortcuts
+      if (shortcut.skipInTextarea && isInputFocused) continue;
 
       const metaMatch = shortcut.meta 
         ? (e.metaKey || e.ctrlKey) 

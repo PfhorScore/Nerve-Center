@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ContextMeter } from './ContextMeter';
 import { UpdateBadge } from './UpdateBadge';
 import { useGateway } from '@/contexts/GatewayContext';
+import { X } from 'lucide-react';
 
 /** Props for {@link StatusBar}. */
 interface StatusBarProps {
@@ -15,6 +16,12 @@ interface StatusBarProps {
   contextTokens?: number;
   /** Context window limit in tokens (omit to hide the meter). */
   contextLimit?: number;
+  /** Whether the right side panel bar is fully collapsed. */
+  rightPanelCollapsed?: boolean;
+  /** Toggle all right-side panels. */
+  onToggleRightPanel?: () => void;
+  /** Whether the agent is currently generating a response. */
+  isGenerating?: boolean;
 }
 
 function formatUptime(seconds: number): string {
@@ -31,7 +38,7 @@ function formatServerTime(date: Date): string {
 }
 
 /** Fetch server time and gateway uptime from /api/server-info */
-async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedAt?: number } | null> {
+async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedAt?: number; serverStartedAt?: number } | null> {
   try {
     const res = await fetch('/api/server-info');
     if (!res.ok) return null;
@@ -47,7 +54,7 @@ async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedA
  * Shows connection state, server time, session count, gateway uptime,
  * an optional context-window meter, a sparkline, and the app version.
  */
-export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit }: StatusBarProps) {
+export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit, rightPanelCollapsed, onToggleRightPanel }: StatusBarProps) {
   useGateway(); // Keep gateway context connected
 
   // Server time: offset between local clock and server clock
@@ -56,6 +63,16 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
   const [gatewayStartedAt, setGatewayStartedAt] = useState<number | null>(null);
   // Ticking display values
   const [now, setNow] = useState(() => Date.now());
+
+  // Changelog dialog
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  const [changelogContent, setChangelogContent] = useState('');
+
+  useEffect(() => {
+    if (changelogOpen && !changelogContent) {
+      fetch('/CHANGELOG.md').then(r => r.text()).then(t => setChangelogContent(t)).catch(() => {});
+    }
+  }, [changelogOpen, changelogContent]);
 
   // Use connectionState as key to trigger CSS animation on change
   const flashKey = connectionState;
@@ -70,6 +87,9 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
     }
     if (typeof data.gatewayStartedAt === 'number') {
       setGatewayStartedAt(data.gatewayStartedAt);
+    } else if (typeof data.serverStartedAt === 'number') {
+      // Fallback to Nerve server start time when gateway PID is not found
+      setGatewayStartedAt(data.serverStartedAt);
     }
   }, []);
 
@@ -164,12 +184,51 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
 
       {/* Right side telemetry (hidden on smaller screens) */}
       <div className="ml-3 hidden shrink-0 items-center gap-2 lg:flex">
+        {/* Sidebar collapse toggle */}
+        {onToggleRightPanel && (
+          <button
+            onClick={onToggleRightPanel}
+            className="flex items-center justify-center size-6 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+            title={rightPanelCollapsed ? 'Expand right panels' : 'Collapse right panels'}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              {rightPanelCollapsed
+                ? <><polyline points="9 18 15 12 9 6" /></>
+                : <><polyline points="15 18 9 12 15 6" /></>
+              }
+            </svg>
+          </button>
+        )}
         <span className="rounded-full border border-border/70 bg-background/75 px-2.5 py-1 font-mono text-[0.667rem] tracking-[-0.08em] text-muted-foreground">
           {sparkline}<span className="ml-1 text-primary animate-alive">_</span>
         </span>
-        <span className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/55">v{__APP_VERSION__}</span>
+        <span
+          onClick={() => setChangelogOpen(true)}
+          className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-muted-foreground/55 hover:text-primary/70 hover:underline cursor-pointer transition-colors"
+          title="Click for changelog"
+        >v{__APP_VERSION__}</span>
         <UpdateBadge />
       </div>
+
+      {/* Changelog dialog */}
+      {changelogOpen && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setChangelogOpen(false)} />
+          <div className="fixed inset-4 z-50 m-auto flex max-h-[80vh] max-w-[600px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_32px_90px_rgba(0,0,0,0.4)] sm:inset-auto">
+            <div className="flex items-center justify-between border-b border-border/50 px-5 py-3 shrink-0">
+              <span className="text-[0.667rem] font-semibold tracking-wider text-foreground/80">Changelog — v{__APP_VERSION__}</span>
+              <button onClick={() => setChangelogOpen(false)} className="shell-icon-button size-8" aria-label="Close">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <pre className="whitespace-pre-wrap text-[0.733rem] text-foreground/80 font-sans leading-relaxed">
+                {changelogContent || 'Loading...'}
+              </pre>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

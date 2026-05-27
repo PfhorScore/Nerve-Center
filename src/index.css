@@ -1203,11 +1203,13 @@
   background: color-mix(in srgb, var(--color-background) 90%, transparent);
 }
 
-/* Streaming cursor */
+/* Streaming indicator — subtle border pulse instead of flashing cursor */
+.streaming .msg-body {
+  position: relative;
+}
 .streaming .msg-body::after {
-  content: '█';
-  animation: blink 0.7s step-end infinite;
-  color: var(--color-primary);
+  content: '';
+  display: none;
 }
 
 /* Markdown tables */
@@ -1420,10 +1422,13 @@
 }
 
 /* Activity indicator animations */
+/* Subtle pulsing ring animation for the processing heartbeat dot.
+ * Reduced glow intensity (smaller spread, lower peak opacity) so it
+ * doesn't distract from the chat content. */
 @keyframes heartbeat-pulse {
   0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
-  70% { box-shadow: 0 0 0 6px transparent; opacity: 0.7; }
-  100% { box-shadow: 0 0 0 0 transparent; opacity: 0.4; }
+  70% { box-shadow: 0 0 0 3px transparent; opacity: 0.85; }
+  100% { box-shadow: 0 0 0 0 transparent; opacity: 0.5; }
 }
 
 @keyframes activity-fade-in {
@@ -1432,8 +1437,8 @@
 }
 
 @keyframes stale-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.85; }
 }
 
 .heartbeat-pulse {

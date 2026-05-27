@@ -172,7 +172,7 @@ export function SettingsDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="fixed right-0 top-0 z-50 flex h-full w-full flex-col overflow-hidden border-l border-border/80 bg-card/92 shadow-[0_32px_90px_rgba(0,0,0,0.36)] backdrop-blur-2xl animate-slide-in-right sm:w-[410px] sm:max-w-[94vw]"
+        className="fixed right-0 top-0 z-50 flex h-full w-full flex-col overflow-hidden border-l border-border/80 bg-card/92 shadow-[0_32px_90px_rgba(0,0,0,0.36)] backdrop-blur-2xl animate-slide-in-right sm:w-[480px] sm:max-w-[94vw]"
       >
         {/* Header */}
         <div className="shrink-0 border-b border-border/70 bg-secondary/45 px-5 py-4">

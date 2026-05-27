@@ -87,6 +87,8 @@ const PANEL_CONFIG: Record<Exclude<PanelId, null> | "default", PanelConfig> = {
 interface TopBarProps {
   /** Callback to open the settings modal. */
   onSettings: () => void;
+  /** Callback to open the Agent Hub drawer. */
+  onOpenAgentHub?: () => void;
   /** Agent log entries rendered in the dropdown log panel. */
   agentLogEntries: AgentLogEntry[];
   /** Token usage data for the usage panel (null while loading). */
@@ -122,6 +124,7 @@ interface TopBarProps {
  */
 export function TopBar({
   onSettings,
+  onOpenAgentHub,
   agentLogEntries,
   tokenData,
   logGlow,
@@ -246,14 +249,12 @@ export function TopBar({
                 Nerve Center
               </span>
             </div>
-            <div className="hidden xl:block text-[0.733rem] text-muted-foreground/80">
-              OpenClaw Cockpit{" "}
-            </div>
+
           </div>
         </div>
         {/* View mode toggle */}
         {onViewModeChange && (
-          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:ml-2 sm:w-auto relative">
+          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:ml-8 sm:w-auto relative">
             <button
               onClick={() => onViewModeChange("chat")}
               onMouseEnter={() => setHoveredView("chat")}
@@ -448,6 +449,19 @@ export function TopBar({
               </span>
             )}
           </button>
+
+          {/* Agent Hub button */}
+          {onOpenAgentHub && (
+            <button
+              onClick={onOpenAgentHub}
+              title="Agent Hub"
+              aria-label="Open agent hub"
+              className={buttonBase}
+            >
+              <Users size={14} aria-hidden="true" />
+              <span className="hidden sm:inline">Hub</span>
+            </button>
+          )}
 
           {/* Settings button */}
           <button

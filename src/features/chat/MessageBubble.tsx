@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, lazy, Suspense, memo } from 'react';
+import { ClipboardCopy, Brain, Search, Volume2, Trash2 } from 'lucide-react';
 import { MemoriesSection } from './MemoriesSection';
 import { ImageLightbox } from './ImageLightbox';
 import { isMessageCollapsible } from './types';
@@ -6,6 +7,7 @@ import { decodeHtmlEntities } from '@/lib/formatting';
 import { isStructuredMarkdown } from '@/lib/text/isStructuredMarkdown';
 import { extractAppEmbeds, stripAppEmbeds } from '@/lib/nerve-app';
 import { AppEmbed } from '@/features/chat/components/AppEmbed';
+import { useSettings } from '@/contexts/SettingsContext';
 import type { ChatMsg } from './types';
 import type { BeadLinkTarget } from '@/features/beads';
 
@@ -41,6 +43,15 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(/\.0$/, '')} MB`;
 }
 
+/** Format timestamp according to user preference. */
+function formatTime(date: Date, use24h: boolean): string {
+  try {
+    return date.toLocaleTimeString(use24h ? 'en-GB' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+}
+
 interface MessageBubbleProps {
   msg: ChatMsg;
   index: number;
@@ -59,12 +70,6 @@ interface MessageBubbleProps {
   onOpenBeadId?: (target: BeadLinkTarget) => void | Promise<void>;
 }
 
-const borderClass = (role: string) => {
-  if (role === 'user') return 'border-l-primary';
-  if (role === 'assistant') return 'border-l-green';
-  return 'border-l-muted-foreground';
-};
-
 const bgClass = (role: string) => {
   if (role === 'user') return 'bg-message-user';
   if (role === 'assistant') return 'bg-message-assistant';
@@ -73,8 +78,10 @@ const bgClass = (role: string) => {
 };
 
 function RoleBadge({ role, agentName = 'Agent' }: { role: string; agentName?: string }) {
+  let userName = 'You';
+  try { userName = localStorage.getItem('nerve-user-name') || 'You'; } catch {}
   if (role === 'user') {
-    return <span className="cockpit-badge" data-tone="primary">Operator</span>;
+    return <span className="cockpit-badge" data-tone="primary">{userName}</span>;
   }
   if (role === 'assistant') {
     return <span className="cockpit-badge" data-tone="success">{agentName}</span>;
@@ -86,10 +93,12 @@ function RoleBadge({ role, agentName = 'Agent' }: { role: string; agentName?: st
 }
 
 function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memoryKey, onToggleCollapse, onToggleMemory, firstMessageTime, searchQuery, isCurrentMatch, agentName, onOpenWorkspacePath, pathLinkPrefixes, pathLinkAliases, onOpenBeadId }: MessageBubbleProps) {
+  const { speak } = useSettings();
   const isUser = msg.role === 'user';
   const isAssistant = msg.role === 'assistant';
   const isSystem = msg.role === 'system' || msg.role === 'event';
-  const timeStr = msg.timestamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const { use24hTime } = useSettings();
+  const timeStr = formatTime(msg.timestamp, use24hTime);
   const missionTime = formatMissionTime(msg.timestamp, firstMessageTime ?? null);
   const isCollapsible = isMessageCollapsible(msg);
   const [copied, setCopied] = useState(false);
@@ -178,19 +187,11 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
   // Intermediate assistant messages: narration between tool calls, not the final answer
   const isIntermediate = msg.intermediate && isAssistant;
 
-  // Thinking bubbles: collapsible, dimmed, with thinking icon
+  // Thinking bubbles: compact, dimmed, no collapse toggle
   if (msg.isThinking) {
     return (
-      <div className="group msg msg-assistant relative max-w-full break-words mx-4 my-0.5">
+      <div className="group msg msg-assistant relative max-w-full break-words ml-8 mr-4 my-0.5">
         <div className="flex items-start gap-2 rounded-2xl border border-primary/10 bg-primary/[0.03] px-3 py-2 transition-colors select-none hover:border-primary/18 hover:bg-primary/[0.05]">
-          <span
-            role="button"
-            tabIndex={0}
-            aria-expanded={!isCollapsed}
-            className={`mt-0.5 w-3 shrink-0 text-[0.667rem] text-primary/60 transition-transform cursor-pointer hover:text-primary ${!isCollapsed ? 'rotate-90' : ''}`}
-            onClick={() => onToggleCollapse(index)}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
-          >›</span>
           <span className="mt-0.5 shrink-0 text-[0.667rem] text-primary/60">💭</span>
           <span className="shrink-0 text-[0.733rem] font-medium text-primary/78">Thinking</span>
           {msg.thinkingDurationMs && (
@@ -200,20 +201,11 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
                 : `${msg.thinkingDurationMs}ms`}
             </span>
           )}
-          {isCollapsed && (
-            <span className="min-w-0 flex-1 truncate text-[0.667rem] italic text-primary/44">
-              {msg.rawText.slice(0, 100)}{msg.rawText.length > 100 ? '…' : ''}
-            </span>
-          )}
+          <span className="min-w-0 flex-1 truncate text-[0.667rem] italic text-primary/44">
+            {msg.rawText.slice(0, 100)}{msg.rawText.length > 100 ? '…' : ''}
+          </span>
           <span className="mt-0.5 shrink-0 font-mono text-[0.667rem] tabular-nums text-primary/36">{timeStr}</span>
         </div>
-        {!isCollapsed && (
-          <div className="ml-3 border-l border-primary/12 px-3 pb-2 pt-1 text-[0.8rem] text-foreground/70 msg-body-intermediate">
-            <Suspense fallback={<span className="text-muted-foreground text-xs">…</span>}>
-              <MarkdownRenderer content={msg.rawText} searchQuery={searchQuery} onOpenWorkspacePath={onOpenWorkspacePath} pathLinkPrefixes={pathLinkPrefixes} pathLinkAliases={pathLinkAliases} onOpenBeadId={onOpenBeadId} />
-            </Suspense>
-          </div>
-        )}
       </div>
     );
   }
@@ -221,8 +213,9 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
   // Intermediate messages get a compact, de-emphasized render
   if (isIntermediate) {
     return (
-      <div className="group msg msg-assistant relative max-w-full break-words mx-4 my-0.5">
+      <div className="group msg msg-assistant relative max-w-full break-words ml-8 mr-4 my-0.5">
         <div className="flex items-start gap-2 select-none hover:bg-foreground/[0.02] transition-colors py-1 px-2 rounded">
+          <span className="w-4 shrink-0" />
           <span
             role="button"
             tabIndex={0}
@@ -264,18 +257,28 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
       <div
         className={`flex items-center py-1.5 gap-2 select-none ${isUser ? 'px-3 sm:px-4 flex-row-reverse' : 'px-3 sm:px-4'}`}
       >
-        <span
-          role="button"
-          tabIndex={0}
-          aria-expanded={!isCollapsed}
-          className={`text-muted-foreground text-xs shrink-0 w-3 cursor-pointer transition-transform hover:text-foreground/70 ${!isCollapsed ? 'rotate-90' : ''} ${isUser ? 'rotate-180' : ''} ${!isCollapsed && isUser ? '-rotate-90' : ''}`}
-          onClick={() => onToggleCollapse(index)}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
-        >›</span>
+        {/* Chevron — far left for both message types */}
+        {!isUser && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-expanded={!isCollapsed}
+            className={`text-muted-foreground/50 text-xs w-3 cursor-pointer transition-transform hover:text-foreground/70 shrink-0 ${!isCollapsed ? 'rotate-90' : ''}`}
+            onClick={() => onToggleCollapse(index)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+          >›</span>
+        )}
         <RoleBadge role={msg.role} agentName={agentName} />
         {/* ✏️ Canvas badge — visible even when collapsed, helps locate canvases in chat history */}
         {appEmbeds.length > 0 && (
           <span className="cockpit-badge" data-tone="info" title="Contains embedded canvas">✏️ Canvas</span>
+        )}
+        {/* 📎 Attachment indicator — paperclip + count when message has images */}
+        {msg.images && msg.images.length > 0 && (
+          <span className="cockpit-badge" data-tone="info" title={`${msg.images.length} image${msg.images.length > 1 ? 's' : ''} attached`}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-0.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+            {msg.images.length}
+          </span>
         )}
         {isCollapsed && preview && (
           <span className="text-muted-foreground text-[0.667rem] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0">
@@ -285,13 +288,26 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
             {preview}
           </span>
         )}
-        <span className={`text-muted-foreground text-[0.667rem] shrink-0 tabular-nums ${isUser ? 'mr-auto' : 'ml-auto'}`}>
-          {timeStr}
-          {missionTime && <span className="ml-1.5 opacity-60">· {missionTime}</span>}
+        <span className="ml-auto flex items-center gap-1.5 shrink-0">
+          <span className="text-muted-foreground text-[0.667rem] shrink-0 tabular-nums">
+            {timeStr}
+            {missionTime && <span className="ml-1.5 opacity-60">· {missionTime}</span>}
+          </span>
         </span>
+        {/* User chevron — last DOM element, far left in flex-row-reverse */}
+        {isUser && (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-expanded={!isCollapsed}
+            className={`text-muted-foreground/50 text-xs w-3 cursor-pointer transition-transform hover:text-foreground/70 shrink-0 ${!isCollapsed ? 'rotate-90' : ''}`}
+            onClick={() => onToggleCollapse(index)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
+          >›</span>
+        )}
       </div>
       {!isCollapsed && (
-        <div className={`relative pb-2 border-transparent ${isUser ? 'px-3 pr-5 mr-1.5 border-r-2 border-r-primary sm:px-4 sm:pr-10 sm:mr-4' : 'px-3 pl-7 ml-2 border-l-2 sm:px-4 sm:pl-10 sm:ml-4'} ${!isUser ? borderClass(msg.role) : ''}`}>
+        <div className={`relative pb-2 ${isUser ? 'px-3 sm:px-4' : 'px-3 sm:px-4'}`}>
           {msg.images && msg.images.length > 0 && !(isAssistant && msg.extractedImages && msg.extractedImages.length > 0) && (
             <div className={`flex gap-2 flex-wrap mb-2 ${isUser ? 'justify-end' : ''}`}>
               {msg.images.map((img, j) => 
@@ -303,7 +319,7 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
               )}
             </div>
           )}
-          <div className={`msg-body text-foreground ${isUser ? 'block w-full min-w-0 max-w-full pr-1.5 text-left sm:pr-0' : ''} ${isAssistant ? (isStructuredMarkdown(msg.rawText) ? 'max-w-[1120px]' : 'max-w-[68ch]') : ''}`}>
+          <div className={`msg-body text-foreground text-[0.867rem] ${isUser ? 'block w-full min-w-0 max-w-full pr-1.5 text-left sm:pr-0' : ''} ${isAssistant ? (isStructuredMarkdown(msg.rawText) ? 'max-w-[1120px]' : 'max-w-[68ch]') : ''}`}>
             {isVoiceMessage && (
               <span className="cockpit-badge mr-2 inline-flex align-middle" data-tone="primary">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
@@ -389,27 +405,54 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
               ))}
             </div>
           )}
-          {/* Action buttons — visible on hover with delay */}
+
+          {/* Bottom toolbar — visible on hover with improved visibility */}
           {!msg.streaming && (
-            <div className="absolute top-0 right-3 hidden gap-1 opacity-0 transition-all duration-200 delay-300 group-hover:opacity-40 hover:!opacity-100 sm:right-4 sm:flex">
-              {/* Copy button */}
+            <div className="flex items-center gap-0.5 mt-1.5 opacity-0 transition-opacity duration-200 delay-300 group-hover:opacity-75 hover:!opacity-100">
               <button
-                className="cockpit-toolbar-button min-h-6 px-1.5"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
                 aria-label="Copy message to clipboard"
+                title="Copy message"
                 onClick={handleCopy}
               >
-                {copied ? (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                )}
+                <ClipboardCopy size={11} className={copied ? 'text-green' : ''} />
+              </button>
+              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <button
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                aria-label="Think about this"
+                title="Think about this"
+              >
+                <Brain size={11} />
+              </button>
+              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <button
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                aria-label="Research this"
+                title="Research this"
+              >
+                <Search size={11} />
+              </button>
+              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <button
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                aria-label="Read aloud"
+                title="Read aloud"
+                onClick={() => speak(msg.rawText)}
+              >
+                <Volume2 size={11} />
+              </button>
+              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <button
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-danger/70 transition-colors"
+                aria-label="Delete message"
+                title="Delete message"
+              >
+                <Trash2 size={11} />
               </button>
             </div>
           )}
+
         </div>
       )}
     </div>

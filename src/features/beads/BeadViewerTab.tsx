@@ -1,6 +1,7 @@
+import React from 'react';
 import { useCallback } from 'react';
 import { AlertTriangle, ArrowUpRight, CircleDot, FileText, GitBranch, Loader2 } from 'lucide-react';
-import { MarkdownRenderer } from '@/features/markdown/MarkdownRenderer';
+const MarkdownRenderer = React.lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 import { useBeadDetail } from './useBeadDetail';
 import type { BeadLinkTarget } from './links';
 

@@ -1,6 +1,6 @@
 /**
  * App.tsx - Main application layout component
- * 
+ *
  * This component focuses on layout and composition.
  * Connection management is handled by useConnectionManager.
  * Dashboard data fetching is handled by useDashboardData.
@@ -15,7 +15,9 @@ import {
   lazy,
   Suspense,
 } from 'react';
-import { AlertTriangle, CheckCircle2, RotateCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RotateCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SidebarStrip } from '@/components/SidebarStrip';
+import { ContextMenu, ContextMenuItem, ContextMenuDivider } from '@/components/ContextMenu';
 import { useGateway } from '@/contexts/GatewayContext';
 import { useSessionContext, type SpawnSessionOpts } from '@/contexts/SessionContext';
 import { useChat } from '@/contexts/ChatContext';
@@ -49,38 +51,134 @@ import { SelectionTooltip } from '@/components/SelectionTooltip';
 
 // Lazy-loaded features (not needed in initial bundle)
 const SettingsDrawer = lazy(() => import('@/features/settings/SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
+const AgentHubDrawer = lazy(() => import('@/features/agents/AgentHubDrawer').then(m => ({ default: m.AgentHubDrawer })));
 const CommandPalette = lazy(() => import('@/features/command-palette/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
 // Lazy-loaded side panels
 const SessionList = lazy(() => import('@/features/sessions/SessionList').then(m => ({ default: m.SessionList })));
 const WorkspacePanel = lazy(() => import('@/features/workspace/WorkspacePanel').then(m => ({ default: m.WorkspacePanel })));
+const ToolCallsPanel = lazy(() => import('@/features/tools/ToolCallsPanel').then(m => ({ default: m.ToolCallsPanel })));
+const AgentActivityPanel = lazy(() => import('@/features/agents/AgentActivityPanel').then(m => ({ default: m.AgentActivityPanel })));
 
 // ── Panel System Types ──
-type PanelId = 'workspace' | 'agents' | 'memory' | 'thoughts';
+
+/**
+ * Unique identifier for each draggable panel in the sidebars.
+ *
+ * New panels must be added here, to {@link DEFAULT_LAYOUT}, to
+ * {@link panelName}, and to the rendering ternary in
+ * {@link renderPanelSide}.
+ */
+type PanelId = 'workspace' | 'agents' | 'memory' | 'thoughts' | 'tools' | 'activity';
+
+/** Which sidebar a panel lives in. */
 type PanelSide = 'left' | 'right';
 
+/**
+ * Complete serialisable description of the panel layout.
+ *
+ * Persisted to `localStorage` under the key `nerve-panel-layout`.
+ * Loaded by {@link loadPanelLayout} on mount.
+ */
 interface PanelLayout {
+  /** Ordered panel IDs for the left sidebar. */
   left: PanelId[];
+  /** Ordered panel IDs for the right sidebar. */
   right: PanelId[];
+  /** Per-panel collapse state. Missing keys default to `false` (expanded). */
   collapsed: Partial<Record<PanelId, boolean>>;
+  /** Per-panel flex weight for vertical space distribution. Missing keys default to `1`. */
   flex: Partial<Record<PanelId, number>>;
 }
 
-const DEFAULT_LAYOUT: PanelLayout = {
+/**
+ * Default panel layout used as the base for merging with persisted
+ * user configs and as a fallback when `localStorage` is unavailable.
+ */const DEFAULT_LAYOUT: PanelLayout = {
+  /** Left sidebar holds the workspace file-tree panel. */
   left: ['workspace'],
-  right: ['agents', 'memory', 'thoughts'],
-  collapsed: { workspace: false, agents: false, memory: false, thoughts: true },
-  flex: { workspace: 1, agents: 1, memory: 1, thoughts: 1 },
+  /** Right sidebar panels, rendered top-to-bottom in this order. */
+  right: ['thoughts', 'activity', 'tools'],
+  /** Initial collapse state. Thoughts starts collapsed to save space. */
+  collapsed: { thoughts: true, tools: false, activity: false },
+  /** Flex weights for vertical space distribution (equal by default). */
+  flex: { thoughts: 1, tools: 1 },
 };
 
+/**
+ * Load the persisted panel layout from `localStorage`, falling back to
+ * {@link DEFAULT_LAYOUT} when no saved config exists or parsing fails.
+ *
+ * ## Panel placement enforcement
+ *
+ * Panels have fixed side assignments — some belong exclusively to the
+ * left sidebar, others to the right. On every load, any panel found in
+ * the wrong sidebar is moved to its correct home. This prevents
+ * duplicates that could arise from drag-and-drop accidents or corrupted
+ * `localStorage` state.
+ *
+ * | Panel       | Side  |
+ * |-------------|-------|
+ * | `workspace` | left  |
+ * | `agents`    | right |
+ * | `memory`    | right |
+ * | `thoughts`  | right |
+ * | `tools`     | right |
+ * | `activity`  | right |
+ *
+ * Merged result: `{ ...DEFAULT_LAYOUT, ...parsed }` — user overrides
+ * take precedence for flex weights and collapse state, but side
+ * assignments are enforced.
+ */
 function loadPanelLayout(): PanelLayout {
   try {
     const raw = localStorage.getItem('nerve-panel-layout');
-    if (raw) return { ...DEFAULT_LAYOUT, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed.left)) parsed.left = [...new Set(parsed.left)];
+      if (Array.isArray(parsed.right)) parsed.right = [...new Set(parsed.right)];
+
+      // Enforce panel placement: prevent any panel from appearing in BOTH sidebars.
+      // Cross-sidebar placement is allowed (user's choice), but duplicates are not.
+      // This runs only on load to clean up corrupted localStorage states.
+
+      // If a panel is in both left and right, keep it only in its DEFAULT side
+      const RIGHT_DEFAULT = new Set<PanelId>(['agents', 'memory', 'thoughts', 'tools', 'activity']);
+      if (Array.isArray(parsed.right) && Array.isArray(parsed.left)) {
+        for (const id of RIGHT_DEFAULT) {
+          if (parsed.left.includes(id) && parsed.right.includes(id)) {
+            // Duplicate — keep only in right
+            parsed.left = parsed.left.filter((p: string) => p !== id);
+          }
+        }
+      }
+
+      // Migrate: ensure newer panels exist in the correct sidebar
+      if (Array.isArray(parsed.right) && !parsed.right.includes('tools')) {
+        parsed.right = [...parsed.right, 'tools'];
+      }
+      if (Array.isArray(parsed.right) && !parsed.right.includes('activity')) {
+        parsed.right = [...parsed.right, 'activity'];
+      }
+
+      // Migrate v2: remove agents and memory from right sidebar (moved to Agent Hub)
+      if (Array.isArray(parsed.right)) {
+        parsed.right = parsed.right.filter((p: string) => p !== 'agents' && p !== 'memory');
+      }
+
+      return { ...DEFAULT_LAYOUT, ...parsed };
+    }
   } catch {}
   return DEFAULT_LAYOUT;
 }
 
+/**
+ * Persist the current panel layout to `localStorage`.
+ *
+ * Note: Unlike {@link loadPanelLayout}, this does NOT enforce side
+ * assignments — it preserves whatever the user arranged via drag-and-drop.
+ * Enforcement only runs on load to clean up corrupted storage.
+ */
 function savePanelLayout(layout: PanelLayout) {
   try { localStorage.setItem('nerve-panel-layout', JSON.stringify(layout)); } catch {}
 }
@@ -202,6 +300,83 @@ export default function App({ onLogout }: AppProps) {
   // ── Panel layout state ──
   const [panelLayout, setPanelLayout] = useState<PanelLayout>(() => loadPanelLayout());
 
+  // ── Sidebar collapse state (sidebar-level, separate from per-panel collapse) ──
+  /**
+   * Whether the left sidebar is collapsed to a thin vertical strip.
+   * When collapsed, hovering over the strip temporarily expands it.
+   * Persisted to `localStorage` under `nerve-left-sidebar-collapsed`.
+   */
+  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('nerve-left-sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+
+  /** Draggable width for the left sidebar (persisted). */
+  const [leftSidebarWidth, setLeftSidebarWidth] = useState(() => {
+    try { return Number(localStorage.getItem('nerve-left-sidebar-width')) || 288; } catch { return 288; }
+  });
+
+  /**
+   * Whether the right sidebar is collapsed to a thin vertical strip.
+   * When collapsed, hovering over the strip temporarily expands it.
+   * Persisted to `localStorage` under `nerve-right-sidebar-collapsed`.
+   */
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('nerve-right-sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+
+  /** Tracks whether the left sidebar is temporarily expanded via hover. */
+  const [leftHoverExpanded, setLeftHoverExpanded] = useState(false);
+  const leftHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Tracks whether the right sidebar is temporarily expanded via hover. */
+  const [rightHoverExpanded, setRightHoverExpanded] = useState(false);
+  const rightHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Whether hover-to-expand is enabled for the left sidebar. */
+  const [leftHoverEnabled, setLeftHoverEnabled] = useState(() => {
+    try { return localStorage.getItem('nerve-left-hover-enabled') !== 'false'; } catch { return true; }
+  });
+
+  /** Whether hover-to-expand is enabled for the right sidebar. */
+  const [rightHoverEnabled, setRightHoverEnabled] = useState(() => {
+    try { return localStorage.getItem('nerve-right-hover-enabled') !== 'false'; } catch { return true; }
+  });
+
+  /** Right-click context menu state for sidebar strips. */
+  const [sidebarContextMenu, setSidebarContextMenu] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    side: 'left' | 'right';
+  }>({ open: false, x: 0, y: 0, side: 'left' });
+
+  /** Whether the Thoughts panel in research view is collapsed. */
+  const [researchThoughtsCollapsed, setResearchThoughtsCollapsed] = useState(() => {
+    try { return localStorage.getItem('nerve-research-thoughts-collapsed') === 'true'; } catch { return false; }
+  });
+
+  /** Right-click context menu on individual panel headers. */
+  const [panelContextMenu, setPanelContextMenu] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    panelId: PanelId;
+    currentSide: PanelSide;
+  }>({ open: false, x: 0, y: 0, panelId: 'workspace', currentSide: 'left' });
+
+  /**
+   * Saved right panel width in pixels, used when restoring from collapsed
+   * to hover-expanded state. Updated by the ResizablePanels resize callback.
+   */
+  const [savedRightPanelWidth, setSavedRightPanelWidth] = useState<number | null>(null);
+
+  /**
+   * Toggle the collapsed state of a single panel and persist the
+   * updated layout to `localStorage`.
+   *
+   * Used by the chevron button in each panel header and by the
+   * Cmd+K command palette toggle commands.
+   */
   const togglePanelCollapse = useCallback((id: PanelId) => {
     setPanelLayout(prev => {
       const next: PanelLayout = {
@@ -213,17 +388,91 @@ export default function App({ onLogout }: AppProps) {
     });
   }, []);
 
+  // ── Sidebar-level collapse callbacks ──
+
+  /**
+   * Toggle the left sidebar between expanded and collapsed (strip) states.
+   * Persists the choice to `localStorage` so it survives page reloads.
+   * Resets the hover-expanded flag when collapsing so the strip starts clean.
+   */
+  const toggleLeftSidebar = useCallback(() => {
+    setLeftSidebarCollapsed(prev => {
+      const next = !prev;
+      setLeftHoverExpanded(false);
+      try { localStorage.setItem('nerve-left-sidebar-collapsed', String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  /**
+   * Toggle the right sidebar between expanded and collapsed (strip) states.
+   * Persists the choice to `localStorage`.
+   * Resets the hover-expanded flag when collapsing.
+   */
+  const toggleRightSidebar = useCallback(() => {
+    setRightSidebarCollapsed(prev => {
+      const next = !prev;
+      setRightHoverExpanded(false);
+      try { localStorage.setItem('nerve-right-sidebar-collapsed', String(next)); } catch {}
+      return next;
+    });
+  }, []);
+
+  /** Keep both state and ref in sync for drag target updates. */
+  const setDropTargetSynced = useCallback((val: { side: PanelSide; index: number } | null) => {
+    setDropTarget(val);
+    dropTargetRef.current = val;
+  }, []);
+
   // Drag state for panel reordering
   const [dragPanelId, setDragPanelId] = useState<PanelId | null>(null);
   const [dropTarget, setDropTarget] = useState<{ side: PanelSide; index: number } | null>(null);
+  /**
+   * Ref mirror of {@link dropTarget} for synchronous reads in drag handlers.
+   *
+   * React state updates during `dragover` are batched asynchronously, but
+   * the `drop` event fires synchronously. Reading from this ref ensures
+   * `handlePanelDrop` always sees the latest target, even before React has
+   * flushed the state update.
+   */
+  const dropTargetRef = useRef<{ side: PanelSide; index: number } | null>(null);
 
+  /**
+   * Move a panel from one sidebar to the other and persist.
+   * Used by the right-click context menu on panel headers.
+   */
+  const movePanelToSide = useCallback((panelId: PanelId, targetSide: PanelSide) => {
+    setPanelLayout(prev => {
+      const next: PanelLayout = {
+        ...prev,
+        left: targetSide === 'left'
+          ? [...prev.left.filter(p => p !== panelId), panelId]
+          : prev.left.filter(p => p !== panelId),
+        right: targetSide === 'right'
+          ? [...prev.right.filter(p => p !== panelId), panelId]
+          : prev.right.filter(p => p !== panelId),
+      };
+      savePanelLayout(next);
+      return next;
+    });
+  }, []);
+
+  /**
+   * Finalise a panel drag-and-drop reorder operation.
+   *
+   * Moves the dragged panel from its current position to the drop
+   * target index in the target sidebar, then persists the new layout.
+   * Clears drag state (`dragPanelId`, `dropTarget`) on completion.
+   */
   const handlePanelDrop = useCallback(() => {
-    if (!dragPanelId || !dropTarget) {
+    const target = dropTargetRef.current;
+    if (!dragPanelId || !target) {
       setDragPanelId(null);
-      setDropTarget(null);
+      setDropTargetSynced(null);
+      dropTargetRef.current = null;
       return;
     }
-    const { side, index } = dropTarget;
+    const { side, index } = target;
     setPanelLayout(prev => {
       const left = prev.left.filter(p => p !== dragPanelId);
       const right = prev.right.filter(p => p !== dragPanelId);
@@ -238,8 +487,9 @@ export default function App({ onLogout }: AppProps) {
       return next;
     });
     setDragPanelId(null);
-    setDropTarget(null);
-  }, [dragPanelId, dropTarget]);
+    setDropTargetSynced(null);
+    dropTargetRef.current = null;
+  }, [dragPanelId]);
 
   // Flex resize is handled inline in the panel render (inline mousedown handler)
 
@@ -367,7 +617,7 @@ export default function App({ onLogout }: AppProps) {
     });
   }, [handleFileChanged]);
 
-  // Dashboard data (extracted hook) — single SSE connection handles all events
+  // Dashboard data (extracted hook) - single SSE connection handles all events
   const { memories, memoriesLoading, tokenData, remoteWorkspace, refreshMemories } = useDashboardData({
     agentId: workspaceAgentId,
     onFileChanged,
@@ -375,20 +625,104 @@ export default function App({ onLogout }: AppProps) {
 
   // UI state
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [agentHubOpen, setAgentHubOpen] = useState(false);
   const [booted, setBooted] = useState(false);
   const [logGlow, setLogGlow] = useState(false);
   const [scratchPadContent, setScratchPadContent] = useState(() => {
-    try { return localStorage.getItem('nerve-scratch-pad') || ''; } catch { return ''; }
+    try {
+      const stored = localStorage.getItem('nerve-scratch-pad');
+      if (stored) return stored;
+      // Fallback: try sessionStorage backup (survives localStorage clears)
+      const backup = sessionStorage.getItem('nerve-scratch-pad-backup');
+      if (backup) { localStorage.setItem('nerve-scratch-pad', backup); return backup; }
+      return '';
+    } catch { return ''; }
   });
+  /**
+   * Persist scratch-pad content to localStorage and mirror to
+   * sessionStorage as a short-lived backup in case the user clears
+   * localStorage without meaning to.
+   */
   const persistScratchPad = useCallback((content: string) => {
     setScratchPadContent(content);
     try { localStorage.setItem('nerve-scratch-pad', content); } catch {}
+    try { sessionStorage.setItem('nerve-scratch-pad-backup', content); } catch {}
   }, []);
   const [scratchPadPreview, setScratchPadPreview] = useState(false);
+  /**
+   * Search query for the Thoughts scratch-pad textarea.
+   *
+   * When non-empty, matching text in the textarea is highlighted and the
+   * first match is scrolled into view. A small search bar is shown at the
+   * top of the Thoughts panel when this is active.
+   *
+   * @see ThoughtsSearchBar
+   */
+  const [thoughtsSearch, setThoughtsSearch] = useState('');
+
+  /**
+   * Selected text + position for the Thoughts "Send to chat" floating button.
+   * When the user selects text in either Thoughts textarea, a small "→" button
+   * appears near the selection. Clicking it dispatches a `nerve:send-to-chat` event
+   * which appends the selected text to the chat input and sends it.
+   */
+  const [thoughtsSelection, setThoughtsSelection] = useState<{
+    text: string;
+    /** Y position relative to viewport for the floating button. */
+    y: number;
+    /** X position relative to viewport for the floating button. */
+    x: number;
+    source: 'sidebar' | 'research';
+  } | null>(null);
+
+  /** Handle "Send to chat" from Thoughts selection */
+  /** Clear the Thoughts search state. */
+  const clearThoughtsSearch = useCallback(() => setThoughtsSearch(''), []);
+
+  const handleThoughtsSendToChat = useCallback(() => {
+    if (!thoughtsSelection?.text.trim()) return;
+    window.dispatchEvent(new CustomEvent('nerve:send-to-chat', {
+      detail: { text: thoughtsSelection.text.trim() },
+    }));
+    setThoughtsSelection(null);
+  }, [thoughtsSelection]);
   const [isMobileTopBarHidden, setIsMobileTopBarHidden] = useState(false);
   const [desktopRightPanelWidth, setDesktopRightPanelWidth] = useState<number | null>(null);
+
+  /**
+   * Return the effective right-sidebar pixel width for ResizablePanels.
+   *
+   * Priority:
+   * 1. `rightSidebarCollapsed` → 40 px (strip), or `savedRightPanelWidth` when hover-expanded
+   * 2. All right panels individually collapsed → 0
+   * 3. `fileBrowserCollapsed` mode → `desktopRightPanelWidth`
+   * 4. Otherwise → `null` (percentage mode)
+   */
+  const computedRightWidthPx = useMemo(() => {
+    if (rightSidebarCollapsed) {
+      return rightHoverExpanded ? (savedRightPanelWidth ?? 280) : 40;
+    }
+    if (panelLayout.right.every(p => panelLayout.collapsed[p])) return 0;
+    if (fileBrowserCollapsed) return desktopRightPanelWidth;
+    return null;
+  }, [rightSidebarCollapsed, rightHoverExpanded, savedRightPanelWidth, panelLayout.right, panelLayout.collapsed, fileBrowserCollapsed, desktopRightPanelWidth]);
+
+  /**
+   * Unified handler for ResizablePanels `onRightWidthChange`.
+   * Keeps `savedRightPanelWidth` and `desktopRightPanelWidth` in sync
+   * so the right panel restores to the correct width after collapse/re-expand.
+   */
+  const handleRightWidthChange = useCallback((width: number) => {
+    setSavedRightPanelWidth(width);
+    setDesktopRightPanelWidth(width);
+  }, []);
+
   const prevLogCount = useRef(0);
   const chatPanelRef = useRef<ChatPanelHandle>(null);
+  /** Ref for the sidebar Thoughts textarea — used for selection-based "Send to chat" button positioning. */
+  const sidebarThoughtsRef = useRef<HTMLTextAreaElement>(null);
+  /** Ref for the research-view Thoughts textarea — same purpose as above. */
+  const researchThoughtsRef = useRef<HTMLTextAreaElement>(null);
 
   // Gateway restart
   const {
@@ -420,10 +754,6 @@ export default function App({ onLogout }: AppProps) {
 
     try { localStorage.setItem('nerve:viewMode', nextMode); } catch { /* ignore */ }
   }, [isCompactLayout, kanbanVisible, setFileBrowserCollapsed]);
-  const openTaskInBoard = useCallback((taskId: string) => {
-    setPendingTaskId(taskId);
-    setViewMode('kanban');
-  }, [setViewMode]);
   const [chatPathLinkPrefixes, setChatPathLinkPrefixes] = useState<string[]>(
     DEFAULT_CHAT_PATH_LINKS_CONFIG.prefixes,
   );
@@ -516,7 +846,7 @@ export default function App({ onLogout }: AppProps) {
     setViewMode('chat');
   }, [kanbanVisible, setViewMode, viewMode]);
 
-  // Listen for nerve:send-to-chat events from ResearchPanel
+  // Listen for nerve:send-to-chat events from ResearchPanel or Thoughts
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { text?: string } | undefined;
@@ -527,6 +857,37 @@ export default function App({ onLogout }: AppProps) {
     window.addEventListener('nerve:send-to-chat', handler);
     return () => window.removeEventListener('nerve:send-to-chat', handler);
   }, [handleSend]);
+
+  /**
+   * Selection tracking for Thoughts "Send to chat" button.
+   *
+   * Listens for `selectionchange` on the document. When the selection is inside
+   * one of the Thoughts textareas and has content, shows a floating "→" button
+   * positioned relative to the textarea. On `mouseup` outside or empty selection,
+   * hides the button.
+   */
+  useEffect(() => {
+    const onSelectionChange = () => {
+      const sel = window.getSelection();
+      const text = sel?.toString().trim() || '';
+      if (text.length > 2 && text.length < 2000) {
+        const activeEl = document.activeElement;
+        // Only show for the thoughts textareas
+        if (activeEl === sidebarThoughtsRef.current || activeEl === researchThoughtsRef.current) {
+          const rect = (activeEl as HTMLTextAreaElement).getBoundingClientRect?.();
+          // Position the button at the top-right area of the textarea
+          if (rect) {
+            setThoughtsSelection({ text, x: rect.right, y: rect.top - 4, source: activeEl === sidebarThoughtsRef.current ? 'sidebar' : 'research' });
+            return;
+          }
+        }
+      }
+      setThoughtsSelection(null);
+    };
+
+    document.addEventListener('selectionchange', onSelectionChange);
+    return () => document.removeEventListener('selectionchange', onSelectionChange);
+  }, []);
 
   // Send conversation to Research tab
   const handleSendToResearch = useCallback(() => {
@@ -719,7 +1080,7 @@ export default function App({ onLogout }: AppProps) {
   useKeyboardShortcuts([
     { key: 'k', meta: true, handler: handleOpenPalette },
     { key: 'b', meta: true, handler: handleToggleFileBrowser },  // Cmd+B → toggle file browser
-    { key: 'f', meta: true, handler: toggleSearch, skipInEditor: true },  // Cmd+F → chat search (yields to CodeMirror search in editor)
+    { key: 'f', meta: true, handler: toggleSearch, skipInEditor: true, skipInTextarea: true },  // Cmd+F → chat search (yields to CodeMirror/search in textarea)
     { key: 'c', ctrl: true, handler: handleCtrlC, preventDefault: false },  // Ctrl+C → abort (when generating), allow copy to still work
     { key: 'Escape', handler: handleEscape, skipInEditor: true },
   ]);
@@ -989,27 +1350,64 @@ export default function App({ onLogout }: AppProps) {
     />
   );
 
+  /** Human-readable labels for each panel, used in header bars and accessible names. */
   const panelName: Record<string, string> = {
-    workspace: 'Workspace', agents: 'Agents', memory: 'Memory', thoughts: 'Thoughts',
+    workspace: 'Workspace', agents: 'Agents', memory: 'Memory', thoughts: 'Thoughts', tools: 'Tool Calls', activity: 'Activity',
   };
 
+  /**
+   * Shared panel-side renderer used for both the left and right sidebars.
+   *
+   * Iterates over the panel IDs in the configured order, rendering each
+   * as a drag-reorderable, collapsible, vertically-resizable card. Panels
+   * share vertical space via proportional flex weights.
+   *
+   * ## Panel dispatch
+   *
+   * The inner ternary selects the appropriate component for each
+   * {@link PanelId}:
+   * - `'workspace'` → {@link FileTreePanel}
+   * - `'agents'`     → {@link SessionList}
+   * - `'memory'`     → {@link WorkspacePanel}
+   * - `'tools'`      → {@link ToolCallsPanel} (new in 2026-05)
+   * - `'activity'`   → {@link AgentActivityPanel} (new in 2026-05)
+   * - `'thoughts'`   → Scratch Pad (markdown editor / preview)
+   *
+   * @param side - Which sidebar to render (`'left'` or `'right'`).
+   * @param onSelect - Session selection callback (only used by the agents
+   *   panel on the right side).
+   */
   const renderPanelSide = (side: 'left' | 'right', onSelect: ((key: string) => Promise<void> | void) | null) => {
     const ids = side === 'left' ? panelLayout.left : panelLayout.right;
     const flexSum = ids.reduce((s, id) => s + (panelLayout.flex[id] ?? 1), 0);
-
+    
     return (
       <div className="flex-1 flex flex-col gap-3 min-h-0"
-        onDragOver={(e) => { e.preventDefault(); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          // Default drop target: append to end of this sidebar's panel list.
+          // Individual panel onDragOver handlers will override with specific
+          // indices when the cursor is directly over a panel.
+          setDropTargetSynced({ side, index: ids.length });
+        }}
         onDrop={handlePanelDrop}
       >
         {ids.map((id, idx) => {
           const collapsed = panelLayout.collapsed[id] ?? false;
           const flexVal = (panelLayout.flex[id] ?? 1) / flexSum;
+          /**
+           * The ID of the next panel below this one, or `null` for the
+           * last panel. Only non-null panels get a vertical resize handle
+           * at their bottom edge, allowing the two adjacent panels to be
+           * resized proportionally via drag.
+           */
+          const nextId = idx < ids.length - 1 ? ids[idx + 1] : null;
           return (
             <div key={id}
-              className={`shell-panel flex flex-col min-h-0 overflow-hidden rounded-[28px] relative transition-all duration-200 ${collapsed ? 'shrink-0' : 'flex-1'} ${dragPanelId === id ? 'opacity-50 scale-[0.98] ring-2 ring-primary/30' : ''} ${dropTarget?.side === side && dropTarget.index === idx ? 'ring-2 ring-primary/50' : ''}`}
+              data-panel-id={id}
+              className={`shell-panel flex flex-col min-h-0 overflow-hidden rounded-[28px] relative transition-all duration-200 ${collapsed ? 'shrink-0' : ''} ${dragPanelId === id ? 'opacity-50 scale-[0.98] ring-2 ring-primary/30' : ''} ${dropTarget?.side === side && dropTarget.index === idx ? 'ring-2 ring-primary/50' : ''}`}
               style={collapsed ? {} : { flex: `${flexVal} 1 0%` }}
-              onDragOver={(e) => { e.preventDefault(); setDropTarget({ side, index: idx }); }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDropTargetSynced({ side, index: idx }); }}
             >
               {/* Drop indicator above */}
               {dragPanelId && dragPanelId !== id && dropTarget?.side === side && dropTarget.index === idx && (
@@ -1018,8 +1416,16 @@ export default function App({ onLogout }: AppProps) {
               <div
                 draggable
                 onDragStart={() => setDragPanelId(id)}
-                onDragEnd={() => { setDragPanelId(null); setDropTarget(null); }}
-                className={`flex items-center gap-2 w-full px-3 py-2 cursor-grab active:cursor-grabbing select-none transition-colors ${dragPanelId === id ? 'bg-primary/5' : 'hover:bg-foreground/[0.02]'}`}
+                onDragEnd={() => { setDragPanelId(null); setDropTargetSynced(null); }}
+                onContextMenu={(e) => {
+                  // Only prevent default on the header element itself (draggable panel title bar).
+                  // The native browser context menu (copy/paste) in the content area below
+                  // must NOT be blocked — this preventDefault only applies to the header.
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setPanelContextMenu({ open: true, x: e.clientX, y: e.clientY, panelId: id as PanelId, currentSide: side });
+                }}
+                className={`flex items-center gap-2 w-full px-2.5 py-1 cursor-grab active:cursor-grabbing select-none transition-colors shrink-0 ${dragPanelId === id ? 'bg-primary/5' : 'hover:bg-foreground/[0.02]'}`}
               >
                 <button
                   onClick={(e) => { e.stopPropagation(); togglePanelCollapse(id); }}
@@ -1029,85 +1435,136 @@ export default function App({ onLogout }: AppProps) {
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </button>
-                <span className="text-[0.55rem] font-semibold uppercase tracking-wider text-muted-foreground/50 flex-1 min-w-0">{panelName[id]}</span>
-                {side === 'right' && idx === 0 && ids.some(p => !panelLayout.collapsed[p]) && (
-                  <button onClick={(e) => { e.stopPropagation(); setPanelLayout(prev => {
-                    const newCollapsed = { ...prev.collapsed };
-                    prev.right.forEach(p => { newCollapsed[p] = true; });
-                    const next = { ...prev, collapsed: newCollapsed };
-                    savePanelLayout(next);
-                    return next;
-                  }); }} className="text-muted-foreground/30 hover:text-foreground/60 transition-colors shrink-0 mr-1" title="Collapse right bar">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-                  </button>
+                <span className="text-[0.667rem] font-semibold tracking-wider text-foreground/70 flex-1 min-w-0">{panelName[id]}</span>
+                {id === 'agents' && (
+                  <div className="ml-auto flex items-center gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setSpawnDialogOpen(true); }}
+                      aria-label="Create session"
+                      title="Create session"
+                      className="size-6 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); refreshSessions(); }}
+                      aria-label="Refresh sessions"
+                      title="Refresh sessions"
+                      className={'size-6 flex items-center justify-center rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors ' + (sessionsLoading ? 'animate-spin' : '')}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 014.85-5.67A9 9 0 0018.36 7.64"/><path d="M20.49 15a9 9 0 01-4.85 5.67A9 9 0 005.64 16.36"/></svg>
+                    </button>
+                  </div>
                 )}
-                {side === 'right' && idx === 0 && ids.every(p => panelLayout.collapsed[p]) && (
-                  <button onClick={(e) => { e.stopPropagation(); setPanelLayout(prev => {
-                    const newCollapsed = { ...prev.collapsed };
-                    prev.right.forEach(p => { newCollapsed[p] = false; });
-                    const next = { ...prev, collapsed: newCollapsed };
-                    savePanelLayout(next);
-                    return next;
-                  }); }} className="text-muted-foreground/30 hover:text-foreground/60 transition-colors shrink-0 mr-1" title="Expand right bar">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                  </button>
-                )}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-muted-foreground/20 shrink-0">
-                  <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
-                  <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
-                  <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
-                </svg>
                 {id === 'thoughts' && !collapsed && (
                   <button onClick={(e) => { e.stopPropagation(); setScratchPadPreview(!scratchPadPreview); }}
                     className="text-[0.5rem] px-2 py-0.5 rounded-md bg-muted/30 text-muted-foreground/60 hover:text-foreground/80 transition-colors"
                   >{scratchPadPreview ? 'Edit' : 'Preview'}</button>
                 )}
+                {/* Activity indicator — always far right */}
+                {isGenerating && <span className="size-1.5 rounded-full bg-primary animate-pulse shrink-0 ml-2" title="Generating..." />}
               </div>
               {!collapsed && (
-                <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 min-h-0 flex flex-col panel-content-scroll">
                   <PanelErrorBoundary name={panelName[id]}>
                     {id === 'workspace' ? (
                       <FileTreePanel workspaceAgentId={workspaceAgentId} onOpenFile={openFile}
                         onAddToChat={(path, kind, agentId) => chatPanelRef.current?.addWorkspacePath(path, kind, agentId ?? workspaceAgentId)}
                         addToChatEnabled={addToChatEnabled} lastChangedEvent={lastChangedEvent}
                         revealRequest={revealRequest} onRemapOpenPaths={remapOpenPaths}
-                        onCloseOpenPaths={closeOpenPathsByPrefix} isCompactLayout={false} hideHeader
-                        collapsed={false} onCollapseChange={() => {}}
+                        onCloseOpenPaths={closeOpenPathsByPrefix} isCompactLayout={false} hideHeader collapsed={false}
+
                       />
                     ) : id === 'agents' ? (
                       <SessionList sessions={sessions} currentSession={currentSession}
                         busyState={busyState} agentStatus={agentStatus} unreadSessions={unreadSessions}
                         onSelect={onSelect!} onRefresh={refreshSessions} onDelete={deleteSession}
                         onSpawn={handleSpawnSession} onRename={renameSession} onAbort={abortSession}
-                        isLoading={sessionsLoading} agentName={agentName}
+                        isLoading={sessionsLoading} agentName={agentName} hideHeader
                       />
                     ) : id === 'memory' ? (
                       <WorkspacePanel workspaceAgentId={workspaceAgentId} memories={memories}
                         onRefreshMemories={refreshMemories} memoriesLoading={memoriesLoading}
-                        remoteWorkspace={remoteWorkspace} onOpenBoard={() => setViewMode('kanban')}
-                        onOpenTask={openTaskInBoard}
+                        remoteWorkspace={remoteWorkspace}
                       />
+                    ) : id === 'activity' ? (
+                      <AgentActivityPanel messages={messages} />
+                    ) : id === 'tools' ? (
+                      <ToolCallsPanel messages={messages} />
                     ) : (
                       scratchPadPreview ? (
-                        <Suspense fallback={<div className="flex-1 p-3 text-xs text-muted-foreground/50">Loading preview…</div>}>
-                          <div className="flex-1 overflow-y-auto p-3 prose prose-zinc dark:prose-invert max-w-none prose-headings:text-foreground/90 prose-strong:text-foreground/90 prose-p:text-xs prose-p:leading-relaxed">
+                        <Suspense fallback={<div className="flex-1 p-3 text-xs text-muted-foreground/50">Loading preview...</div>}>
+                          <div className="flex-1 overflow-y-auto p-3 prose prose-zinc dark:prose-invert max-w-none prose-headings:text-foreground/90 prose-strong:text-foreground/90 prose-p:text-xs prose-p:leading-relaxed break-words">
                             <MarkdownRenderer content={scratchPadContent || '*Nothing yet...*'} />
                           </div>
                         </Suspense>
                       ) : (
-                        <textarea value={scratchPadContent}
-                          onChange={(e) => persistScratchPad(e.target.value)}
-                          placeholder="Jot down notes for your next prompt..."
-                          className="flex-1 w-full bg-transparent border-none outline-none resize-none p-3 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono"
-                        />
+                        <div className="flex-1 flex flex-col min-h-0">
+                          {/* Thoughts search bar */}
+                          {thoughtsSearch !== '' && (
+                            <div className="flex items-center gap-1 px-2 py-1 shrink-0 border-b border-border/20">
+                              <input
+                                value={thoughtsSearch}
+                                onChange={(e) => setThoughtsSearch(e.target.value)}
+                                placeholder="Search thoughts…"
+                                className="flex-1 bg-transparent border-none outline-none text-[0.667rem] text-foreground/70 placeholder:text-muted-foreground/30"
+                                autoFocus
+                                onKeyDown={(e) => { if (e.key === 'Escape') clearThoughtsSearch(); }}
+                              />
+                              <button
+                                onClick={clearThoughtsSearch}
+                                className="size-4 flex items-center justify-center rounded text-muted-foreground/40 hover:text-foreground transition-colors"
+                              >
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              </button>
+                            </div>
+                          )}
+                          <textarea value={scratchPadContent} ref={sidebarThoughtsRef}
+                            onChange={(e) => persistScratchPad(e.target.value)}
+                            placeholder="Jot down notes for your next prompt…"
+                            className="flex-1 w-full bg-transparent border-none outline-none resize-none p-3 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono break-words whitespace-pre-wrap"
+                            onKeyDown={(e) => {
+                              if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                                e.preventDefault();
+                                setThoughtsSearch(prev => prev || '');
+                                // Auto-focus the search input after a tick
+                                setTimeout(() => {
+                                  const searchInput = (e.target as HTMLElement).closest('.flex-1.flex.flex-col')?.querySelector('input');
+                                  searchInput?.focus();
+                                }, 0);
+                              }
+                            }}
+                          />
+                        </div>
                       )
                     )}
                   </PanelErrorBoundary>
                 </div>
               )}
-              {idx < ids.length - 1 && (
-                <div onMouseDown={(e) => { e.preventDefault(); const startY = e.clientY; const p1 = (panelLayout.flex[id] ?? 1); const initP1 = p1; const nextId = ids[idx + 1]; const p2 = (panelLayout.flex[nextId] ?? 1); const onMove = (ev: MouseEvent) => { const delta = (ev.clientY - startY) / 30; setPanelLayout(prev => ({ ...prev, flex: { ...prev.flex, [id]: Math.max(0.2, initP1 + delta), [nextId]: Math.max(0.2, p2 - delta) } })); }; const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); }}
-                  className="absolute bottom-0 left-2 right-2 h-1 cursor-row-resize z-10 rounded-full hover:bg-primary/30 transition-colors"
+              {nextId && (
+                <div onMouseDown={(e) => { e.preventDefault(); const startY = e.clientY; const p1 = (panelLayout.flex[id] ?? 1); const initP1 = p1; const p2 = (panelLayout.flex[nextId] ?? 1); const onMove = (ev: MouseEvent) => { const delta = (ev.clientY - startY) / 30; setPanelLayout(prev => ({ ...prev, flex: { ...prev.flex, [id]: Math.max(0.5, initP1 + delta), [nextId]: Math.max(0.5, p2 - delta) } })); }; const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); }; window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp); }}
+                  onDoubleClick={() => {
+                    // Auto-size both panels to fit their content
+                    // Measures the content scrollHeight and distributes proportionally
+                    const panelEls = document.querySelectorAll(`[data-panel-id="${id}"], [data-panel-id="${nextId}"]`);
+                    if (panelEls.length < 2) {
+                      // Fallback: equal distribution
+                      setPanelLayout(prev => ({ ...prev, flex: { ...prev.flex, [id]: 1, [nextId]: 1 } }));
+                      return;
+                    }
+                    const heights: number[] = [];
+                    for (const el of panelEls) {
+                      const content = el.querySelector('.panel-content-scroll');
+                      heights.push(content ? content.scrollHeight : 100);
+                    }
+                    const total = heights[0] + heights[1];
+                    if (total > 0) {
+                      const f1 = Math.max(0.5, (heights[0] / total) * 4);
+                      const f2 = Math.max(0.5, (heights[1] / total) * 4);
+                      setPanelLayout(prev => ({ ...prev, flex: { ...prev.flex, [id]: f1, [nextId]: f2 } }));
+                    }
+                  }}
+                  className="absolute bottom-0 left-2 right-2 h-1 cursor-row-resize z-10 rounded-full bg-border/30 hover:bg-primary/55 hover:shadow-[0_0_16px_rgba(0,0,0,0.22)] transition-colors"
                 />
               )}
             </div>
@@ -1118,14 +1575,102 @@ export default function App({ onLogout }: AppProps) {
     );
   };
 
-  const renderRightPanels = (onSelect: (key: string) => Promise<void> | void) => (
-    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading…</div>}>
-      {renderPanelSide('right', onSelect)}
+  const renderRightPanels = (onSelect: (key: string) => Promise<void> | void) => {
+    const showStrip = rightSidebarCollapsed && !rightHoverExpanded;
+
+    if (showStrip) {
+      return (
+        <div
+          onMouseEnter={() => {
+            if (!rightHoverEnabled) return;
+            rightHoverTimerRef.current = setTimeout(() => setRightHoverExpanded(true), 250);
+          }}
+          onMouseLeave={() => {
+            if (rightHoverTimerRef.current) { clearTimeout(rightHoverTimerRef.current); rightHoverTimerRef.current = null; }
+            setRightHoverExpanded(false);
+          }}
+          onContextMenu={(e) => {
+            // Don't block native context menu on text inputs (copy/paste)
+            if ((e.target as HTMLElement)?.closest?.('textarea, input, [contenteditable]')) return;
+            e.preventDefault(); setSidebarContextMenu({ open: true, x: e.clientX, y: e.clientY, side: 'right' });
+          }}
+          className="h-full flex"
+        >
+          <SidebarStrip
+            side="right"
+            panelIds={panelLayout.right}
+            onPanelClick={(id: string) => togglePanelCollapse(id as PanelId)}
+            onToggleSidebar={toggleRightSidebar}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div
+        onMouseLeave={() => rightSidebarCollapsed && setRightHoverExpanded(false)}
+        onContextMenu={(e) => {
+            if ((e.target as HTMLElement)?.closest?.('textarea, input, [contenteditable]')) return;
+            e.preventDefault(); setSidebarContextMenu({ open: true, x: e.clientX, y: e.clientY, side: 'right' });
+          }}
+        className="min-h-0 flex flex-1"
+      >
+        {/* Collapse toggle strip at left edge of expanded right sidebar */}
+        <button
+          onClick={toggleRightSidebar}
+          className="flex flex-col items-center justify-center w-5 shrink-0 hover:bg-foreground/[0.04] transition-colors cursor-pointer group"
+          title="Collapse sidebar"
+          aria-label="Collapse right sidebar"
+        >
+          <ChevronRight size={14} className="text-muted-foreground/30 group-hover:text-foreground/70 transition-colors" />
+        </button>
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+          {renderPanelSide('right', onSelect)}
+        </Suspense>
+      </div>
+    );
+  };
+
+  const drawerAgentsPanel = (
+    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading sessions...</div>}>
+      <PanelErrorBoundary name="Sessions">
+        <SessionList
+          sessions={sessions}
+          currentSession={currentSession}
+          busyState={busyState}
+          agentStatus={agentStatus}
+          unreadSessions={unreadSessions}
+          onSelect={handleSessionChange}
+          onRefresh={refreshSessions}
+          onDelete={deleteSession}
+          onSpawn={handleSpawnSession}
+          onRename={renameSession}
+          onAbort={abortSession}
+          isLoading={sessionsLoading}
+          agentName={agentName}
+          hideHeader
+        />
+      </PanelErrorBoundary>
+    </Suspense>
+  );
+
+  const drawerMemoryPanel = (
+    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading...</div>}>
+      <PanelErrorBoundary name="Memory">
+        <WorkspacePanel
+          workspaceAgentId={workspaceAgentId}
+          memories={memories}
+          onRefreshMemories={refreshMemories}
+          memoriesLoading={memoriesLoading}
+          remoteWorkspace={remoteWorkspace}
+          compact
+        />
+      </PanelErrorBoundary>
     </Suspense>
   );
 
   const compactSessionsPanel = (
-    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading sessions…</div>}>
+    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading sessions...</div>}>
       <PanelErrorBoundary name="Sessions">
         <SessionList
           sessions={sessions}
@@ -1148,7 +1693,7 @@ export default function App({ onLogout }: AppProps) {
   );
 
   const compactWorkspacePanel = (
-    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading workspace…</div>}>
+    <Suspense fallback={<div className="p-4 text-muted-foreground text-xs">Loading workspace...</div>}>
       <PanelErrorBoundary name="Workspace">
         <WorkspacePanel
           workspaceAgentId={workspaceAgentId}
@@ -1157,8 +1702,6 @@ export default function App({ onLogout }: AppProps) {
           memoriesLoading={memoriesLoading}
           remoteWorkspace={remoteWorkspace}
           compact
-          onOpenBoard={() => setViewMode('kanban')}
-          onOpenTask={openTaskInBoard}
         />
       </PanelErrorBoundary>
     </Suspense>
@@ -1166,11 +1709,20 @@ export default function App({ onLogout }: AppProps) {
 
   const showCompactFileBrowser = isCompactLayout && viewMode !== 'kanban' && viewMode !== 'research' && !fileBrowserCollapsed;
 
+  // Pulse tab title during generation
+  useEffect(() => {
+    if (isGenerating) {
+      document.title = '⚡ Thinking...';
+    } else {
+      document.title = 'Nerve Center';
+    }
+  }, [isGenerating]);
+
   return (
     <div className="scan-lines relative h-screen flex flex-col overflow-hidden" data-booted={booted}>
       {/* Skip to main content link for keyboard navigation */}
-      <a 
-        href="#main-chat" 
+      <a
+        href="#main-chat"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:font-bold focus:text-sm"
       >
         Skip to chat
@@ -1206,7 +1758,7 @@ export default function App({ onLogout }: AppProps) {
           <span className="inline-flex size-7 items-center justify-center rounded-xl bg-orange/10 text-orange">
             <RotateCw size={14} className="animate-spin" aria-hidden="true" />
           </span>
-          <span className="min-w-0 text-left leading-5">Gateway restarting…</span>
+          <span className="min-w-0 text-left leading-5">Gateway restarting...</span>
         </div>
       )}
 
@@ -1228,10 +1780,11 @@ export default function App({ onLogout }: AppProps) {
           <span className="min-w-0 text-left leading-5">{gatewayRestartNotice.message}</span>
         </button>
       )}
-      
+
       {(!isCompactLayout || !isMobileTopBarHidden) && (
         <TopBar
           onSettings={openSettings}
+          onOpenAgentHub={() => setAgentHubOpen(true)}
           agentLogEntries={agentLogEntries}
           tokenData={tokenData}
           logGlow={logGlow}
@@ -1281,14 +1834,91 @@ export default function App({ onLogout }: AppProps) {
           />
         </Suspense>
       </PanelErrorBoundary>
-      
+
+      {/* Agent Hub drawer */}
+      <PanelErrorBoundary name="Agent Hub">
+        <Suspense fallback={null}>
+          <AgentHubDrawer
+            open={agentHubOpen}
+            onClose={() => setAgentHubOpen(false)}
+            agentsPanel={drawerAgentsPanel}
+            memoryPanel={drawerMemoryPanel}
+          />
+        </Suspense>
+      </PanelErrorBoundary>
+
       <div className="flex-1 flex gap-3 overflow-hidden min-h-0 px-2 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-2">
-        {/* Left bar — dynamic panels */}
-        {!isCompactLayout && !fileBrowserCollapsed && (
-          <div className="h-full min-h-0 w-72 shrink-0">
-            {renderPanelSide('left', null)}
-          </div>
-        )}
+        {/* Left bar - collapsible sidebar with hover-to-expand, resizable */}
+        {!isCompactLayout && !fileBrowserCollapsed && (() => {
+          const isCollapsed = leftSidebarCollapsed && !leftHoverExpanded;
+          const displayWidth = isCollapsed ? 40 : leftSidebarWidth;
+          return (
+            <div
+              className="relative h-full flex shrink-0"
+              style={{ width: displayWidth, transition: isCollapsed ? 'width 400ms ease-in-out' : undefined }}
+              onMouseEnter={() => {
+                if (!leftSidebarCollapsed || !leftHoverEnabled) return;
+                leftHoverTimerRef.current = setTimeout(() => setLeftHoverExpanded(true), 250);
+              }}
+              onMouseLeave={() => {
+                if (leftHoverTimerRef.current) { clearTimeout(leftHoverTimerRef.current); leftHoverTimerRef.current = null; }
+                setLeftHoverExpanded(false);
+              }}
+              onContextMenu={(e) => {
+                if ((e.target as HTMLElement)?.closest?.('textarea, input, [contenteditable]')) return;
+                e.preventDefault(); setSidebarContextMenu({ open: true, x: e.clientX, y: e.clientY, side: 'left' });
+              }}
+            >
+              {isCollapsed ? (
+                <SidebarStrip
+                  side="left"
+                  panelIds={panelLayout.left}
+                  onPanelClick={(id: string) => togglePanelCollapse(id as PanelId)}
+                  onToggleSidebar={toggleLeftSidebar}
+                />
+              ) : (
+                <>
+                  {/* Toggle button at right edge (expanded state) */}
+                  <button
+                    onClick={toggleLeftSidebar}
+                    className="absolute -right-3 top-2 z-10 flex items-center justify-center size-6 rounded-full bg-card border border-border/40 text-muted-foreground/40 hover:text-foreground hover:border-foreground/20 shadow-sm transition-all opacity-50 hover:opacity-100"
+                    title="Collapse sidebar"
+                    aria-label="Collapse left sidebar"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <div className="h-full min-h-0 flex-1 min-w-0 flex flex-col overflow-hidden">
+                    <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+                      {renderPanelSide('left', null)}
+                    </Suspense>
+                  </div>
+                  {/* Horizontal resize handle — drag to resize left sidebar width */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      const startX = e.clientX;
+                      const startWidth = displayWidth;
+                      let currentWidth = displayWidth;
+                      const onMove = (ev: MouseEvent) => {
+                        currentWidth = Math.max(160, Math.min(600, startWidth + (ev.clientX - startX)));
+                        setLeftSidebarWidth(currentWidth);
+                      };
+                      const onUp = () => {
+                        try { localStorage.setItem('nerve-left-sidebar-width', String(currentWidth)); } catch {}
+                        window.removeEventListener('mousemove', onMove);
+                        window.removeEventListener('mouseup', onUp);
+                      };
+                      window.addEventListener('mousemove', onMove);
+                      window.addEventListener('mouseup', onUp);
+                    }}
+                    className="absolute right-0 top-0 z-10 h-full w-2 cursor-col-resize opacity-0 hover:opacity-100 transition-opacity"
+                    title="Resize sidebar"
+                  />
+                </>
+              )}
+            </div>
+          );
+        })()}
 
         {showCompactFileBrowser && (
           <>
@@ -1326,20 +1956,100 @@ export default function App({ onLogout }: AppProps) {
          * in-progress voice recording / STT transcription survives tab switches.
          * See: https://github.com/.../issues/64
          */}
-        {viewMode === 'kanban' && (
-          <div className="shell-panel boot-panel flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden rounded-[28px]">
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading…</div>}>
-              <KanbanPanel initialTaskId={pendingTaskId} onInitialTaskConsumed={() => setPendingTaskId(null)} />
-            </Suspense>
-          </div>
-        )}
-        {viewMode === 'research' && (
-          <div className="shell-panel boot-panel flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden rounded-[28px]">
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading…</div>}>
+        {/* Kanban view — kept mounted but hidden when inactive to preserve task state */}
+        <div style={{ display: viewMode === 'kanban' ? undefined : 'none' }} className="shell-panel boot-panel flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden rounded-[28px]">
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+            <KanbanPanel initialTaskId={pendingTaskId} onInitialTaskConsumed={() => setPendingTaskId(null)} />
+          </Suspense>
+        </div>
+        {/* Research view — kept mounted but hidden when inactive to preserve threads + history */}
+        <div style={{ display: viewMode === 'research' ? undefined : 'none' }} className="shell-panel boot-panel flex-1 flex flex-row min-w-0 min-h-0 overflow-hidden rounded-[28px]">
+          {/* Research panel — left column */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
               <ResearchPanel />
             </Suspense>
           </div>
-        )}
+          {/* Thoughts scratch-pad — right column, collapsible */}
+          <div className={`${researchThoughtsCollapsed ? 'w-8' : 'w-64'} shrink-0 border-l border-border/40 flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}
+          >
+            {/* Collapse toggle header */}
+            <div className="flex items-center gap-1 px-1.5 py-1 shrink-0 border-b border-border/30">
+              {!researchThoughtsCollapsed && (
+                <span className="text-[0.6rem] font-semibold tracking-wider text-muted-foreground/60 ml-1">Thoughts</span>
+              )}
+              <button
+                onClick={() => {
+                  const next = !researchThoughtsCollapsed;
+                  setResearchThoughtsCollapsed(next);
+                  try { localStorage.setItem('nerve-research-thoughts-collapsed', String(next)); } catch {}
+                }}
+                className={`${researchThoughtsCollapsed ? 'mx-auto' : 'ml-auto'} flex items-center justify-center size-5 rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-foreground/[0.06] transition-colors`}
+                title={researchThoughtsCollapsed ? 'Show thoughts' : 'Hide thoughts'}
+                aria-label={researchThoughtsCollapsed ? 'Show thoughts' : 'Hide thoughts'}
+              >
+                <ChevronRight size={12} className={`transition-transform ${researchThoughtsCollapsed ? '' : 'rotate-180'}`} />
+              </button>
+            </div>
+            {!researchThoughtsCollapsed && (
+              <>
+                <div className="flex items-center gap-2 px-3 py-0.5 border-b border-border/20">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setScratchPadPreview(!scratchPadPreview); }}
+                    className="text-[0.5rem] px-2 py-0.5 rounded-md bg-muted/30 text-muted-foreground/60 hover:text-foreground/80 transition-colors ml-auto"
+                  >
+                    {scratchPadPreview ? 'Edit' : 'Preview'}
+                  </button>
+                </div>
+                {scratchPadPreview ? (
+                  <Suspense fallback={<div className="flex-1 px-3 pb-2 text-xs text-muted-foreground/50">Loading preview…</div>}>
+                    <div className="flex-1 overflow-y-auto px-3 pb-2 prose prose-zinc dark:prose-invert max-w-none prose-headings:text-foreground/90 prose-strong:text-foreground/90 prose-p:text-xs prose-p:leading-relaxed break-words">
+                      <MarkdownRenderer content={scratchPadContent || '*Nothing yet...*'} />
+                    </div>
+                  </Suspense>
+                ) : (
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {/* Thoughts search bar */}
+                    {thoughtsSearch !== '' && (
+                      <div className="flex items-center gap-1 px-3 py-1 shrink-0 border-b border-border/20">
+                        <input
+                          value={thoughtsSearch}
+                          onChange={(e) => setThoughtsSearch(e.target.value)}
+                          placeholder="Search thoughts…"
+                          className="flex-1 bg-transparent border-none outline-none text-[0.667rem] text-foreground/70 placeholder:text-muted-foreground/30"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === 'Escape') clearThoughtsSearch(); }}
+                        />
+                        <button
+                          onClick={clearThoughtsSearch}
+                          className="size-4 flex items-center justify-center rounded text-muted-foreground/40 hover:text-foreground transition-colors"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
+                      </div>
+                    )}
+                    <textarea
+                      value={scratchPadContent} ref={researchThoughtsRef}
+                      onChange={(e) => persistScratchPad(e.target.value)}
+                      placeholder="Jot down notes for your next prompt…"
+                      className="flex-1 w-full bg-transparent border-none outline-none resize-none px-3 pb-2 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono break-words whitespace-pre-wrap"
+                      onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                          e.preventDefault();
+                          setThoughtsSearch(prev => prev || '');
+                          setTimeout(() => {
+                            const searchInput = (e.target as HTMLElement).closest('.flex-1.flex.flex-col')?.querySelector('input');
+                            searchInput?.focus();
+                          }, 0);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>  {/* end research view */}
         {isCompactLayout ? (
           <div className={`shell-panel flex-1 min-w-0 min-h-0 overflow-hidden rounded-[28px] boot-panel${viewMode === 'kanban' || viewMode === 'research' ? ' hidden' : ''}`}>
             {chatContent}
@@ -1351,8 +2061,8 @@ export default function App({ onLogout }: AppProps) {
               onResize={setPanelRatio}
               minLeftPercent={30}
               maxLeftPercent={85}
-              rightWidthPx={panelLayout.right.every(p => panelLayout.collapsed[p]) ? 0 : (fileBrowserCollapsed ? desktopRightPanelWidth : null)}
-              onRightWidthChange={panelLayout.right.every(p => panelLayout.collapsed[p]) ? undefined : (fileBrowserCollapsed ? undefined : setDesktopRightPanelWidth)}
+              rightWidthPx={computedRightWidthPx}
+              onRightWidthChange={handleRightWidthChange}
               leftClassName="shell-panel boot-panel rounded-[28px] overflow-hidden"
               rightClassName="boot-panel flex flex-col"
               left={chatContent}
@@ -1425,6 +2135,109 @@ export default function App({ onLogout }: AppProps) {
         onSpawn={handleSpawnSession}
       />
       <SelectionTooltip />
+
+      {/* Thoughts "Send to chat" floating button — appears at the top-right of the Thoughts textarea when text is selected */}
+      {thoughtsSelection && (
+        <div
+          className="fixed z-[9999] pointer-events-auto"
+          style={{
+            right: Math.min(window.innerWidth - thoughtsSelection.x, window.innerWidth - 40),
+            top: Math.max(thoughtsSelection.y, 8),
+          }}
+        >
+          <button
+            onClick={handleThoughtsSendToChat}
+            className="flex items-center justify-center size-6 rounded-full border border-border/50 bg-primary/85 text-primary-foreground shadow-lg text-sm font-bold transition-all hover:bg-primary hover:scale-110 active:scale-95"
+            title="Send to chat"
+            aria-label="Send selected text to chat"
+          >
+            →
+          </button>
+        </div>
+      )}
+
+      {/* Panel header right-click context menu: move to other sidebar */}
+      <ContextMenu
+        open={panelContextMenu.open}
+        position={{ x: panelContextMenu.x, y: panelContextMenu.y }}
+        onClose={() => setPanelContextMenu(prev => ({ ...prev, open: false }))}
+      >
+        <ContextMenuItem
+          onClick={() => {
+            const targetSide = panelContextMenu.currentSide === 'left' ? 'right' : 'left';
+            movePanelToSide(panelContextMenu.panelId, targetSide);
+          }}
+          onClose={() => setPanelContextMenu(prev => ({ ...prev, open: false }))}
+        >
+          Move to {panelContextMenu.currentSide === 'left' ? 'right' : 'left'} sidebar
+        </ContextMenuItem>
+      </ContextMenu>
+
+      {/* Sidebar right-click context menu for hover toggle */}
+      <ContextMenu
+        open={sidebarContextMenu.open}
+        position={{ x: sidebarContextMenu.x, y: sidebarContextMenu.y }}
+        onClose={() => setSidebarContextMenu(prev => ({ ...prev, open: false }))}
+      >
+        <ContextMenuItem
+          active={sidebarContextMenu.side === 'left' ? leftHoverEnabled : rightHoverEnabled}
+          onClick={() => {
+            if (sidebarContextMenu.side === 'left') {
+              const next = !leftHoverEnabled;
+              setLeftHoverEnabled(next);
+              try { localStorage.setItem('nerve-left-hover-enabled', String(next)); } catch {}
+            } else {
+              const next = !rightHoverEnabled;
+              setRightHoverEnabled(next);
+              try { localStorage.setItem('nerve-right-hover-enabled', String(next)); } catch {}
+            }
+          }}
+          onClose={() => setSidebarContextMenu(prev => ({ ...prev, open: false }))}
+        >
+          Show on hover
+        </ContextMenuItem>
+        <ContextMenuDivider />
+        <ContextMenuItem
+          onClick={() => {
+            if (sidebarContextMenu.side === 'left') toggleLeftSidebar();
+            else toggleRightSidebar();
+          }}
+          onClose={() => setSidebarContextMenu(prev => ({ ...prev, open: false }))}
+        >
+          {sidebarContextMenu.side === 'left'
+            ? (leftSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar')
+            : (rightSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar')}
+        </ContextMenuItem>
+        <ContextMenuDivider />
+        <ContextMenuItem
+          onClick={() => {
+            const sel = window.getSelection();
+            const text = sel?.toString();
+            if (text) navigator.clipboard.writeText(text).catch(() => {});
+          }}
+          onClose={() => setSidebarContextMenu(prev => ({ ...prev, open: false }))}
+        >
+          Copy selected
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => {
+            navigator.clipboard.readText().then(text => {
+              const el = document.activeElement as HTMLElement;
+              if (el?.tagName === 'TEXTAREA' || el?.tagName === 'INPUT' || el?.isContentEditable) {
+                const start = (el as HTMLTextAreaElement).selectionStart ?? 0;
+                const end = (el as HTMLTextAreaElement).selectionEnd ?? start;
+                const val = 'value' in el ? (el as HTMLTextAreaElement).value : el.textContent ?? '';
+                const newVal = val.slice(0, start) + text + val.slice(end);
+                if ('value' in el) (el as HTMLTextAreaElement).value = newVal;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+            }).catch(() => {});
+          }}
+          onClose={() => setSidebarContextMenu(prev => ({ ...prev, open: false }))}
+        >
+          Paste
+        </ContextMenuItem>
+      </ContextMenu>
     </div>
   );
 }

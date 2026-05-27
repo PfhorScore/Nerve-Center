@@ -6,6 +6,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Highlights — 2026-05-26
+
+**Panel system overhaul with sidebar enforcement.** Duplicate panels no longer appear in both sidebars — a strict placement enforcement system ensures Workspace lives only in the left sidebar and Agents/Memory/Thoughts/Tool Calls live only in the right. Corrupted localStorage layouts are auto-healed on every page load.
+
+**Tool Calls panel** is now a first-class sidebar citizen with full "Expand/Collapse" Cmd+K command and scrollable expandable entry cards showing tool name, args, status (running/success/error), and truncated results.
+
+**Research tab state survives tab switches.** Research and Kanban panels now stay mounted (hidden via `display: none`) instead of unmounting when switching to Chat, preserving threads, search history, and task state.
+
+**Smooth streaming text.** The streaming message display now uses append-only DOM manipulation instead of full `innerHTML` replacement on every frame, eliminating the janky/choppy animation during generation.
+
+**Collapsible sidebars with hover-to-expand.** Both left and right sidebars can be collapsed to a ~40px icon strip. Hovering the strip temporarily expands the sidebar to full width with smooth CSS transitions. Collapse state is persisted to localStorage independently for each sidebar.
+
+**Live markdown preview in composer.** A Preview/Edit toggle in the chat input bar renders markdown in real-time (bold, italic, code, links) using the existing MarkdownRenderer. Enter sends from preview mode, Escape returns to editing.
+
+**Auto-fit double-click on the main panel divider.** Double-clicking the resize handle between chat and right sidebar now auto-sizes the right panel to fit its content (measured via synchronous `scrollWidth` with no visual flash), capped at 70% container width.
+
+**Full documentation audit.** All touched files (ResizablePanels, ToolCallsPanel, App.tsx, commands.ts, StreamingMessage) now have comprehensive JSDoc with `@param`/`@returns`/`@link` cross-references and inline architecture notes.
+
+### Added
+- Tool Calls panel (`src/features/tools/ToolCallsPanel.tsx`) integrated into the right sidebar panel system
+- SidebarStrip component (`src/components/SidebarStrip.tsx`) for collapsed sidebar icon strips
+- Cmd+K command for "Expand/Collapse Tool Calls Panel"
+- Compact Thoughts panel (full Edit/Preview toggle) at the bottom of the Research view
+- Markdown preview toggle in the chat input composer (Eye icon button)
+- `sharp` dependency for image attachment processing
+
+### Changed
+- Double-click on resize handle now auto-fits right panel to content (was: reset to 55%)
+- Research and Kanban panels stay mounted (CSS-hidden) instead of unmounting on tab switch
+- Streaming message rendering uses append-only DOM updates via ref for smooth animation
+- Panel placement is now strictly enforced on every `loadPanelLayout()` and `savePanelLayout()`
+- Left sidebar is hard-limited to Workspace only; right sidebar to Agents/Memory/Thoughts/Tools
+
+### Fixed
+- Broken `DEFAULT_LAYOUT` constant (partially deleted declaration causing orphan object properties at module scope)
+- `nextId` scope bug in vertical inter-panel resize handle's `onDoubleClick` handler
+- Duplicate Thoughts and Tool Calls panels appearing in both left and right sidebars
+- Research tab losing all threads/history when switching to Chat view
+- Janky/choppy text streaming caused by full `innerHTML` replacement on every rAF frame
+- Streaming text flickering/disappearing caused by `dangerouslySetInnerHTML` racing with `useLayoutEffect`
+- Right sidebar scrolling/resizing broken by `h-full` on collapsible wrapper (changed to `flex-1`)
+- Drag-and-drop blocked by `savePanelLayout` enforcement stripping wrong-side panels
+- Drag-and-drop cross-sidebar drop targets missing (container fallback + `stopPropagation`)
+- Drag-and-drop racy `dropTarget` React state (switched to ref for synchronous reads)
+- Workspace panel double header (FileTreePanel internal header now respects `hideHeader` prop)
+- Workspace panel internal resize handle conflicting with panel system (hidden when `hideHeader`)
+- Memory panel not scrolling (changed `overflow-hidden` → `overflow-y-auto` in WorkspacePanel)
+- Panel header labels in ALL CAPS (removed `uppercase` CSS class)
+- OCR dependency: installed `sharp` for image attachment processing
+
+### Added (continued)
+- Right-click context menu on sidebar strips: Show on hover toggle, Expand/Collapse
+- Right-click context menu on panel headers: Move to left/right sidebar
+- Hover delay (250ms) before sidebar expands to prevent accidental triggers
+- Thoughts content dual-persistence: `sessionStorage` backup in case `localStorage` is cleared
+- Sidebar bar-level scrolling (`overflow-y-auto` on right sidebar wrapper)
+- `ContextMenu` / `ContextMenuItem` / `ContextMenuDivider` reusable components
+
+### Documentation
+- All exported functions and non-trivial helpers in modified files now have JSDoc
+- Panel system types (`PanelId`, `PanelLayout`) now have inline documentation for adding new panels
+- `loadPanelLayout()` includes a side-assignment table in its JSDoc
+- `StreamingMessage` documents the append-only DOM manipulation technique
+
 ## [1.5.3] - 2026-04-21
 
 ### Highlights

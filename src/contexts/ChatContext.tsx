@@ -89,6 +89,10 @@ interface ChatContextValue {
   loadHistory: (session?: string) => Promise<void>;
   /** Load more (older) messages — returns true if there are still more to show */
   loadMore: () => boolean;
+  /** Messages waiting to be sent while generating. */
+  queuedCount: number;
+  /** Queue a message for sending when current generation finishes */
+  queueMessage: (text: string) => void;
   /** Whether there are older messages available to load */
   hasMore: boolean;
   /** Reset confirmation dialog state — rendered by the consumer, not the provider */
@@ -105,7 +109,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const { soundEnabled, speak } = useSettings();
 
   // ─── Shared state ─────────────────────────────────────────────────────────
+  // Drain the message queue when generation finishes
+
   const [isGenerating, setIsGenerating] = useState(false);
+  const [messageQueue, setMessageQueue] = useState<string[]>([]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // ─── Refs for stable callback references ──────────────────────────────────
@@ -590,6 +597,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   ]);
 
   // ─── Send message ─────────────────────────────────────────────────────────
+  const queueMessage = useCallback((text: string) => {
+    setMessageQueue(prev => [...prev, text]);
+    // Show an optimistic queued message
+    const { msg: userMsg } = buildUserMessage({ text });
+    const queuedMsg = { ...userMsg, pending: true };
+    msgHook.setAllMessages(prev => [...prev, queuedMsg]);
+    msgHook.setMessages((prev: ChatMsg[]) => [...prev, queuedMsg]);
+  }, []);
+  // Check if we need to queue this message
+
   const handleSend = useCallback(async (text: string, images?: ImageAttachment[], uploadPayload?: OutgoingUploadPayload) => {
     ttsHook.trackVoiceMessage(text);
 
@@ -647,6 +664,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   }, [rpc, msgHook, streamHook, ttsHook, incrementGeneration, setProcessingStage, startThinking]);
 
+  const queueOrSend = useCallback(async (text: string, images?: ImageAttachment[], uploadPayload?: OutgoingUploadPayload) => {
+    if (isGeneratingRef.current) {
+      queueMessage(text);
+      return;
+    }
+    return handleSend(text, images, uploadPayload);
+  }, [handleSend, queueMessage]);
+
+  // Drain the message queue when generation finishes
+  useEffect(() => {
+    if (!isGenerating && messageQueue.length > 0) {
+      const [nextText, ...rest] = messageQueue;
+      setMessageQueue(rest);
+      handleSend(nextText);
+    }
+  }, [isGenerating, messageQueue, handleSend]);
   // ─── Abort / Reset ────────────────────────────────────────────────────────
   const handleAbort = useCallback(async () => {
     try {
@@ -700,8 +733,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     lastEventTimestamp: lastEventTimestamp,
     activityLog: streamHook.activityLog,
     currentToolDescription: streamHook.currentToolDescription,
-    handleSend,
+    handleSend: queueOrSend,
     handleAbort,
+    queueMessage,
+    queuedCount: messageQueue.length,
     handleReset,
     loadHistory: loadHistory,
     loadMore: msgHook.loadMore,
@@ -717,8 +752,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     lastEventTimestamp,
     streamHook.activityLog,
     streamHook.currentToolDescription,
-    handleSend,
+    queueOrSend,
     handleAbort,
+    messageQueue.length,
     handleReset,
     loadHistory,
     msgHook.loadMore,

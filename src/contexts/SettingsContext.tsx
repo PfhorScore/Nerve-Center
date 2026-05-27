@@ -47,6 +47,8 @@ interface SettingsContextValue {
   font: FontName;
   setFont: (font: FontName) => void;
   fontSize: number;
+  use24hTime: boolean;
+  toggleUse24hTime: () => void;
   setFontSize: (size: number) => void;
   editorFontSize: number;
   setEditorFontSize: (size: number) => void;
@@ -155,6 +157,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem('oc-theme') as ThemeName | null;
     return saved && themeNames.includes(saved) ? saved : 'ayu-dark';
   });
+  const [use24hTime, setUse24hTime] = useState(() => {
+    try { return localStorage.getItem('nerve:use24h') !== 'false'; } catch { return true; }
+  });
+  const toggleUse24hTime = useCallback(() => {
+    setUse24hTime(prev => {
+      const next = !prev;
+      try { localStorage.setItem('nerve:use24h', String(next)); } catch {}
+      return next;
+    });
+  }, []);
   const [font, setFontState] = useState<FontName>(resolveInitialFont);
   const [fontSize, setFontSizeState] = useState<number>(() => {
     const saved = localStorage.getItem('nerve:font-size');
@@ -407,6 +419,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     telemetryVisible,
     toggleTelemetry,
     eventsVisible,
+    use24hTime,
+    toggleUse24hTime,
     toggleEvents,
     logVisible,
     toggleLog,
