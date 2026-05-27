@@ -277,13 +277,7 @@ export function createCommands(actions: CommandActions): Command[] {
         category: 'navigation' as const,
         keywords: ['thoughts', 'scratch', 'notes', 'panel', 'toggle', 'collapse'],
       },
-      {
-        id: 'toggle-panel-tools',
-        label: `${actions.panelStates?.tools ? 'Expand' : 'Collapse'} Tool Calls Panel`,
-        action: () => actions.onTogglePanel!('tools'),
-        category: 'navigation' as const,
-        keywords: ['tools', 'tool', 'calls', 'panel', 'toggle', 'collapse'],
-      },
+
     ] : []),
     ...(actions.onNewFile ? [
       {

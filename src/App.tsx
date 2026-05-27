@@ -48,17 +48,19 @@ import { buildAgentRootSessionKey, getSessionDisplayLabel } from '@/features/ses
 import { shouldGuardWorkspaceSwitch } from '@/features/workspace/workspaceSwitchGuard';
 import { getWorkspaceAgentId, getWorkspaceRootSessionKey } from '@/features/workspace/workspaceScope';
 import { SelectionTooltip } from '@/components/SelectionTooltip';
+import { ThoughtsPanel } from '@/features/thoughts';
 
 // Lazy-loaded features (not needed in initial bundle)
 const SettingsDrawer = lazy(() => import('@/features/settings/SettingsDrawer').then(m => ({ default: m.SettingsDrawer })));
 const AgentHubDrawer = lazy(() => import('@/features/agents/AgentHubDrawer').then(m => ({ default: m.AgentHubDrawer })));
 const CommandPalette = lazy(() => import('@/features/command-palette/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
+const ResearchPanel = lazy(() => import('@/features/research/ResearchPanel').then(m => ({ default: m.ResearchPanel })));
 // Lazy-loaded side panels
 const SessionList = lazy(() => import('@/features/sessions/SessionList').then(m => ({ default: m.SessionList })));
 const WorkspacePanel = lazy(() => import('@/features/workspace/WorkspacePanel').then(m => ({ default: m.WorkspacePanel })));
-const ToolCallsPanel = lazy(() => import('@/features/tools/ToolCallsPanel').then(m => ({ default: m.ToolCallsPanel })));
 const AgentActivityPanel = lazy(() => import('@/features/agents/AgentActivityPanel').then(m => ({ default: m.AgentActivityPanel })));
+const LibraryPanel = lazy(() => import('@/features/references/LibraryPanel').then(m => ({ default: m.LibraryPanel })));
 
 // ── Panel System Types ──
 
@@ -69,7 +71,7 @@ const AgentActivityPanel = lazy(() => import('@/features/agents/AgentActivityPan
  * {@link panelName}, and to the rendering ternary in
  * {@link renderPanelSide}.
  */
-type PanelId = 'workspace' | 'agents' | 'memory' | 'thoughts' | 'tools' | 'activity';
+type PanelId = 'workspace' | 'agents' | 'memory' | 'thoughts' | 'references' | 'activity';
 
 /** Which sidebar a panel lives in. */
 type PanelSide = 'left' | 'right';
@@ -98,11 +100,11 @@ interface PanelLayout {
   /** Left sidebar holds the workspace file-tree panel. */
   left: ['workspace'],
   /** Right sidebar panels, rendered top-to-bottom in this order. */
-  right: ['thoughts', 'activity', 'tools'],
-  /** Initial collapse state. Thoughts starts collapsed to save space. */
-  collapsed: { thoughts: true, tools: false, activity: false },
+  right: ['thoughts', 'references', 'activity'],
+  /** Initial collapse state. Thoughts and references start collapsed. */
+  collapsed: { thoughts: true, references: true, activity: false },
   /** Flex weights for vertical space distribution (equal by default). */
-  flex: { thoughts: 1, tools: 1 },
+  flex: { thoughts: 1, references: 1, activity: 1 },
 };
 
 /**
@@ -143,7 +145,7 @@ function loadPanelLayout(): PanelLayout {
       // This runs only on load to clean up corrupted localStorage states.
 
       // If a panel is in both left and right, keep it only in its DEFAULT side
-      const RIGHT_DEFAULT = new Set<PanelId>(['agents', 'memory', 'thoughts', 'tools', 'activity']);
+      const RIGHT_DEFAULT = new Set<PanelId>(['agents', 'memory', 'thoughts', 'references', 'activity']);
       if (Array.isArray(parsed.right) && Array.isArray(parsed.left)) {
         for (const id of RIGHT_DEFAULT) {
           if (parsed.left.includes(id) && parsed.right.includes(id)) {
@@ -166,6 +168,24 @@ function loadPanelLayout(): PanelLayout {
         parsed.right = parsed.right.filter((p: string) => p !== 'agents' && p !== 'memory');
       }
 
+      // Migrate v3: remove tools panel (merged into activity panel)
+      if (Array.isArray(parsed.right)) {
+        parsed.right = parsed.right.filter((p: string) => p !== 'tools');
+      }
+      if (Array.isArray(parsed.left)) {
+        parsed.left = parsed.left.filter((p: string) => p !== 'tools');
+      }
+
+      // Migrate v4: add references panel if missing
+      if (Array.isArray(parsed.right) && !parsed.right.includes('references')) {
+        const actIdx = parsed.right.indexOf('activity');
+        if (actIdx >= 0) {
+          parsed.right.splice(actIdx, 0, 'references');
+        } else {
+          parsed.right.push('references');
+        }
+      }
+
       return { ...DEFAULT_LAYOUT, ...parsed };
     }
   } catch {}
@@ -185,7 +205,6 @@ function savePanelLayout(layout: PanelLayout) {
 
 // Lazy-loaded view modes
 const KanbanPanel = lazy(() => import('@/features/kanban/KanbanPanel').then(m => ({ default: m.KanbanPanel })));
-const ResearchPanel = lazy(() => import('@/features/research/ResearchPanel').then(m => ({ default: m.ResearchPanel })));
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
 interface AppProps {
@@ -632,21 +651,65 @@ export default function App({ onLogout }: AppProps) {
     try {
       const stored = localStorage.getItem('nerve-scratch-pad');
       if (stored) return stored;
-      // Fallback: try sessionStorage backup (survives localStorage clears)
       const backup = sessionStorage.getItem('nerve-scratch-pad-backup');
       if (backup) { localStorage.setItem('nerve-scratch-pad', backup); return backup; }
       return '';
     } catch { return ''; }
   });
-  /**
-   * Persist scratch-pad content to localStorage and mirror to
-   * sessionStorage as a short-lived backup in case the user clears
-   * localStorage without meaning to.
-   */
+
+  const scratchPadRef = useRef(scratchPadContent);
+  const scratchPadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function guessDeviceLabel(): string {
+    const ua = navigator.userAgent;
+    if (/Firefox/i.test(ua) && !/Seamonkey/i.test(ua)) return 'Zen/Firefox';
+    if (/Edg/i.test(ua)) return 'Edge';
+    if (/Chrome/i.test(ua) || /Chromium/i.test(ua)) return 'Chromium';
+    if (/Safari/i.test(ua)) return 'Safari';
+    return 'Other Browser';
+  }
+
   const persistScratchPad = useCallback((content: string) => {
+    scratchPadRef.current = content;
     setScratchPadContent(content);
     try { localStorage.setItem('nerve-scratch-pad', content); } catch {}
     try { sessionStorage.setItem('nerve-scratch-pad-backup', content); } catch {}
+    if (scratchPadTimer.current) clearTimeout(scratchPadTimer.current);
+    scratchPadTimer.current = setTimeout(() => {
+      fetch('/api/files/write', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'scratchpad.md', content: scratchPadRef.current }),
+      }).catch(() => {});
+    }, 500);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/files/read?path=scratchpad.md')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !data.ok) return;
+        const serverContent: string = data.content || '';
+        const localContent: string = scratchPadRef.current;
+        const alreadyMigrated = localStorage.getItem('nerve-scratch-pad-migrated');
+        if (alreadyMigrated) {
+          if (serverContent && serverContent !== localContent) {
+            persistScratchPad(serverContent);
+          }
+          return;
+        }
+        if (serverContent && localContent && serverContent !== localContent) {
+          const label = guessDeviceLabel();
+          const merged = `${serverContent}\n\n---\n*From ${label} (${new Date().toLocaleDateString()})*\n\n${localContent}`;
+          persistScratchPad(merged);
+        } else if (serverContent && !localContent) {
+          persistScratchPad(serverContent);
+        }
+        localStorage.setItem('nerve-scratch-pad-migrated', 'true');
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
   const [scratchPadPreview, setScratchPadPreview] = useState(false);
   /**
@@ -687,7 +750,6 @@ export default function App({ onLogout }: AppProps) {
     setThoughtsSelection(null);
   }, [thoughtsSelection]);
   const [isMobileTopBarHidden, setIsMobileTopBarHidden] = useState(false);
-  const [desktopRightPanelWidth, setDesktopRightPanelWidth] = useState<number | null>(null);
 
   /**
    * Return the effective right-sidebar pixel width for ResizablePanels.
@@ -695,7 +757,6 @@ export default function App({ onLogout }: AppProps) {
    * Priority:
    * 1. `rightSidebarCollapsed` → 40 px (strip), or `savedRightPanelWidth` when hover-expanded
    * 2. All right panels individually collapsed → 0
-   * 3. `fileBrowserCollapsed` mode → `desktopRightPanelWidth`
    * 4. Otherwise → `null` (percentage mode)
    */
   const computedRightWidthPx = useMemo(() => {
@@ -703,18 +764,18 @@ export default function App({ onLogout }: AppProps) {
       return rightHoverExpanded ? (savedRightPanelWidth ?? 280) : 40;
     }
     if (panelLayout.right.every(p => panelLayout.collapsed[p])) return 0;
-    if (fileBrowserCollapsed) return desktopRightPanelWidth;
+    // Non-collapsed expanded mode: use percentage-based layout so the
+    // right sidebar naturally shrinks/grows with the browser window.
     return null;
-  }, [rightSidebarCollapsed, rightHoverExpanded, savedRightPanelWidth, panelLayout.right, panelLayout.collapsed, fileBrowserCollapsed, desktopRightPanelWidth]);
+  }, [rightSidebarCollapsed, rightHoverExpanded, savedRightPanelWidth, panelLayout.right, panelLayout.collapsed]);
 
   /**
    * Unified handler for ResizablePanels `onRightWidthChange`.
-   * Keeps `savedRightPanelWidth` and `desktopRightPanelWidth` in sync
-   * so the right panel restores to the correct width after collapse/re-expand.
+   * Keeps `savedRightPanelWidth` up to date so the right panel restores
+   * to the correct width after collapse/re-expand.
    */
   const handleRightWidthChange = useCallback((width: number) => {
     setSavedRightPanelWidth(width);
-    setDesktopRightPanelWidth(width);
   }, []);
 
   const prevLogCount = useRef(0);
@@ -846,7 +907,6 @@ export default function App({ onLogout }: AppProps) {
     setViewMode('chat');
   }, [kanbanVisible, setViewMode, viewMode]);
 
-  // Listen for nerve:send-to-chat events from ResearchPanel or Thoughts
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { text?: string } | undefined;
@@ -1047,8 +1107,6 @@ export default function App({ onLogout }: AppProps) {
     canShowKanban: kanbanVisible,
     onToggleFileBrowser: isCompactLayout ? handleToggleFileBrowser : fileBrowserCollapsed ? handleToggleFileBrowser : undefined,
     isFileBrowserCollapsed: fileBrowserCollapsed,
-    onToggleRightPanel: undefined,
-    isRightPanelCollapsed: false,
     onNewFile: handleNewFile,
     onTogglePanel: (id) => togglePanelCollapse(id as any),
     panelStates: Object.fromEntries(panelLayout.right.map(p => [p, !panelLayout.collapsed[p]])),
@@ -1333,8 +1391,6 @@ export default function App({ onLogout }: AppProps) {
             hasMore={hasMore}
             onToggleFileBrowser={isCompactLayout ? handleToggleFileBrowser : fileBrowserCollapsed ? handleToggleFileBrowser : undefined}
             isFileBrowserCollapsed={fileBrowserCollapsed}
-            onToggleRightPanel={undefined}
-            isRightPanelCollapsed={false}
             onToggleMobileTopBar={isCompactLayout ? toggleMobileTopBar : undefined}
             isMobileTopBarHidden={isMobileTopBarHidden}
             onSendToResearch={handleSendToResearch}
@@ -1352,7 +1408,7 @@ export default function App({ onLogout }: AppProps) {
 
   /** Human-readable labels for each panel, used in header bars and accessible names. */
   const panelName: Record<string, string> = {
-    workspace: 'Workspace', agents: 'Agents', memory: 'Memory', thoughts: 'Thoughts', tools: 'Tool Calls', activity: 'Activity',
+    workspace: 'Workspace', agents: 'Agents', memory: 'Memory', thoughts: 'Thoughts', references: 'Library', activity: 'Activity',
   };
 
   /**
@@ -1435,7 +1491,7 @@ export default function App({ onLogout }: AppProps) {
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 </button>
-                <span className="text-[0.667rem] font-semibold tracking-wider text-foreground/70 flex-1 min-w-0">{panelName[id]}</span>
+                <span className="text-[0.667rem] font-semibold tracking-wider text-foreground/70 flex-1 min-w-0" title={id === 'thoughts' ? 'Use --- to split thoughts into separate cards. Check off when done, click to edit.' : undefined}>{panelName[id]}</span>
                 {id === 'agents' && (
                   <div className="ml-auto flex items-center gap-1">
                     <button
@@ -1487,10 +1543,12 @@ export default function App({ onLogout }: AppProps) {
                         onRefreshMemories={refreshMemories} memoriesLoading={memoriesLoading}
                         remoteWorkspace={remoteWorkspace}
                       />
+                    ) : id === 'references' ? (
+                      <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+                        <LibraryPanel messages={messages} />
+                      </Suspense>
                     ) : id === 'activity' ? (
                       <AgentActivityPanel messages={messages} />
-                    ) : id === 'tools' ? (
-                      <ToolCallsPanel messages={messages} />
                     ) : (
                       scratchPadPreview ? (
                         <Suspense fallback={<div className="flex-1 p-3 text-xs text-muted-foreground/50">Loading preview...</div>}>
@@ -1519,20 +1577,12 @@ export default function App({ onLogout }: AppProps) {
                               </button>
                             </div>
                           )}
-                          <textarea value={scratchPadContent} ref={sidebarThoughtsRef}
-                            onChange={(e) => persistScratchPad(e.target.value)}
-                            placeholder="Jot down notes for your next prompt…"
-                            className="flex-1 w-full bg-transparent border-none outline-none resize-none p-3 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono break-words whitespace-pre-wrap"
-                            onKeyDown={(e) => {
-                              if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                                e.preventDefault();
-                                setThoughtsSearch(prev => prev || '');
-                                // Auto-focus the search input after a tick
-                                setTimeout(() => {
-                                  const searchInput = (e.target as HTMLElement).closest('.flex-1.flex.flex-col')?.querySelector('input');
-                                  searchInput?.focus();
-                                }, 0);
-                              }
+                          <ThoughtsPanel
+                            content={scratchPadContent}
+                            onContentChange={persistScratchPad}
+                            isGenerating={isGenerating}
+                            onSendToChat={(text) => {
+                              window.dispatchEvent(new CustomEvent('nerve:send-to-chat', { detail: { text } }));
                             }}
                           />
                         </div>
@@ -1797,6 +1847,7 @@ export default function App({ onLogout }: AppProps) {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           showKanbanView={kanbanVisible}
+          leftSidebarOffset={!isCompactLayout && !fileBrowserCollapsed ? leftSidebarWidth + 12 : 0}
         />
       )}
 
@@ -1849,7 +1900,7 @@ export default function App({ onLogout }: AppProps) {
 
       <div className="flex-1 flex gap-3 overflow-hidden min-h-0 px-2 pt-1.5 pb-2 sm:px-4 sm:pt-2 sm:pb-2">
         {/* Left bar - collapsible sidebar with hover-to-expand, resizable */}
-        {!isCompactLayout && !fileBrowserCollapsed && (() => {
+        {!isCompactLayout && !fileBrowserCollapsed && viewMode !== 'research' && (() => {
           const isCollapsed = leftSidebarCollapsed && !leftHoverExpanded;
           const displayWidth = isCollapsed ? 40 : leftSidebarWidth;
           return (
@@ -2028,20 +2079,12 @@ export default function App({ onLogout }: AppProps) {
                         </button>
                       </div>
                     )}
-                    <textarea
-                      value={scratchPadContent} ref={researchThoughtsRef}
-                      onChange={(e) => persistScratchPad(e.target.value)}
-                      placeholder="Jot down notes for your next prompt…"
-                      className="flex-1 w-full bg-transparent border-none outline-none resize-none px-3 pb-2 text-xs text-foreground/80 placeholder:text-muted-foreground/30 font-mono break-words whitespace-pre-wrap"
-                      onKeyDown={(e) => {
-                        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-                          e.preventDefault();
-                          setThoughtsSearch(prev => prev || '');
-                          setTimeout(() => {
-                            const searchInput = (e.target as HTMLElement).closest('.flex-1.flex.flex-col')?.querySelector('input');
-                            searchInput?.focus();
-                          }, 0);
-                        }
+                    <ThoughtsPanel
+                      content={scratchPadContent}
+                      onContentChange={persistScratchPad}
+                      isGenerating={isGenerating}
+                      onSendToChat={(text) => {
+                        window.dispatchEvent(new CustomEvent('nerve:send-to-chat', { detail: { text } }));
                       }}
                     />
                   </div>

@@ -244,7 +244,7 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
   }
 
   return (
-    <div className={`group msg msg-${msg.role} relative max-w-full break-words ${isUser ? 'ml-auto w-fit max-w-full overflow-visible flex flex-col sm:max-w-[72ch]' : 'overflow-hidden'} ${bgClass(msg.role)} ${matchClass} ${pendingClass} ${failedClass}`}>
+    <div data-msg-id={msg.msgId} className={`group msg msg-${msg.role} relative max-w-full break-words ${isUser ? 'ml-auto w-fit max-w-full overflow-visible flex flex-col sm:max-w-[72ch]' : 'overflow-hidden'} ${bgClass(msg.role)} ${matchClass} ${pendingClass} ${failedClass}`}>
       {/* Collapsible memories section for user messages */}
       {isUser && memories && (
         <MemoriesSection

@@ -18,7 +18,7 @@
  * />
  * ```
  */
-import { type LucideIcon, FolderTree, Bot, Brain, Lightbulb, Wrench, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
+import { type LucideIcon, FolderTree, Bot, Brain, Lightbulb, BookMarked, Activity, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /** Internal icon-to-component mapping for known panel IDs. */
 const PANEL_ICONS: Record<string, LucideIcon> = {
@@ -26,7 +26,7 @@ const PANEL_ICONS: Record<string, LucideIcon> = {
   agents: Bot,
   memory: Brain,
   thoughts: Lightbulb,
-  tools: Wrench,
+  references: BookMarked,
   activity: Activity,
 };
 

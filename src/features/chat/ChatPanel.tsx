@@ -38,8 +38,6 @@ interface ChatPanelProps {
   onToggleFileBrowser?: () => void;
   /** Whether the mobile file browser is currently collapsed. */
   isFileBrowserCollapsed?: boolean;
-  onToggleRightPanel?: () => void;
-  isRightPanelCollapsed?: boolean;
   /** Mobile top bar toggle handler. */
   onToggleMobileTopBar?: () => void;
   /** Whether the mobile top bar is currently hidden. */
@@ -63,6 +61,8 @@ interface ChatPanelProps {
 export interface ChatPanelHandle {
   focusInput: () => void;
   addWorkspacePath: (path: string, kind: 'file' | 'directory', agentId?: string) => Promise<void>;
+  /** Scroll to a message by its index in the messages array. Returns true if found. */
+  scrollToMessage: (messageIndex: number) => boolean;
 }
 
 /** Main chat panel with message list, infinite scroll, search, and input bar. */
@@ -115,7 +115,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   lastEventTimestamp = 0, currentToolDescription = null, activityLog = [],
   onWakeWordState, onReset, searchOpen, onSearchClose, id, agentName = 'Agent',
   loadMore, hasMore = false, onToggleFileBrowser, isFileBrowserCollapsed = true,
-  onToggleRightPanel, isRightPanelCollapsed = true,
   onToggleMobileTopBar, isMobileTopBarHidden = false,
   onOpenWorkspacePath,
   pathLinkPrefixes,
@@ -126,23 +125,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   onSendToResearch,
 }, ref) {
   const { serverNames: mcpServerNames, visible: mcpVisible } = useMcpState();
-  // When false, tool calls and thinking messages are hidden from the chat.
-  // The chat becomes a clean text-only conversation like a normal messenger.
-  const [showAgentActivity, setShowAgentActivity] = useState(() => {
-    try {
-      const stored = localStorage.getItem('nerve-show-agent-activity');
-      return stored !== null ? stored === 'true' : true;
-    } catch { return true; }
-  });
-
-  // Persist to localStorage when toggled
-  const handleToggleAgentActivity = useCallback(() => {
-    setShowAgentActivity(prev => {
-      const next = !prev;
-      try { localStorage.setItem('nerve-show-agent-activity', String(next)); } catch {}
-      return next;
-    });
-  }, []);
   const scrollRef = useRef<HTMLDivElement>(null);
   const messageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const inputBarRef = useRef<InputBarHandle>(null);
@@ -197,13 +179,34 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     return () => observer.disconnect();
   }, [loadMore, hasMore]);
 
-  // Expose focusInput to parent
+  // Keep a ref to the latest messages for useImperativeHandle (avoids stale closures)
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+
+  // Expose methods to parent
   useImperativeHandle(ref, () => ({
     focusInput: () => inputBarRef.current?.focus(),
     addWorkspacePath: async (path: string, kind: 'file' | 'directory', agentId?: string) => {
       await inputBarRef.current?.addWorkspacePath(path, kind, agentId);
     },
-  }), []);
+    scrollToMessage: (messageIndex: number) => {
+      const msgs = messagesRef.current;
+      if (messageIndex < 0 || messageIndex >= msgs.length) return false;
+
+      const msgElement = messageRefs.current.get(messageIndex);
+      if (!msgElement || !scrollRef.current) return false;
+
+      // Expand the message if it's collapsed
+      const collapseKey = msgs[messageIndex]?.msgId || msgs[messageIndex]?.tempId || messageIndex;
+      if (collapsed[collapseKey]) {
+        setCollapsed(prev => ({ ...prev, [collapseKey]: false }));
+      }
+
+      msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setAutoScroll(false);
+      return true;
+    },
+  }), [messages, collapsed]);
 
   // Clean up stale messageRefs when messages change
   useEffect(() => {
@@ -301,6 +304,35 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
     prevMessageCount.current = messages.length;
   }, [messages.length, autoScroll]);
 
+  // Listen for nerve:jump-to-message events from the Activity Panel
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail?.msgId) return;
+
+      // Find the message index by msgId
+      const msgIndex = messages.findIndex(
+        (m) => m.msgId === detail.msgId || m.tempId === detail.msgId
+      );
+      if (msgIndex < 0) return;
+
+      const msgElement = messageRefs.current.get(msgIndex);
+      if (msgElement && scrollRef.current) {
+        // Expand the message if it's collapsed
+        const collapseKey = messages[msgIndex]?.msgId || messages[msgIndex]?.tempId || msgIndex;
+        if (collapsed[collapseKey]) {
+          setCollapsed(prev => ({ ...prev, [collapseKey]: false }));
+        }
+        // Scroll to the message
+        msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setAutoScroll(false);
+      }
+    };
+
+    window.addEventListener('nerve:jump-to-message', handler);
+    return () => window.removeEventListener('nerve:jump-to-message', handler);
+  }, [messages, collapsed]);
+
   // Processing timer
   useEffect(() => {
     if (isGenerating) {
@@ -356,12 +388,8 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         isGenerating={isGenerating}
         onToggleFileBrowser={onToggleFileBrowser}
         isFileBrowserCollapsed={isFileBrowserCollapsed}
-        onToggleRightPanel={onToggleRightPanel}
-        isRightPanelCollapsed={isRightPanelCollapsed}
         onToggleMobileTopBar={onToggleMobileTopBar}
         isMobileTopBarHidden={isMobileTopBarHidden}
-        showAgentActivity={showAgentActivity}
-        onToggleAgentActivity={handleToggleAgentActivity}
       />
 
       {/* Search Bar */}
@@ -404,8 +432,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           // so AppEmbed components render properly
           const hasEmbed = isTool && /<!--\s*nerve-app\s+/.test(msg.rawText);
 
-          // Hide tool calls and thinking messages when agent activity is toggled off
-          if (!showAgentActivity && (isTool || msg.isThinking)) return null;
+          // Tool calls and thinking messages are hidden from the chat —
+          // they appear in the Activity Panel instead.
+          if (isTool || msg.isThinking) return null;
 
           if (isTool && !hasEmbed) {
             // Grouped tool bubble (multiple consecutive tool calls)
@@ -413,6 +442,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
               return (
                 <div
                   key={stableKey}
+                  data-message-index={i}
                   ref={(el) => { if (el) messageRefs.current.set(i, el); }}
                 >
                   <ToolGroupBlock
@@ -428,6 +458,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
             return (
               <div
                 key={stableKey}
+                data-message-index={i}
                 ref={(el) => { if (el) messageRefs.current.set(i, el); }}
               >
                 <ToolCallBlock
@@ -445,6 +476,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           return (
             <div
               key={stableKey}
+              data-message-index={i}
               ref={(el) => { if (el) messageRefs.current.set(i, el); }}
             >
               <MessageBubble

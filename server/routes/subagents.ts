@@ -28,7 +28,7 @@ interface SubAgentEntry {
 /**
  * GET /api/subagents — List active + recent sub-agents.
  */
-app.get('/', async (c) => {
+app.get('/api/subagents', async (c) => {
   try {
     const result = await invokeGatewayTool('subagents', { action: 'list' }) as {
       active?: SubAgentEntry[];
