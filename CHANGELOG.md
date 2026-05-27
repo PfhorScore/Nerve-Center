@@ -6,6 +6,67 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Highlights — 2026-05-27 — Thoughts v2, Library, Perplexity Input 🧠
+
+**Thoughts Panel v2.** Complete redesign. Instead of one big textarea, thoughts are now individual cards split by `---` markers. Each card has a completion checkbox, inline editing, and hover actions (copy, send to chat, research). Send a thought to chat and it auto-checks off when the AI finishes generating. Completion state persists in localStorage.
+
+**Library Panel.** New sidebar panel that automatically extracts all URLs, citation links, and images from chat conversations. Deduplicated by URL with tabs for All/Links/Images, search filter, favicon previews, and image thumbnails.
+
+**Server-Backed Scratchpad.** Thoughts now sync across all devices via a `scratchpad.md` file on the server (`POST /api/files/write`). Debounced at 500ms. One-time migration merges content from multiple browsers with device labels. localStorage is preserved as instant cache.
+
+**Perplexity-Style Input Bar.** Send/attach buttons moved below the text input area in a labeled toolbar (Attach, Research, TTS, Markdown preview, Send). File upload accept changed from `image/*` to `*/*` so .md and other file types work.
+
+**Activity Panel Improvements.** Tool calls now appear exclusively in the Activity Panel — hidden from the chat stream for a clean conversation view. Each call is individually expandable. Removed redundant Tool Calls panel (merged into Activity panel).
+
+**Chat Header Cleanup.** Removed the collapse right sidebar button and the show/hide agent activity toggle. Header now shows just Model + Effort selectors and the reset button.
+
+**Tool Calls Hidden from Chat.** Tool messages and thinking indicators are no longer rendered in the chat view. They appear exclusively in the Activity Panel sidebar.
+
+**Research View Simplified.** Removed the workspace/file-explorer sidebar from research mode. Research view now shows only the thread sidebar, research panel, and thoughts panel.
+
+**Sidebar Width Fix.** Right sidebar now uses percentage-based layout when expanded (instead of fixed pixel width), so it naturally shrinks/grows with the browser window. Root container has `overflow-x-hidden` to prevent page-level horizontal scroll.
+
+**TopBar Alignment.** Chat/Research/Tasks buttons now offset by the left sidebar width (`leftSidebarOffset` prop) so they align with the chat content area.
+
+**AgentActivityPanel reverted to individual entries.** The grouping experiment was reverted for stability. Each tool call is its own expandable entry in the activity panel.
+
+### Added
+- ThoughtsPanel component (`src/features/thoughts/ThoughtsPanel.tsx`) — thought-bubble scratch pad
+- LibraryPanel component (`src/features/references/LibraryPanel.tsx`) — auto-extracted references from chat
+- Server-backed scratchpad sync via `scratchpad.md` with one-time cross-browser merge
+- `ThoughtsPanel` integrated into both sidebar and research view
+- `LibraryPanel` as a right-sidebar panel with BookMarked icon
+- TopBar `leftSidebarOffset` prop for view button alignment
+- Tooltip on Thoughts panel header explaining `---` workflow
+
+### Changed
+- InputBar: moved from inline button row to Perplexity-style button bar below textarea
+- InputBar: file accept changed from `image/*` to `*/*`
+- ChatHeader: removed collapse sidebar and agent activity toggle buttons
+- ChatPanel: tool calls permanently hidden from chat (activity panel only)
+- computedRightWidthPx: uses percentage mode for expanded sidebar
+- Research view: removed workspace sidebar, uses full-width thoughts panel
+- DEFAULT_LAYOUT: replaced 'tools' with 'references' panel
+- loadPanelLayout: added migrate v3 (remove tools) and v4 (add references)
+- SidebarStrip: added BookMarked icon, removed Wrench icon
+- package.json: bumped to v0.2.0
+
+### Fixed
+- Right sidebar width not adapting to window resize (was fixed pixel via `fileBrowserCollapsed`)
+- File upload filter blocking .md and non-image files
+- TopBar view buttons misaligned with chat area when left sidebar visible
+- Subagents route path fix (`/` → `/api/subagents`)
+
+### Removed
+- ToolCallsPanel from imports, PanelId, DEFAULT_LAYOUT, panelName, rendering
+- `onToggleRightPanel` and `showAgentActivity` from ChatHeader and ChatPanel
+- `tools` from SidebarStrip icon mapping
+- `handleJumpToMessage` and related jump-to-message code (reverted with AgentActivityPanel)
+- `desktopRightPanelWidth` unused state
+- ResearchPanel removed from research view (restored later)
+
+## [Unreleased]
+
 ### Highlights — 2026-05-26
 
 **Panel system overhaul with sidebar enforcement.** Duplicate panels no longer appear in both sidebars — a strict placement enforcement system ensures Workspace lives only in the left sidebar and Agents/Memory/Thoughts/Tool Calls live only in the right. Corrupted localStorage layouts are auto-healed on every page load.
