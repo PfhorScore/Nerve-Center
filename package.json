@@ -1,6 +1,6 @@
 {
   "name": "openclaw-nerve",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Web interface for OpenClaw — chat, voice input, TTS, and agent monitoring in the browser",
   "license": "MIT",
   "engines": {
