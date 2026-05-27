@@ -30,9 +30,10 @@ All the power of Nerve, plus a whole lot more:
 
 ### 🧩 Drag-and-Drop Panel System
 Your workspace, your layout:
-- **Drag panels** to reorder left/right — no settings, just grab and go
-- **Collapse individually** or nuke the whole right sidebar with one button
-- **Resize vertically** with slick drag handles
+- **Drag panels** to reorder or move between left/right sidebars
+- **Collapse individually** or nuke the whole sidebar with one button
+- **Resize vertically** with slick drag handles — double-click to auto-fit
+- **Right-click** any panel header to move it to the other sidebar
 - Everything **persists** across sessions (localStorage, no DB required)
 
 ### 🧠 AI-Powered Research Tab
@@ -45,12 +46,35 @@ Full Perplexity-class research experience built right in:
 - **Follow-up suggestion chips** — click to dive deeper
 - **Thread sidebar** with AI-generated titles
 - **Smart persistence** — fresh start after inactivity, old threads accessible
+- **Thoughts panel** alongside research — take notes without leaving the tab
+
+### ⚙️ Agent Hub
+Your agents, sessions, and memory in a dedicated slide-out drawer:
+- **Active Sessions** — full session list with model, thinking level, status
+- **Memory & Configuration** — Memory, Crons, and Config tabs in one place
+- **Sub-Agent visibility** — live list of running sub-agents with duration and status, auto-refreshes
+- Click the 👥 icon in the TopBar — same drawer pattern as Settings
+
+### ⚡ Agent Activity Panel
+Live tool call and reasoning display during generation:
+- See tool names, descriptions, and status (running ✓ error)
+- Thinking/reasoning steps as they happen
+- Finished activity persists for review — no more disappearing tool calls
+- Separate from the chat stream — keeps conversations clean
+
+### 🎭 Collapsible Sidebars
+Both sidebars collapse to icon strips — exactly like VS Code:
+- **Hover to expand** — temporarily shows the full panel (250ms delay prevents accidents)
+- **Right-click** the strip to toggle hover behavior on/off
+- Independent collapse state per sidebar
+- Smooth 400ms width animation
 
 ### 📝 Scratch Pad (Thoughts Panel)
 Your brain while the AI is thinking:
 - **Markdown editor** with live preview toggle
 - Notes auto-save to localStorage — never lose a thought
-- Collapsible, lives in the right panel bar
+- Available in both Chat view (sidebar) and Research view (right column)
+- Collapsible, resizable, syncs across views
 
 ### 🔧 Clean Chat Mode
 Toggle agent activity visibility with the wrench icon:
@@ -59,11 +83,19 @@ Toggle agent activity visibility with the wrench icon:
 - Pulsing dot when hidden and model is generating
 
 ### 🎯 Quality-of-Life
-- **Copy button** on messages (subtle icon, appears on hover)
-- **"Still thinking…"** indicator at 15s with hourglass pulse
-- **Collapse only chevron** — no more accidentally collapsing messages
+- **Live markdown preview** in chat input — toggle with the 👁️ icon
+- **Smooth streaming text** — no more flickering, append-only DOM updates
+- **Tab title pulses** during generation ("⚡ Thinking...")
+- **Smooth scroll** on new messages (no jarring snaps)
+- **Brain icon** on stop/send button during generation
+- **Copy button** on messages (subtle, appears on hover)
+- **"Still thinking…"** indicator at 15s with compact one-line status
+- **Collapse only chevron** — no accidentally collapsing messages
 - **Cmd+K** command palette with panel toggles, file creation, and navigation
-- **Research This?** tooltip — select text anywhere, send to research with one click
+- **Research This?** tooltip — select text, send to research (auto-fades after 4s)
+- **Changelog dialog** — click the version number in the StatusBar
+- **Right-click context menus** — Copy, Paste, Show on hover, Move panel
+- **Attachment indicators** — paperclip badge on messages with images
 - **NERVE CENTER** branding — it's not just a fork, it's its own thing
 
 ### 🎨 And everything Nerve already gives you
@@ -93,6 +125,26 @@ npm run build
 ---
 
 ## What's new
+
+### v0.2.0 — May 27, 2026 — Agent Hub & Polish Marathon 🔧
+
+**Agent Hub** — Dedicated slide-out drawer for Sessions, Memory, and live Sub-Agent tracking. Frees up sidebar real estate and puts agent management in its own space.
+
+**Collapsible Sidebars** — Both left and right sidebars collapse to 40px icon strips with hover-to-expand. Each sidebar independently persistable. Right-click context menus for "Show on hover" toggle and quick collapse.
+
+**Agent Activity Panel** — Live tool call and reasoning display during generation, separate from the chat stream. Cleaner chat, richer debugging.
+
+**Smooth Streaming** — Append-only DOM updates eliminate the flickering "nuke and rebuild" text. Messages now scroll into view smoothly (no jarring snaps).
+
+**Processing Indicator** — Slimmed to one compact line: "● Thinking · 12s · Reasoning..." instead of stacked rows. Tab title pulses during generation.
+
+**Right-Click Everywhere** — Panel headers show "Move to other sidebar". Sidebar strips show hover toggle, collapse, copy/paste. Textareas pass through to native browser menu.
+
+**Live Markdown Preview** — Eye toggle in the chat input shows real-time rendered markdown before sending.
+
+**Chat/Research/Tasks** — Buttons moved away from logo (ml-2 → ml-8), font sizes unified across streaming and static messages (0.867rem), attachment paperclip indicators on messages.
+
+**And dozens more** — 45 files changed, 3,000+ lines, 8 new components. See the full [changelog](NERVE-CHANGELOG.md).
 
 ### v0.1.0 — May 26, 2026 — The Big One 🚀
 
