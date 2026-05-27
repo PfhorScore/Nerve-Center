@@ -113,6 +113,8 @@ interface TopBarProps {
   onViewModeChange?: (mode: ViewMode) => void;
   /** Whether the Tasks/Kanban view toggle should be shown. */
   showKanbanView?: boolean;
+  /** Pixels to offset the view buttons so they align with the chat area (left sidebar width + gap). */
+  leftSidebarOffset?: number;
 }
 
 /**
@@ -137,6 +139,7 @@ export function TopBar({
   viewMode = "chat",
   onViewModeChange,
   showKanbanView = true,
+  leftSidebarOffset = 0,
 }: TopBarProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(null);
   const [hoveredView, setHoveredView] = useState<ViewMode | null>(null);
@@ -254,7 +257,9 @@ export function TopBar({
         </div>
         {/* View mode toggle */}
         {onViewModeChange && (
-          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:ml-8 sm:w-auto relative">
+          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:w-auto relative"
+            style={leftSidebarOffset ? { paddingLeft: leftSidebarOffset } : undefined}
+          >
             <button
               onClick={() => onViewModeChange("chat")}
               onMouseEnter={() => setHoveredView("chat")}

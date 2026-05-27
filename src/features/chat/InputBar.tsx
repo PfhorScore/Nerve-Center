@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo, lazy, Suspense } from 'react';
-import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Brain } from 'lucide-react';
+import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Brain, Search } from 'lucide-react';
 import type { TreeEntry } from '@/features/file-browser';
 import { useVoiceInput } from '@/features/voice/useVoiceInput';
 import { useTabCompletion } from '@/hooks/useTabCompletion';
@@ -1203,7 +1203,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   const pathPickerBreadcrumbs = pathPickerCurrentDir
     ? pathPickerCurrentDir.split('/').filter(Boolean)
     : [];
-  const fileAccept = uploadConfig.fileReferenceEnabled || uploadConfig.twoModeEnabled ? '*/*' : 'image/*';
+  const fileAccept = '*/*';
 
   return (
     <>
@@ -1268,111 +1268,116 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
         className="hidden"
         onChange={e => { if (e.target.files) { processFiles(e.target.files); e.target.value = ''; } }}
       />
-      {/* Input row */}
+      {/* Input area — Perplexity-style layout */}
       <div
-        className={`flex items-start gap-0 border-t shrink-0 bg-card focus-within:border-t-primary/40 focus-within:shadow-[0_-1px_8px_rgba(232,168,56,0.1)] ${voiceState === 'recording' ? 'border-t-red-500 shadow-[0_-1px_12px_rgba(239,68,68,0.3)]' : 'border-border'}`}
+        className={`flex flex-col border-t shrink-0 bg-card focus-within:border-t-primary/40 focus-within:shadow-[0_-1px_8px_rgba(232,168,56,0.1)] ${voiceState === 'recording' ? 'border-t-red-500 shadow-[0_-1px_12px_rgba(239,68,68,0.3)]' : 'border-border'}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {voiceState === 'recording' ? (
-          <span className="self-start pl-3.5 pt-3 shrink-0 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <Mic size={14} className="text-red-500" />
-          </span>
-        ) : voiceState === 'transcribing' ? (
-          <span className="self-start pl-3.5 pt-3 shrink-0 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <Mic size={14} className="text-primary" />
-          </span>
-        ) : (
-          <span className="self-start text-primary text-base leading-none font-bold pl-3.5 pt-3 shrink-0 animate-prompt-pulse">›</span>
-        )}
-        {/* Uncontrolled textarea - value is read/written via inputRef.
-            This is intentional: useTabCompletion and history navigation
-            set input.value directly, which is safe without a `value` prop.
-            Do NOT add a `value={state}` prop without also passing a
-            setValue callback to useTabCompletion. */}
-        {previewMarkdown ? (
-          <Suspense fallback={<div className="flex-1 px-2.5 py-3 text-xs text-muted-foreground/50">Loading preview...</div>}>
-            <div className="flex-1 overflow-y-auto px-3 py-2.5 prose prose-zinc dark:prose-invert max-w-none prose-p:text-[13px] prose-p:leading-relaxed prose-code:text-[12px] max-h-[160px] min-h-[42px]">
-              {draftText.trim() ? (
-                <MarkdownRenderer content={draftText} />
-              ) : (
-                <span className="text-muted-foreground/40 italic">Nothing to preview...</span>
-              )}
-            </div>
-          </Suspense>
-        ) : (
-        <textarea
-          ref={inputRef}
-          onKeyDown={handleKeyDown}
-          onInput={handleInput}
-          placeholder="Message..."
-          aria-label="Message input"
-          rows={1}
-          className="flex-1 font-mono text-[13px] bg-transparent text-foreground border-none px-2.5 py-3 resize-none outline-none min-h-[42px] max-h-[160px]"
-        />
-        )}
-        {onResearch && (
+        {/* Textarea row with left prompt indicator */}
+        <div className="flex items-start">
+          {voiceState === 'recording' ? (
+            <span className="pl-3.5 pt-3 shrink-0 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <Mic size={14} className="text-red-500" />
+            </span>
+          ) : voiceState === 'transcribing' ? (
+            <span className="pl-3.5 pt-3 shrink-0 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <Mic size={14} className="text-primary" />
+            </span>
+          ) : (
+            <span className="text-primary text-base leading-none font-bold pl-3.5 pt-3 shrink-0 animate-prompt-pulse">›</span>
+          )}
+          {previewMarkdown ? (
+            <Suspense fallback={<div className="flex-1 px-2.5 py-3 text-xs text-muted-foreground/50">Loading preview...</div>}>
+              <div className="flex-1 overflow-y-auto px-3 py-2.5 prose prose-zinc dark:prose-invert max-w-none prose-p:text-[13px] prose-p:leading-relaxed prose-code:text-[12px] max-h-[160px] min-h-[42px]">
+                {draftText.trim() ? (
+                  <MarkdownRenderer content={draftText} />
+                ) : (
+                  <span className="text-muted-foreground/40 italic">Nothing to preview...</span>
+                )}
+              </div>
+            </Suspense>
+          ) : (
+          <textarea
+            ref={inputRef}
+            onKeyDown={handleKeyDown}
+            onInput={handleInput}
+            placeholder="Message..."
+            aria-label="Message input"
+            rows={1}
+            className="flex-1 font-mono text-[13px] bg-transparent text-foreground border-none px-2.5 py-3 resize-none outline-none min-h-[42px] max-h-[160px]"
+          />
+          )}
+        </div>
+        {/* Button bar below the textarea */}
+        <div className="flex items-center gap-1 px-2 pb-2">
           <button
             type="button"
-            onClick={onResearch}
-            className="bg-transparent border-none text-muted-foreground hover:text-primary text-xs cursor-pointer px-2.5 self-stretch h-full flex items-center justify-center"
-            title="Send conversation to deep research"
-            aria-label="Send to deep research"
+            onClick={openUploadFilesPicker}
+            disabled={!uploadsEnabled}
+            className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={uploadsEnabled ? 'Attach files' : 'Uploads disabled by configuration'}
+            aria-label={uploadsEnabled ? 'Attach files' : 'Uploads disabled by configuration'}
           >
-            🔬
+            <Paperclip size={15} />
+            <span className="text-[11px]">Attach</span>
           </button>
-        )}
-        {showCommandPaletteButton && onOpenCommandPalette && (
+          {onResearch && (
+            <button
+              type="button"
+              onClick={onResearch}
+              className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center gap-1.5"
+              title="Send conversation to deep research"
+              aria-label="Send to deep research"
+            >
+              <Search size={14} />
+              <span className="text-[11px]">Research</span>
+            </button>
+          )}
+          {showCommandPaletteButton && onOpenCommandPalette && (
+            <button
+              type="button"
+              onClick={onOpenCommandPalette}
+              className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center"
+              title="Open command palette"
+              aria-label="Open command palette"
+            >
+              <Command size={15} />
+            </button>
+          )}
+          {/* Spacer */}
+          <div className="flex-1" />
           <button
             type="button"
-            onClick={onOpenCommandPalette}
-            className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2.5 self-stretch h-full flex items-center justify-center"
-            title="Open command palette"
-            aria-label="Open command palette"
+            onClick={toggleTts}
+            className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center"
+            title={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
+            aria-label={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
           >
-            <Command size={16} aria-hidden="true" />
+            {ttsEnabled ? <Volume2 size={15} /> : <VolumeOff size={15} className="text-destructive/70" />}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={openUploadFilesPicker}
-          disabled={!uploadsEnabled}
-          className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 self-stretch h-full flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-          title={uploadsEnabled ? 'Attach files' : 'Uploads disabled by configuration'}
-          aria-label={uploadsEnabled ? 'Attach files' : 'Uploads disabled by configuration'}
-        >
-          <Paperclip size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={toggleTts}
-          className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 self-stretch h-full flex items-center"
-          title={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
-          aria-label={ttsEnabled ? 'Disable voice replies' : 'Enable voice replies'}
-        >
-          {ttsEnabled ? <Volume2 size={16} /> : <VolumeOff size={16} className="text-destructive/70" />}
-        </button>
-        <button
-          type="button"
-          onClick={() => setPreviewMarkdown((p) => !p)}
-          className={`bg-transparent border-none cursor-pointer px-2 self-stretch h-full flex items-center ${previewMarkdown ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
-          title={previewMarkdown ? 'Edit message' : 'Preview markdown'}
-          aria-label={previewMarkdown ? 'Edit message' : 'Preview markdown'}
-        >
-          {previewMarkdown ? <EyeOff size={16} /> : <Eye size={16} />}
-        </button>
-        <button
-          onClick={() => { void handleSend(); }}
-          disabled={isGenerating || isPreparingInline}
-          aria-label={isGenerating ? 'Generating response...' : (isPreparingInline ? 'Preparing attachments...' : 'Send message')}
-          aria-busy={isGenerating || isPreparingInline}
-          className={`w-9 flex items-center justify-center self-stretch text-primary/60 hover:text-primary transition-colors ${isGenerating || isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
-        >
-          {isGenerating || isPreparingInline ? <Brain size={15} className="animate-pulse" aria-hidden="true" /> : <ArrowUp size={16} aria-hidden="true" />}
-        </button>
+          <button
+            type="button"
+            onClick={() => setPreviewMarkdown((p) => !p)}
+            className={`bg-transparent border-none cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center ${previewMarkdown ? 'text-primary' : 'text-muted-foreground hover:text-primary'}`}
+            title={previewMarkdown ? 'Edit message' : 'Preview markdown'}
+            aria-label={previewMarkdown ? 'Edit message' : 'Preview markdown'}
+          >
+            {previewMarkdown ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+          <button
+            onClick={() => { void handleSend(); }}
+            disabled={isGenerating || isPreparingInline}
+            aria-label={isGenerating ? 'Generating response...' : (isPreparingInline ? 'Preparing attachments...' : 'Send message')}
+            aria-busy={isGenerating || isPreparingInline}
+            className={`w-9 h-9 flex items-center justify-center rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors ${isGenerating || isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
+          >
+            {isGenerating || isPreparingInline ? <Brain size={15} className="animate-pulse" aria-hidden="true" /> : <ArrowUp size={16} aria-hidden="true" />}
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground px-4 pb-1.5 pl-10 bg-card">
         <span>
