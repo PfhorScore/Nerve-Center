@@ -1,33 +1,11 @@
-<div align="center">
-
-<img src="docs/nerve-logo-animated.svg" alt="Nerve Center" width="200" />
-
-# Nerve Center
-
-**The AI cockpit. Forked, enhanced, and personalized.**
-
-*A community fork of [Nerve](https://github.com/daggerhashimoto/openclaw-nerve) — the OpenClaw dashboard that makes you say "oh, now I get it."*
-
-
-[![Star Nerve Center](https://img.shields.io/github/stars/PfhorScore/Nerve-Center?style=for-the-badge&logo=github&label=Star%20Nerve%20Center&color=0f172a)](https://github.com/PfhorScore/Nerve-Center)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
-[![Changelog](https://img.shields.io/badge/changelog-see%20what%27s%20new-brightgreen?style=for-the-badge)](NERVE-CHANGELOG.md)
-
-</div>
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 ```
 > *Run the installer, live in 60 seconds*
 
-<img src="docs/screenshot-v0.2.0.png" alt="Nerve Center v0.2.0 — Thoughts v2, Library panel, Perplexity input, and more" />
+<img src="docs/screenshot-v0.1.0.png" alt="Nerve Center v0.2.0 — Thoughts v2, Library panel, Perplexity input, and more" />
 
-<div align="center">
-  <img src="docs/screenshot-research-view.png" alt="Research view" width="45%" />
-  <img src="docs/screenshot-sidebar-collapsed.png" alt="Sidebar collapsed to strip" width="45%" />
-  <br />
-  <img src="docs/screenshot-layout-custom.png" alt="Custom layout with collapsed sidebars" width="45%" />
-</div>
 
 ---
 
