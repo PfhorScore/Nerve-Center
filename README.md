@@ -5,7 +5,6 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 > *Run the installer, live in 60 seconds*
 
 <div align="center">
-  <a href="docs/screenshot-1.png"><img src="docs/screenshot-1.png" width="45%" alt="Nerve Center overview" /></a>
   <a href="docs/screenshot-2.png"><img src="docs/screenshot-2.png" width="45%" alt="Thoughts panel and workspace" /></a>
   <br />
   <a href="docs/screenshot-3.png"><img src="docs/screenshot-3.png" width="45%" alt="Research view and library" /></a>
