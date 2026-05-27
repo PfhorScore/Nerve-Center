@@ -4,7 +4,7 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 ```
 > *Run the installer, live in 60 seconds*
 
-<img src="docs/screenshot-v0.1.0.png" alt="Nerve Center v0.2.0 — Thoughts v2, Library panel, Perplexity input, and more" />
+<img src="docs/screenshot-workspace-thoughts.jpeg" alt="Nerve Center v0.2.0 — Workspace, Thoughts panel, and chat" />
 
 
 ---
