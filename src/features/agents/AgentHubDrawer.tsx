@@ -8,17 +8,17 @@
  * out of the main chat layout and into a dedicated overlay.
  */
 
-import { useEffect, useRef } from 'react';
-import { Users, X } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Users, X, Upload, ChevronDown } from 'lucide-react';
 import { SubAgentPanel } from './SubAgentPanel';
 
 interface AgentHubDrawerProps {
   open: boolean;
   onClose: () => void;
-  /** Agents panel content (SessionList wrapped in PanelErrorBoundary). */
   agentsPanel: React.ReactNode;
-  /** Memory panel content (WorkspacePanel wrapped in PanelErrorBoundary). */
   memoryPanel: React.ReactNode;
+  /** List of known agent names for per-agent avatar selection. */
+  agentNames?: string[];
 }
 
 /**
@@ -28,7 +28,7 @@ interface AgentHubDrawerProps {
  * — backdrop overlay, slide-in-right panel, close on backdrop click
  * or Escape key.
  */
-export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel }: AgentHubDrawerProps) {
+export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel, agentNames }: AgentHubDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -92,6 +92,10 @@ export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel }: Agen
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
+
+          {/* Avatar section */}
+          <AvatarSection knownAgents={agentNames} />
+
         {/* Agents section */}
           <div className="border-b border-border/40">
             <div className="px-5 py-3">
@@ -120,5 +124,111 @@ export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel }: Agen
         </div>
       </div>
     </>
+  );
+}
+
+function getAvatarKey(name: string): string {
+  return `nerve-avatar-${name}`;
+}
+
+/**
+ * AvatarSection — Upload and manage per-agent avatars.
+ * Stores each agent's avatar URL in localStorage keyed by agent name.
+ */
+function AvatarSection({ knownAgents }: { knownAgents?: string[] }) {
+  const agentNames = useMemo(() => {
+    const names = new Set(knownAgents || []);
+    names.add('You');
+    return Array.from(names).sort();
+  }, [knownAgents]);
+  const [agentName, setAgentName] = useState(() => {
+    try { return localStorage.getItem('nerve-agent-name') || 'You'; } catch { return 'You'; }
+  });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    try { return localStorage.getItem(getAvatarKey(agentName)) || ''; } catch { return ''; }
+  });
+  const [uploading, setUploading] = useState(false);
+
+  const refreshAvatar = useCallback((name: string) => {
+    setAgentName(name);
+    try { setAvatarUrl(localStorage.getItem(getAvatarKey(name)) || ''); } catch { setAvatarUrl(''); }
+  }, []);
+
+  const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please select an image file.'); return; }
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB.'); return; }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-reference/resolve', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.ok && data.items?.[0]?.absolutePath) {
+        const path = data.items[0].absolutePath;
+        localStorage.setItem(getAvatarKey(agentName), path);
+        setAvatarUrl(path);
+      }
+    } catch (err) { console.error('Avatar upload failed:', err); }
+    finally { setUploading(false); }
+  }, [agentName]);
+
+  const handleRemove = useCallback(() => {
+    localStorage.removeItem(getAvatarKey(agentName));
+    setAvatarUrl('');
+  }, [agentName]);
+
+  return (
+    <div className="border-b border-border/40">
+      <div className="px-5 py-3">
+        <h3 className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">Avatar</h3>
+        <div className="flex items-center gap-4">
+          {/* Preview */}
+          <div className="size-14 rounded-full border-2 border-border/50 overflow-hidden bg-secondary/30 flex items-center justify-center shrink-0">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-lg font-bold text-muted-foreground/40">{agentName.charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          {/* Controls */}
+          <div className="flex flex-col gap-1.5">
+            <label className="shell-icon-button inline-flex items-center gap-1.5 px-3 py-1.5 cursor-pointer text-[0.667rem]">
+              <Upload size={12} />
+              <span>{uploading ? 'Uploading…' : 'Upload'}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+            </label>
+            {avatarUrl && <button onClick={handleRemove} className="text-[0.6rem] text-muted-foreground/50 hover:text-destructive transition-colors text-left">Remove</button>}
+          </div>
+        </div>
+        <div className="mt-2 relative">
+          <span className="text-[0.533rem] text-muted-foreground/40 block mb-1">Set avatar for:</span>
+          <button
+            onClick={() => setShowDropdown(!showDropdown)}
+            className="flex items-center gap-2 w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-1.5 text-[0.667rem] text-foreground/70 hover:border-primary/40 transition-colors"
+          >
+            <span className="flex-1 text-left">{agentName}</span>
+            <ChevronDown size={12} className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+          </button>
+          {showDropdown && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-10 rounded-xl border border-border/70 bg-card shadow-[0_8px_30px_rgba(0,0,0,0.28)] p-1 max-h-[200px] overflow-y-auto">
+              {agentNames.map((name) => (
+                <button
+                  key={name}
+                  onClick={() => { refreshAvatar(name); setShowDropdown(false); }}
+                  className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[0.667rem] transition-colors ${name === agentName ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:bg-foreground/[0.04]'}`}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <p className="text-[0.533rem] text-muted-foreground/40 mt-1">PNG, JPG or WebP up to 2MB. Per-agent avatars.</p>
+      </div>
+    </div>
   );
 }

@@ -7,6 +7,7 @@ import { decodeHtmlEntities } from '@/lib/formatting';
 import { isStructuredMarkdown } from '@/lib/text/isStructuredMarkdown';
 import { extractAppEmbeds, stripAppEmbeds } from '@/lib/nerve-app';
 import { AppEmbed } from '@/features/chat/components/AppEmbed';
+import { AvatarIcon } from '@/components/AvatarIcon';
 import { useSettings } from '@/contexts/SettingsContext';
 import type { ChatMsg } from './types';
 import type { BeadLinkTarget } from '@/features/beads';
@@ -76,21 +77,6 @@ const bgClass = (role: string) => {
   if (role === 'system' || role === 'event') return 'bg-message-system';
   return '';
 };
-
-function RoleBadge({ role, agentName = 'Agent' }: { role: string; agentName?: string }) {
-  let userName = 'You';
-  try { userName = localStorage.getItem('nerve-user-name') || 'You'; } catch {}
-  if (role === 'user') {
-    return <span className="cockpit-badge" data-tone="primary">{userName}</span>;
-  }
-  if (role === 'assistant') {
-    return <span className="cockpit-badge" data-tone="success">{agentName}</span>;
-  }
-  if (role === 'event') {
-    return <span className="cockpit-badge" data-tone="warning">Event</span>;
-  }
-  return <span className="cockpit-badge">System</span>;
-}
 
 function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memoryKey, onToggleCollapse, onToggleMemory, firstMessageTime, searchQuery, isCurrentMatch, agentName, onOpenWorkspacePath, pathLinkPrefixes, pathLinkAliases, onOpenBeadId }: MessageBubbleProps) {
   const { speak } = useSettings();
@@ -268,18 +254,17 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggleCollapse(index); } }}
           >›</span>
         )}
-        <RoleBadge role={msg.role} agentName={agentName} />
         {/* ✏️ Canvas badge — visible even when collapsed, helps locate canvases in chat history */}
         {appEmbeds.length > 0 && (
           <span className="cockpit-badge" data-tone="info" title="Contains embedded canvas">✏️ Canvas</span>
         )}
-        {/* 📎 Attachment indicator — paperclip + count when message has images */}
-        {msg.images && msg.images.length > 0 && (
-          <span className="cockpit-badge" data-tone="info" title={`${msg.images.length} image${msg.images.length > 1 ? 's' : ''} attached`}>
+        {/* 📎 Attachment indicator — paperclip + count when message has images or uploads */}
+        {(msg.images?.length || msg.uploadAttachments?.length) ? (
+          <span className="cockpit-badge" data-tone="info" title={`${(msg.images?.length || 0) + (msg.uploadAttachments?.length || 0)} file(s) attached`}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block mr-0.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-            {msg.images.length}
+            {(msg.images?.length || 0) + (msg.uploadAttachments?.length || 0)}
           </span>
-        )}
+        ) : null}
         {isCollapsed && preview && (
           <span className="text-muted-foreground text-[0.667rem] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0">
             {isSystem && msg.rawText && /```/.test(msg.rawText) && (
@@ -288,12 +273,7 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
             {preview}
           </span>
         )}
-        <span className="ml-auto flex items-center gap-1.5 shrink-0">
-          <span className="text-muted-foreground text-[0.667rem] shrink-0 tabular-nums">
-            {timeStr}
-            {missionTime && <span className="ml-1.5 opacity-60">· {missionTime}</span>}
-          </span>
-        </span>
+
         {/* User chevron — last DOM element, far left in flex-row-reverse */}
         {isUser && (
           <span
@@ -319,6 +299,11 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
               )}
             </div>
           )}
+          <div className="flex items-center gap-2 mb-0.5">
+            <AvatarIcon name={msg.role === 'user' ? 'You' : (agentName || 'Agent')} size="sm" />
+            <span className="text-[0.733rem] font-semibold text-foreground/80">{msg.role === 'user' ? 'You' : (agentName || 'Agent')}</span>
+            <span className="text-[0.6rem] text-muted-foreground/50 tabular-nums">{timeStr}{missionTime ? <span className="ml-1 opacity-60">· {missionTime}</span> : ''}</span>
+          </div>
           <div className={`msg-body text-foreground text-[0.867rem] ${isUser ? 'block w-full min-w-0 max-w-full pr-1.5 text-left sm:pr-0' : ''} ${isAssistant ? (isStructuredMarkdown(msg.rawText) ? 'max-w-[1120px]' : 'max-w-[68ch]') : ''}`}>
             {isVoiceMessage && (
               <span className="cockpit-badge mr-2 inline-flex align-middle" data-tone="primary">

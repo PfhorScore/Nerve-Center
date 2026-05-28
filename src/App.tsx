@@ -257,7 +257,7 @@ export default function App({ onLogout }: AppProps) {
   // Chat state
   const {
     messages, isGenerating, stream, processingStage,
-    lastEventTimestamp, activityLog, currentToolDescription,
+    activityLog, currentToolDescription,
     handleSend, handleAbort, handleReset,
     loadMore, hasMore,
     showResetConfirm, confirmReset, cancelReset,
@@ -1073,9 +1073,6 @@ export default function App({ onLogout }: AppProps) {
     }
   }, [openFile, setFileBrowserCollapsed, workspaceAgentId]);
 
-  const toggleMobileTopBar = useCallback(() => {
-    setIsMobileTopBarHidden((prev) => !prev);
-  }, []);
 
   // Build command list with stable references
   const openSettings = useCallback(() => setSettingsOpen(true), []);
@@ -1379,20 +1376,14 @@ export default function App({ onLogout }: AppProps) {
             isGenerating={isGenerating}
             stream={stream}
             processingStage={processingStage}
-            lastEventTimestamp={lastEventTimestamp}
             currentToolDescription={currentToolDescription}
             activityLog={activityLog}
             onWakeWordState={handleWakeWordState}
-            onReset={handleReset}
             searchOpen={searchOpen}
             onSearchClose={closeSearch}
             agentName={currentSessionDisplayName}
             loadMore={loadMore}
             hasMore={hasMore}
-            onToggleFileBrowser={isCompactLayout ? handleToggleFileBrowser : fileBrowserCollapsed ? handleToggleFileBrowser : undefined}
-            isFileBrowserCollapsed={fileBrowserCollapsed}
-            onToggleMobileTopBar={isCompactLayout ? toggleMobileTopBar : undefined}
-            isMobileTopBarHidden={isMobileTopBarHidden}
             onSendToResearch={handleSendToResearch}
             onOpenWorkspacePath={openWorkspacePath}
             pathLinkPrefixes={chatPathLinkPrefixes}
@@ -1894,6 +1885,7 @@ export default function App({ onLogout }: AppProps) {
             onClose={() => setAgentHubOpen(false)}
             agentsPanel={drawerAgentsPanel}
             memoryPanel={drawerMemoryPanel}
+            agentNames={[agentName, ...new Set(sessions.map(s => getSessionDisplayLabel(s, agentName)).filter(Boolean))]}
           />
         </Suspense>
       </PanelErrorBoundary>
@@ -1906,7 +1898,7 @@ export default function App({ onLogout }: AppProps) {
           return (
             <div
               className="relative h-full flex shrink-0"
-              style={{ width: displayWidth, transition: isCollapsed ? 'width 400ms ease-in-out' : undefined }}
+              style={{ width: displayWidth, transition: leftSidebarCollapsed ? 'width 400ms ease-in-out' : undefined }}
               onMouseEnter={() => {
                 if (!leftSidebarCollapsed || !leftHoverEnabled) return;
                 leftHoverTimerRef.current = setTimeout(() => setLeftHoverExpanded(true), 250);

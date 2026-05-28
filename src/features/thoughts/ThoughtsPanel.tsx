@@ -17,7 +17,7 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { CheckSquare, Square, Copy, Check, MessageSquare, ExternalLink, Clock } from 'lucide-react';
+import { CheckSquare, Square, Copy, Check, MessageSquare, ExternalLink, Clock, Trash2 } from 'lucide-react';
 
 /** Props for {@link ThoughtsPanel}. */
 interface ThoughtsPanelProps {
@@ -101,6 +101,7 @@ function ThoughtCard({
   pending,
   onToggleComplete,
   onEdit,
+  onDelete,
   onSendToChat,
   onResearch,
   copied,
@@ -111,6 +112,7 @@ function ThoughtCard({
   pending: boolean;
   onToggleComplete: () => void;
   onEdit: (newText: string) => void;
+  onDelete: () => void;
   onSendToChat?: (text: string) => void;
   onResearch?: (text: string) => void;
   copied: boolean;
@@ -169,15 +171,15 @@ function ThoughtCard({
                 if (e.key === 'Escape') { setEditing(false); setEditText(thought.text); }
                 if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') commitEdit();
               }}
-              className="w-full bg-transparent border-none outline-none resize-none text-xs text-foreground/80 font-mono leading-relaxed p-0"
-              rows={thought.text.split('\n').length}
+              className="w-full bg-secondary/40 border border-primary/30 rounded-lg outline-none resize-vertical text-sm text-foreground/90 font-mono leading-relaxed p-2 min-h-[80px]"
+              rows={Math.max(3, thought.text.split('\n').length + 1)}
               autoFocus
             />
           ) : (
             <div
               onClick={startEdit}
-              className={`whitespace-pre-wrap break-words text-xs leading-relaxed cursor-text ${
-                completed ? 'text-muted-foreground/50 line-through' : 'text-foreground/80'
+              className={`whitespace-pre-wrap break-words text-sm leading-relaxed cursor-text ${
+                completed ? 'text-muted-foreground/50' : 'text-foreground/80'
               }`}
             >
               {thought.text}
@@ -215,6 +217,14 @@ function ThoughtCard({
           >
             {copied ? <Check size={11} className="text-green" /> : <Copy size={11} />}
           </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="size-6 flex items-center justify-center rounded-md text-muted-foreground/30 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Delete thought"
+            aria-label="Delete thought"
+          >
+            <Trash2 size={11} />
+          </button>
         </div>
       </div>
     </div>
@@ -249,6 +259,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   }, [isGenerating, pendingIdx]);
 
   const thoughts = useMemo(() => parseThoughts(content), [content]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   /** Rebuild the content string from the current thought array, preserving order. */
   const rebuildContent = useCallback((updatedThoughts: Thought[]) => {
@@ -274,6 +285,24 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
     });
   }, []);
 
+  /** Delete a thought by index. */
+  const deleteThought = useCallback((index: number) => {
+    const updated = thoughts.filter((t) => t.index !== index).map((t, i) => ({ index: i, text: t.text }));
+    onContentChange(rebuildContent(updated));
+    // Clean up completion state
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
+      // Shift higher indices down
+      const adjusted = new Set<number>();
+      for (const v of next) {
+        adjusted.add(v > index ? v - 1 : v);
+      }
+      saveCompleted(adjusted);
+      return adjusted;
+    });
+  }, [thoughts, onContentChange, rebuildContent]);
+
   /** Add a new thought from the input. */
   const addThought = useCallback(() => {
     const text = newThought.trim();
@@ -281,7 +310,13 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
     const updated = [...thoughts, { index: thoughts.length, text }];
     onContentChange(rebuildContent(updated));
     setNewThought('');
-    newThoughtRef.current?.focus();
+    // Auto-scroll to bottom to show the new thought
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+      newThoughtRef.current?.focus();
+    }, 50);
   }, [newThought, thoughts, onContentChange, rebuildContent]);
 
 
@@ -303,12 +338,12 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
             value={newThought}
             onChange={(e) => setNewThought(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addThought(); }
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); addThought(); }
               if (e.key === 'Escape') setNewThought('');
             }}
             placeholder="Write a thought…"
-            className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-xs text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors"
-            rows={2}
+            className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-sm text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors min-h-[60px]"
+            rows={3}
           />
         </div>
       </div>
@@ -318,7 +353,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Thought list */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {/* Active thoughts */}
         {thoughts.map((thought) => (
           <ThoughtCard
@@ -333,6 +368,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
               );
               onContentChange(rebuildContent(updated));
             }}
+            onDelete={() => deleteThought(thought.index)}
             onSendToChat={(text) => {
             setPendingIdx(thought.index);
             savePending(thought.index);
@@ -354,12 +390,12 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           value={newThought}
           onChange={(e) => setNewThought(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addThought(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); addThought(); }
             if (e.key === 'Escape') setNewThought('');
           }}
           placeholder="New thought…"
-          className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-xs text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors"
-          rows={2}
+          className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-sm text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors min-h-[60px]"
+          rows={3}
         />
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo, lazy, Suspense } from 'react';
-import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Brain, Search } from 'lucide-react';
+import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Search } from 'lucide-react';
 import type { TreeEntry } from '@/features/file-browser';
 import { useVoiceInput } from '@/features/voice/useVoiceInput';
 import { useTabCompletion } from '@/hooks/useTabCompletion';
@@ -48,6 +48,8 @@ interface InputBarProps {
   onOpenCommandPalette?: () => void;
   /** Send the current conversation to the Research tab with an auto-generated brief. */
   onResearch?: () => void;
+  /** Callback to abort the current generation. */
+  onAbort?: () => void;
 }
 
 export interface InputBarHandle {
@@ -277,6 +279,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   showCommandPaletteButton = false,
   onOpenCommandPalette,
   onResearch,
+  onAbort,
 }, ref) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1368,15 +1371,26 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
           >
             {previewMarkdown ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
-          <button
-            onClick={() => { void handleSend(); }}
-            disabled={isGenerating || isPreparingInline}
-            aria-label={isGenerating ? 'Generating response...' : (isPreparingInline ? 'Preparing attachments...' : 'Send message')}
-            aria-busy={isGenerating || isPreparingInline}
-            className={`w-9 h-9 flex items-center justify-center rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors ${isGenerating || isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
-          >
-            {isGenerating || isPreparingInline ? <Brain size={15} className="animate-pulse" aria-hidden="true" /> : <ArrowUp size={16} aria-hidden="true" />}
-          </button>
+          {isGenerating ? (
+            <button
+              onClick={() => onAbort?.()}
+              aria-label="Stop generating"
+              title="Stop generating"
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors active:scale-95"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
+            </button>
+          ) : (
+            <button
+              onClick={() => { void handleSend(); }}
+              disabled={isPreparingInline}
+              aria-label={isPreparingInline ? 'Preparing attachments...' : 'Send message'}
+              aria-busy={isPreparingInline}
+              className={`w-9 h-9 flex items-center justify-center rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors ${isPreparingInline ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95'} ${sendPulse ? 'animate-send-pulse' : ''} ${sendError ? 'animate-shake' : ''}`}
+            >
+              <ArrowUp size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground px-4 pb-1.5 pl-10 bg-card">

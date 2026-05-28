@@ -2,26 +2,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { ContextMeter } from './ContextMeter';
 import { UpdateBadge } from './UpdateBadge';
 import { useGateway } from '@/contexts/GatewayContext';
-import { X } from 'lucide-react';
+import { Cpu, Gauge, X } from 'lucide-react';
+import { InlineSelect } from '@/components/ui/InlineSelect';
+import { useModelEffort } from '@/features/chat/components/useModelEffort';
 
 /** Props for {@link StatusBar}. */
 interface StatusBarProps {
-  /** Current WebSocket connection state to the gateway. */
   connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
-  /** Number of active agent sessions. */
   sessionCount: number;
-  /** ASCII sparkline string rendered at the right edge of the bar. */
   sparkline: string;
-  /** Context tokens consumed in the active session (omit to hide the meter). */
   contextTokens?: number;
-  /** Context window limit in tokens (omit to hide the meter). */
   contextLimit?: number;
-  /** Whether the right side panel bar is fully collapsed. */
   rightPanelCollapsed?: boolean;
-  /** Toggle all right-side panels. */
   onToggleRightPanel?: () => void;
-  /** Whether the agent is currently generating a response. */
   isGenerating?: boolean;
+  onReset?: () => void;
 }
 
 function formatUptime(seconds: number): string {
@@ -54,8 +49,12 @@ async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedA
  * Shows connection state, server time, session count, gateway uptime,
  * an optional context-window meter, a sparkline, and the app version.
  */
-export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit, rightPanelCollapsed, onToggleRightPanel }: StatusBarProps) {
-  useGateway(); // Keep gateway context connected
+export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit, rightPanelCollapsed, onToggleRightPanel, onReset }: StatusBarProps) {
+  useGateway();
+  const {
+    modelOptions, effortOptions, selectedModel, selectedEffort, selectedEffortLabel,
+    handleModelChange, handleEffortChange, controlsDisabled, uiError,
+  } = useModelEffort();
 
   // Server time: offset between local clock and server clock
   const [serverTimeOffset, setServerTimeOffset] = useState<number | null>(null);
@@ -182,8 +181,47 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
         )}
       </div>
 
-      {/* Right side telemetry (hidden on smaller screens) */}
+      {/* Right side controls (hidden on smaller screens) */}
       <div className="ml-3 hidden shrink-0 items-center gap-2 lg:flex">
+        {/* Model selector */}
+        <div className="flex items-center gap-1">
+          <Cpu size={11} className="shrink-0 text-muted-foreground/50" />
+          <InlineSelect
+            value={controlsDisabled ? '' : selectedModel}
+            onChange={handleModelChange}
+            ariaLabel="Model"
+            disabled={controlsDisabled}
+            title={controlsDisabled ? 'Connect to gateway to change model' : uiError || undefined}
+            triggerClassName="max-w-[110px] rounded-xl border-border/75 bg-background/65 px-2 py-1 text-[0.6rem] font-sans text-foreground"
+            menuClassName="min-w-[160px] rounded-2xl border-border/80 bg-card/98 p-1 shadow-[0_20px_50px_rgba(0,0,0,0.28)]"
+            options={modelOptions}
+          />
+        </div>
+        {/* Effort selector */}
+        <div className="flex items-center gap-1">
+          <Gauge size={11} className="shrink-0 text-muted-foreground/50" />
+          <InlineSelect
+            value={controlsDisabled ? '' : selectedEffort}
+            onChange={handleEffortChange}
+            ariaLabel="Effort"
+            disabled={controlsDisabled}
+            triggerClassName="max-w-[80px] rounded-xl border-border/75 bg-background/65 px-2 py-1 text-[0.6rem] font-sans text-foreground"
+            menuClassName="rounded-2xl border-border/80 bg-card/98 p-1 shadow-[0_20px_50px_rgba(0,0,0,0.28)]"
+            displayLabel={selectedEffortLabel}
+            options={effortOptions}
+          />
+        </div>
+        {/* Reset session button */}
+        {onReset && (
+          <button
+            onClick={() => onReset()}
+            title="Reset session (start fresh)"
+            aria-label="Reset session"
+            className="flex items-center justify-center size-6 rounded-md text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36"/></svg>
+          </button>
+        )}
         {/* Sidebar collapse toggle */}
         {onToggleRightPanel && (
           <button

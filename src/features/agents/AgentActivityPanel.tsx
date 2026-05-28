@@ -29,7 +29,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Loader2, CheckCircle2, XCircle, Clock, Terminal } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Terminal, Loader2 } from 'lucide-react';
 import { useChat } from '@/contexts/ChatContext';
 import type { ChatMsg } from '@/features/chat/types';
 
@@ -321,7 +321,7 @@ export function AgentActivityPanel({ messages }: AgentActivityPanelProps): React
         </div>
       )}
 
-      {/* ── Current tool description banner (for tool_use stage, separate from thinking) ── */}
+      {/* ── Current tool description banner (for tool_use stage) ── */}
       {processingStage === 'tool_use' && currentToolDescription && !activityLog.some(e => e.phase === 'running') && (
         <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border border-orange/20 bg-orange/[0.04]">
           <Clock size={12} className="text-orange shrink-0 animate-pulse" />

@@ -138,6 +138,21 @@ function extractEntries(messages: ChatMsg[]): LibraryEntry[] {
       }
     }
 
+    // Extract files from upload attachments (file_reference mode)
+    if (msg.uploadAttachments) {
+      for (const att of msg.uploadAttachments) {
+        if (att.mimeType?.startsWith('image/') && att.name) {
+          entries.push({
+            id: `upload-${entries.length}`,
+            type: 'image',
+            url: att.reference?.path || att.name,
+            title: att.name,
+            timestamp: msg.timestamp,
+          });
+        }
+      }
+    }
+
     // Extract images from extractedImages field
     if (msg.extractedImages) {
       for (const img of msg.extractedImages) {

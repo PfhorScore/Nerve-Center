@@ -5,7 +5,7 @@ import { MessageBubble } from './MessageBubble';
 import { InputBar, type InputBarHandle } from './InputBar';
 import { SearchBar } from './SearchBar';
 import { useMessageSearch } from './useMessageSearch';
-import { ActivityLog, ChatHeader, ProcessingIndicator, ScrollToBottomButton, StreamingMessage, ToolGroupBlock } from './components';
+import { ActivityLog, ProcessingIndicator, ScrollToBottomButton, StreamingMessage, ToolGroupBlock } from './components';
 import { isMessageCollapsible } from './types';
 import type { ChatMsg, ImageAttachment, OutgoingUploadPayload } from './types';
 import type { BeadLinkTarget } from '@/features/beads';
@@ -17,11 +17,9 @@ interface ChatPanelProps {
   isGenerating: boolean;
   stream: ChatStreamState;
   processingStage?: ProcessingStage;
-  lastEventTimestamp?: number;
   currentToolDescription?: string | null;
   activityLog?: ActivityLogEntry[];
   onWakeWordState?: (enabled: boolean, toggle: () => void) => void;
-  onReset?: () => void;
   /** Externally controlled search open state */
   searchOpen?: boolean;
   /** Called when search should close */
@@ -35,13 +33,9 @@ interface ChatPanelProps {
   /** Whether there are older messages to load */
   hasMore?: boolean;
   /** Mobile file browser toggle handler */
-  onToggleFileBrowser?: () => void;
   /** Whether the mobile file browser is currently collapsed. */
-  isFileBrowserCollapsed?: boolean;
   /** Mobile top bar toggle handler. */
-  onToggleMobileTopBar?: () => void;
   /** Whether the mobile top bar is currently hidden. */
-  isMobileTopBarHidden?: boolean;
   /** Open or reveal a safe workspace path in the file explorer/editor. */
   onOpenWorkspacePath?: (path: string) => void | Promise<void>;
   /** Configured path prefixes that should render as clickable inline path links. */
@@ -112,10 +106,9 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   messages,
   onSend, onAbort, isGenerating, stream,
   processingStage,
-  lastEventTimestamp = 0, currentToolDescription = null, activityLog = [],
-  onWakeWordState, onReset, searchOpen, onSearchClose, id, agentName = 'Agent',
-  loadMore, hasMore = false, onToggleFileBrowser, isFileBrowserCollapsed = true,
-  onToggleMobileTopBar, isMobileTopBarHidden = false,
+  currentToolDescription = null, activityLog = [],
+  onWakeWordState, searchOpen, onSearchClose, id, agentName = 'Agent',
+  loadMore, hasMore = false,
   onOpenWorkspacePath,
   pathLinkPrefixes,
   pathLinkAliases,
@@ -381,16 +374,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   return (
     <div id={id} className="h-full flex flex-col border-r border-border min-w-0 relative">
-      {/* COMMS Header */}
-      <ChatHeader
-        onReset={onReset}
-        onAbort={onAbort}
-        isGenerating={isGenerating}
-        onToggleFileBrowser={onToggleFileBrowser}
-        isFileBrowserCollapsed={isFileBrowserCollapsed}
-        onToggleMobileTopBar={onToggleMobileTopBar}
-        isMobileTopBarHidden={isMobileTopBarHidden}
-      />
+
 
       {/* Search Bar */}
       {search.isActive && (
@@ -413,11 +397,14 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         aria-label="Chat messages"
         className="flex-1 overflow-y-auto overflow-x-hidden py-3 flex flex-col gap-1"
       >
-        {/* Infinite scroll sentinel + "load more" indicator */}
+        {/* Load older messages */}
         {hasMore && (
-          <div ref={sentinelRef} className="flex items-center justify-center py-2 text-muted-foreground/60 text-[0.667rem] tracking-widest uppercase select-none">
+          <button
+            onClick={() => loadMore?.()}
+            className="w-full flex items-center justify-center py-2 text-muted-foreground/60 hover:text-foreground/80 text-[0.667rem] tracking-widest uppercase select-none transition-colors cursor-pointer"
+          >
             ↑ older messages
-          </div>
+          </button>
         )}
         {messages.map((msg, i) => {
           const isTool = msg.role === 'tool' || msg.role === 'toolResult';
@@ -505,7 +492,6 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           <ProcessingIndicator
             stage={processingStage}
             elapsedMs={processingTime}
-            lastEventTimestamp={lastEventTimestamp}
             currentToolDescription={currentToolDescription}
             isRecovering={Boolean(stream.isRecovering)}
             recoveryReason={stream.recoveryReason}
@@ -551,6 +537,7 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
         showCommandPaletteButton={showCommandPaletteButton}
         onOpenCommandPalette={onOpenCommandPalette}
         onResearch={onSendToResearch}
+        onAbort={onAbort}
       />
 
     </div>

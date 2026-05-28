@@ -14,7 +14,7 @@ function messageSignature(msg: ChatMsg): string {
     .replace(/\s+/g, ' ')
     .slice(0, 4000);
   const textHash = hashString(normalizedText).toString(16);
-  const tsBucket = Math.floor(msg.timestamp.getTime() / 30_000);
+  const tsBucket = Math.floor(msg.timestamp.getTime() / 300_000); // 5-minute buckets for stability
   const flags = [
     msg.isThinking ? 'thinking' : '',
     msg.intermediate ? 'intermediate' : '',
@@ -69,23 +69,39 @@ export function mergeRecoveredTail(existing: ChatMsg[], recovered: ChatMsg[]): C
   if (recovered.length === 0) return existing;
   if (existing.length === 0) return recovered;
 
+  // First pass: deduplicate by msgId/tempId — remove any recovered messages
+  // that already exist in the current list (handles streaming race conditions).
+  const existingIds = new Set<string>();
+  for (const msg of existing) {
+    if (msg.msgId) existingIds.add(msg.msgId);
+    if (msg.tempId) existingIds.add(msg.tempId);
+  }
+  const uniqueRecovered = recovered.filter(
+    (msg) => !(msg.msgId && existingIds.has(msg.msgId)) && !(msg.tempId && existingIds.has(msg.tempId))
+  );
+  if (uniqueRecovered.length === 0) return existing;
+
   const existingSigs = existing.map(messageSignature);
-  const recoveredSigs = recovered.map(messageSignature);
+  const recoveredSigs = uniqueRecovered.map(messageSignature);
 
   // Fast path: recovered starts where existing tail ends.
   const overlap = findSuffixPrefixOverlap(existingSigs, recoveredSigs);
   if (overlap > 0) {
-    return [...existing, ...recovered.slice(overlap)];
+    return [...existing, ...uniqueRecovered.slice(overlap)];
   }
 
   // Anchor path: find a matching point in the existing tail and replace only suffix.
   const anchor = findTailAnchor(existingSigs, recoveredSigs);
   if (anchor) {
     const preservedPrefix = existing.slice(0, anchor.existingIdx);
-    const patchedTail = recovered.slice(anchor.recoveredIdx);
+    const patchedTail = uniqueRecovered.slice(anchor.recoveredIdx);
     return [...preservedPrefix, ...patchedTail];
   }
 
   // Last resort: no overlap/anchor detected, prefer authoritative recovered tail.
-  return recovered;
+  // But still filter out any messages that are text-duplicates of existing ones.
+  const existingTexts = new Set(existing.map(m => (m.rawText || '').trim().slice(0, 500)));
+  const finalDeduped = uniqueRecovered.filter(m => !existingTexts.has((m.rawText || '').trim().slice(0, 500)));
+  if (finalDeduped.length > 0) return finalDeduped;
+  return existing;
 }

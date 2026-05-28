@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Highlights — 2026-05-27 — Avatars, Chat Cleanup, Polish 🎨
+
+**Avatars!** Agent Hub now has an avatar section — upload per-agent images shown in message headers and session lists. Falls back to colored initials. Stored in localStorage keyed by agent name.
+
+**Chat Header Removed.** Model/Effort/Reset controls moved to the StatusBar at the bottom of the screen. The chat area is now just messages + input — much cleaner.
+
+**Send Button Becomes Stop.** During generation, the send button turns into a red stop square. No more separate abort button.
+
+**Discord-Style Messages.** Username on its own line above the message body, timestamp next to it. Inline name prefix removed.
+
+**"↑ older messages" is now clickable.** Replaced the IntersectionObserver sentinel with a proper button.
+
+**Left sidebar hover animation fixed.** Transition now uses the permanent collapsed state so hover-to-expand animates smoothly.
+
+### Added
+- AvatarIcon component (`src/components/AvatarIcon.tsx`) — per-agent avatars with initial fallback
+- AvatarSection in Agent Hub — upload UI with agent dropdown
+- Avatars shown in SessionNode (session list) and MessageBubble (chat headers)
+
+### Changed
+- ChatHeader removed entirely — Model/Effort/Reset now in StatusBar
+- InputBar send button becomes stop button during generation
+- MessageBubble: Discord-style username header with avatar, no inline name prefix
+- "older messages" sentinel → clickable button
+- Left sidebar hover uses `leftSidebarCollapsed` for smooth transition
+- package.json bumped to v0.2.1
+
+### Fixed
+- Left sidebar hover animation snapping (transition was conditional on wrong state)
+- "↑ older messages" not triggering (IntersectionObserver → button)
+- Agent names not populating in avatar dropdown (was hitting 404 API endpoint)
+
 ### Highlights — 2026-05-27 — Thoughts v2, Library, Perplexity Input 🧠
 
 **Thoughts Panel v2.** Complete redesign. Instead of one big textarea, thoughts are now individual cards split by `---` markers. Each card has a completion checkbox, inline editing, and hover actions (copy, send to chat, research). Send a thought to chat and it auto-checks off when the AI finishes generating. Completion state persists in localStorage.

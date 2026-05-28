@@ -8,6 +8,7 @@ import { PROGRESS_BAR_TRANSITION } from '@/lib/progress-colors';
 import { getStatusBadgeText, getStatusBadgeClasses } from './statusUtils';
 import { ChevronRight, ChevronDown, EllipsisVertical, PenLine, Timer, CornerDownRight } from 'lucide-react';
 import { SessionInfoPanel } from './SessionInfoPanel';
+import { AvatarIcon } from '@/components/AvatarIcon';
 
 // Pre-defined color configs to avoid object creation during render
 const COLORS_CRITICAL = {
@@ -257,9 +258,10 @@ export const SessionNode = memo(function SessionNode({
         ) : (
           <SessionInfoPanel session={node.session} running={running}>
             <span className={cn(
-              "text-[0.667rem] font-bold flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer",
+              "text-[0.667rem] font-bold flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap cursor-pointer flex items-center gap-1.5",
               isCronRun ? "text-muted-foreground font-normal" : "text-foreground"
             )}>
+              <AvatarIcon name={label} size="sm" />
               {isCron && <Timer size={11} className="text-purple mr-1 inline shrink-0" aria-label="Cron job" />}
               {isCronRun && <CornerDownRight size={10} className="text-purple/60 mr-1 inline shrink-0" aria-label="Cron run" />}
               {label}

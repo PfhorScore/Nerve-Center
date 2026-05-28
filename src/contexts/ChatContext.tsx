@@ -36,7 +36,6 @@ import {
   extractFinalMessages,
   deriveProcessingStage,
   isActiveAgentState,
-  mergeRecoveredTail,
   getOrCreateRunState,
   hasSeqGap,
   pruneRunRegistry,
@@ -133,7 +132,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const activeRunIdRef = useRef<string | null>(null);
   const lastGatewaySeqRef = useRef<number | null>(null);
   const lastChatSeqRef = useRef<number | null>(null);
-  const toolResultRefreshRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ─── Compose hooks ────────────────────────────────────────────────────────
   const msgHook = useChatMessages({ rpc, currentSessionRef });
@@ -196,10 +194,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     activeRunIdRef.current = null;
     lastGatewaySeqRef.current = null;
     lastChatSeqRef.current = null;
-    if (toolResultRefreshRef.current) {
-      clearTimeout(toolResultRefreshRef.current);
-      toolResultRefreshRef.current = null;
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSession]);
 
@@ -379,22 +373,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (type === 'agent_tool_result') {
           const completedId = ap.data?.toolCallId;
           if (completedId) completeActivityEntry(completedId);
-
-          if (toolResultRefreshRef.current) clearTimeout(toolResultRefreshRef.current);
-          const capturedSession = currentSessionRef.current;
-          const capturedGeneration = getGeneration();
-          toolResultRefreshRef.current = setTimeout(async () => {
-            toolResultRefreshRef.current = null;
-            try {
-              const recovered = await loadChatHistory({ rpc, sessionKey: capturedSession, limit: 100 });
-              if (capturedSession !== currentSessionRef.current) return;
-              if (capturedGeneration !== getGeneration()) return;
-              if (recovered.length > 0) {
-                const merged = mergeRecoveredTail(getAllMessages(), recovered);
-                applyMessageWindow(merged, false);
-              }
-            } catch { /* best-effort */ }
-          }, 300);
           return;
         }
 
