@@ -117,6 +117,40 @@ npm run build
 
 ## What's new
 
+### v0.2.1 — May 27, 2026 — Avatars, Chat Cleanup, Polish 🎨
+
+**Avatars!** Agent Hub has an avatar section — upload per-agent images that show up in message headers and the session list. Falls back to colored initials. Each agent gets its own avatar.
+
+**Chat Header Removed.** Model, Effort, and Reset controls moved to the StatusBar at the bottom. The chat area is now just messages + input — much cleaner.
+
+**Send Button Becomes Stop.** During generation, the send arrow turns into a red stop square. No more separate abort button.
+
+**Discord-Style Messages.** Username on its own line above the message body with a small avatar, timestamp next to it. Cleaner than inline name prefixes.
+
+**"↑ older messages" is now clickable.** Click it to load more chat history instead of relying on an invisible scroll sentinel.
+
+**Left sidebar hover animation fixed.** Smooth 400ms animation on hover-to-expand, matching the right sidebar behavior.
+
+### Changed
+- Chat header removed (Model/Effort/Reset → StatusBar)
+- Send button → stop button during generation
+- Discord-style message layout with avatars
+- "Older messages" → clickable button
+- Left sidebar transition fix
+- package.json bumped to v0.2.1
+
+### Added
+- AvatarIcon component — per-agent avatars with initial fallback
+- Avatar upload section in Agent Hub
+- Avatars in session list and message headers
+
+### Fixed
+- Left sidebar hover snapping
+- "Older messages" not triggering
+- Agent names not populating in avatar dropdown
+
+---
+
 ### v0.2.0 — May 27, 2026 — Thoughts, Library & Polish 🧠
 
 **Thoughts Panel v2** — Complete rethink. Thoughts are now individual cards split by `---` markers. Each card has a completion checkbox, inline editing, and hover actions (copy, send to chat, research). Send a thought to chat and it auto-checks off when the AI finishes generating.
