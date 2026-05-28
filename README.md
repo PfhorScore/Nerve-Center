@@ -15,17 +15,13 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 
 ---
+### 🧩 Work, Research, and manage Tasks
+Work alongside your agents, not delegate and wait
+- **Work** Chat with your agents, create and edit files, and browse your agent workspace
+- **Research** Use your agent to perform deep research, generating reports with citations
+- **Tasks** Kanban board with agent control
 
-
-### 🧩 Drag-and-Drop Panel System
-Your workspace, your layout:
-- **Drag panels** to reorder or move between left/right sidebars
-- **Collapse individually** or nuke the whole sidebar with one button
-- **Resize vertically** with slick drag handles — double-click to auto-fit
-- **Right-click** any panel header to move it to the other sidebar
-- Everything **persists** across sessions (localStorage, no DB required)
-
-### 📝 Thoughts Panel v2
+### 📝 Thoughts
 Your brain, organized into thought bubbles:
 - **`---` separates thoughts** — split your notes into individual cards
 - **Check off completed** thoughts (dimmed, stays visible for history)
