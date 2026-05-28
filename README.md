@@ -2,7 +2,7 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 ```
-> *Run the installer, live in 60 seconds*
+> *Nerve Center - All-in-one Dashboard for your Agent Fleet*
 
 <div align="center">
   <a href="docs/screenshot-2.png"><img src="docs/screenshot-2.png" width="45%" alt="Thoughts panel and workspace" /></a>
@@ -16,9 +16,6 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 ---
 
-## What makes Nerve Center different
-
-All the power of Nerve, plus a whole lot more:
 
 ### 🧩 Drag-and-Drop Panel System
 Your workspace, your layout:
