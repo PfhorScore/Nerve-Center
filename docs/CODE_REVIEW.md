@@ -1,10 +1,10 @@
 # Code Review Guide
 
-Review Nerve as it exists today, not as an imaginary perfect architecture.
+Review Nerve Center as it exists today, not as an imaginary perfect architecture.
 
 ## First principle
 
-Prefer consistency with the surrounding subsystem over introducing a brand-new pattern just because it looks cleaner in isolation. Nerve has strong structure, but it is still a living codebase with some mixed styles and a few rough edges. Good review reduces drift. It does not create more of it.
+Prefer consistency with the surrounding subsystem over introducing a brand-new pattern just because it looks cleaner in isolation. Nerve Center has strong structure, but it is still a living codebase with some mixed styles and a few rough edges. Good review reduces drift. It does not create more of it.
 
 ## Repo reality, right now
 

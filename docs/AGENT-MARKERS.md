@@ -1,6 +1,6 @@
 # Agent Markers
 
-Nerve parses special markers in agent responses to render rich UI elements. These markers are stripped from the visible text and replaced with interactive components.
+Nerve Center parses special markers in agent responses to render rich UI elements. These markers are stripped from the visible text and replaced with interactive components.
 
 ## TTS Markers — `[tts:...]`
 
@@ -14,11 +14,11 @@ Makes the agent's response play back as audio.
 
 ### How It Works
 
-1. **User sends a voice message** → Nerve prepends `[voice] ` to the text
-2. **Nerve appends a system hint** to the message telling the agent to include `[tts:...]` markers in its response
+1. **User sends a voice message** → Nerve Center prepends `[voice] ` to the text
+2. **Nerve Center appends a system hint** to the message telling the agent to include `[tts:...]` markers in its response
 3. **Agent responds** with both readable text AND a `[tts:...]` marker
-4. **Nerve extracts the marker**, strips it from visible text, and sends it to the TTS engine for audio playback
-5. **Fallback**: If the agent forgets the marker but the user sent a voice message, Nerve auto-speaks the full response text
+4. **Nerve Center extracts the marker**, strips it from visible text, and sends it to the TTS engine for audio playback
+5. **Fallback**: If the agent forgets the marker but the user sent a voice message, Nerve Center auto-speaks the full response text
 
 ### Example
 
@@ -29,8 +29,8 @@ The weather in Istanbul is 22°C and sunny.
 [tts: The weather in Istanbul is 22 degrees and sunny.]
 ```
 
-Nerve displays: "The weather in Istanbul is 22°C and sunny."  
-Nerve speaks: "The weather in Istanbul is 22 degrees and sunny."
+Nerve Center displays: "The weather in Istanbul is 22°C and sunny."  
+Nerve Center speaks: "The weather in Istanbul is 22 degrees and sunny."
 
 ### Rules for Agents
 
@@ -131,7 +131,7 @@ The marker must contain valid JSON inside `[chart:{...}]`. The parser uses brack
 
 ### How Agents Learn About Charts
 
-Unlike TTS markers, chart markers are **not** injected by Nerve at runtime.
+Unlike TTS markers, chart markers are **not** injected by Nerve Center at runtime.
 
 Agents only use `[chart:{...}]` markers when that syntax is already present in their own instructions or workspace context, for example in `TOOLS.md`, `AGENTS.md`, or another prompt source you manage.
 

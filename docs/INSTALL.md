@@ -1,6 +1,6 @@
-# Nerve Agent Install Contract
+# Nerve Center Agent Install Contract
 
-Use this file as the operational contract when you are installing, configuring, or validating Nerve on a machine.
+Use this file as the operational contract when you are installing, configuring, or validating Nerve Center on a machine.
 
 ## Hard gate
 
@@ -35,13 +35,13 @@ Unless the user clearly asks for something else, use these defaults:
 
 If `~/nerve` already exists:
 1. inspect it first
-2. determine whether it is an existing Nerve install
+2. determine whether it is an existing Nerve Center install
 3. prefer safe validation, restart, repair, or non-destructive reconfigure work
 4. ask before reinstalling, replacing, deleting, or hard-resetting anything
 
 ## OpenClaw dependency handling
 
-Nerve depends on an OpenClaw gateway.
+Nerve Center depends on an OpenClaw gateway.
 
 You must:
 1. detect whether a usable gateway already exists
@@ -52,7 +52,7 @@ You must:
 You may apply minimal localhost-safe OpenClaw changes automatically when needed for the default local path. Examples:
 - adding missing local control UI origins
 - adding required gateway tool allow entries such as `cron`, `gateway`, and `sessions_spawn`
-- fixing local device pairing or scopes needed for Nerve to connect
+- fixing local device pairing or scopes needed for Nerve Center to connect
 
 Ask first before any OpenClaw change that is remote, public, security-sensitive, destructive, or changes network exposure.
 
@@ -75,7 +75,7 @@ If prerequisite installation is impossible, fail clearly and say what is missing
 
 Ask for confirmation before any of the following:
 - installing OpenClaw
-- exposing Nerve beyond localhost
+- exposing Nerve Center beyond localhost
 - LAN exposure
 - public internet exposure
 - reverse proxy setup
@@ -162,7 +162,7 @@ Then handle runtime like this:
 1. if the installer already configured a service manager, use that instead of starting a duplicate foreground process
 2. on Linux, check for `systemd` service management via `nerve.service`
 3. on macOS, check for `launchd` management via `~/Library/LaunchAgents/com.nerve.server.plist`
-4. if no service manager is configured, run Nerve directly with the production entrypoint
+4. if no service manager is configured, run Nerve Center directly with the production entrypoint
 
 Typical commands:
 
@@ -185,8 +185,8 @@ npm run prod
 
 Stay self-contained for the common path, then branch by user intent:
 - Local / same machine: [DEPLOYMENT-A.md](./DEPLOYMENT-A.md)
-- Hybrid / remote gateway + local Nerve: [DEPLOYMENT-B.md](./DEPLOYMENT-B.md)
-- Cloud / remote Nerve: [DEPLOYMENT-C.md](./DEPLOYMENT-C.md)
+- Hybrid / remote gateway + local Nerve Center: [DEPLOYMENT-B.md](./DEPLOYMENT-B.md)
+- Cloud / remote Nerve Center: [DEPLOYMENT-C.md](./DEPLOYMENT-C.md)
 - Tailscale retrofit: [TAILSCALE.md](./TAILSCALE.md)
 
 Choose the branch based on the user's intended topology, not on low-level subsystem details.
@@ -194,8 +194,8 @@ Choose the branch based on the user's intended topology, not on low-level subsys
 ## Done criteria
 
 Only report success when all of the following are true:
-- Nerve is installed at the intended path
-- Nerve starts successfully
+- Nerve Center is installed at the intended path
+- Nerve Center starts successfully
 - it is configured against the intended OpenClaw gateway
 - access and auth behavior match the chosen mode
 - a minimal smoke test passes
@@ -204,8 +204,8 @@ Only report success when all of the following are true:
 
 Keep the smoke test small and explicit.
 
-1. Confirm the Nerve process or service is running.
-2. Confirm the expected Nerve URL responds.
+1. Confirm the Nerve Center process or service is running.
+2. Confirm the expected Nerve Center URL responds.
    - local default: `http://127.0.0.1:3080/health`
 3. Confirm the intended OpenClaw gateway is reachable.
 4. Confirm `.env` points to that gateway.

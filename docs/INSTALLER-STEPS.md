@@ -1,4 +1,4 @@
-# Nerve Installer Script: Step-by-Step Reference
+# Nerve Center Installer Script: Step-by-Step Reference
 
 This document describes exactly what `install.sh` does, in the order it executes, including conditional branches.
 
@@ -82,7 +82,7 @@ Interactive mode is true if either:
 This allows prompts even when invoked via `curl | bash`.
 
 ### 0.7 Banner output
-Prints the Nerve ASCII banner and a dry-run warning banner when relevant.
+Prints the Nerve Center ASCII banner and a dry-run warning banner when relevant.
 
 ---
 
@@ -239,13 +239,13 @@ Inside the interactive setup wizard, access mode now splits Tailscale into two e
 Behavior by interactive profile:
 - `tailnet IP`
   - configures direct tailnet-IP access
-  - keeps Nerve network-reachable
+  - keeps Nerve Center network-reachable
   - patches gateway allowed origins using the tailnet IP origin
 - `Tailscale Serve`
-  - keeps Nerve on `127.0.0.1`
+  - keeps Nerve Center on `127.0.0.1`
   - asks whether to run `tailscale serve --bg http://127.0.0.1:<PORT>`
   - detects the resulting `https://<node>.tail<id>.ts.net` origin
-  - patches both Nerve and the gateway for that `*.ts.net` origin
+  - patches both Nerve Center and the gateway for that `*.ts.net` origin
   - if Serve cannot be confirmed, asks whether to fall back to `tailnet IP` or stop
 
 If Tailscale is installed but not logged in:
@@ -279,9 +279,9 @@ After `.env` is written, the setup wizard detects and applies pending OpenClaw g
 
 #### Possible changes detected:
 1. **Device scopes** — bootstraps `~/.openclaw/devices/paired.json` with full operator scopes if missing or incomplete
-2. **Pre-pair Nerve device** — registers Nerve's Ed25519 identity in `paired.json` so it can connect without manual `openclaw devices approve`
+2. **Pre-pair Nerve Center device** — registers Nerve Center's Ed25519 identity in `paired.json` so it can connect without manual `openclaw devices approve`
 3. **Tools allow** — adds `"cron"`, `"gateway"`, and `"sessions_spawn"` to `gateway.tools.allow` in `~/.openclaw/openclaw.json` (required for OpenClaw ≥2026.2.23, which denies these tools on `/tools/invoke` by default; `sessions_spawn` is required for Kanban task execution)
-4. **Allowed origins** — adds all required Nerve browser origins to `gateway.controlUi.allowedOrigins`
+4. **Allowed origins** — adds all required Nerve Center browser origins to `gateway.controlUi.allowedOrigins`
    - LAN or tailnet-IP mode: `http://<ip>:<port>`
    - Tailscale Serve mode: `https://<node>.tail<id>.ts.net`
 

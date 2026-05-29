@@ -1,11 +1,11 @@
-# Add Tailscale to an Existing Nerve Install
+# Add Tailscale to an Existing Nerve Center Install
 
-This guide is for the case where **Nerve is already installed and working**, and you want to add private remote access afterward.
+This guide is for the case where **Nerve Center is already installed and working**, and you want to add private remote access afterward.
 
 Use one of these two paths:
 
-- **Tailnet IP**: quickest path, Nerve listens on the Tailscale IP and you open `http://100.x.y.z:3080`
-- **Tailscale Serve**: better default for phones and voice input, Nerve stays on `127.0.0.1` and Tailscale exposes `https://<node>.tail<id>.ts.net`
+- **Tailnet IP**: quickest path, Nerve Center listens on the Tailscale IP and you open `http://100.x.y.z:3080`
+- **Tailscale Serve**: better default for phones and voice input, Nerve Center stays on `127.0.0.1` and Tailscale exposes `https://<node>.tail<id>.ts.net`
 
 If you are starting from scratch, use the normal installer/setup flow first, then come back here only if you need to retrofit Tailscale onto an existing machine.
 
@@ -13,11 +13,11 @@ If you are starting from scratch, use the normal installer/setup flow first, the
 
 Make sure all of this is already true:
 
-- Nerve starts locally and `curl http://127.0.0.1:3080/health` works
+- Nerve Center starts locally and `curl http://127.0.0.1:3080/health` works
 - OpenClaw gateway is healthy and `openclaw gateway status` works
-- Tailscale is installed on the Nerve machine
-- Tailscale is logged in on the Nerve machine and on the client device you want to use
-- You know where your Nerve install lives, default is usually `~/nerve`
+- Tailscale is installed on the Nerve Center machine
+- Tailscale is logged in on the Nerve Center machine and on the client device you want to use
+- You know where your Nerve Center install lives, default is usually `~/nerve`
 
 Back up your current config first:
 
@@ -32,16 +32,16 @@ cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.before-tailscale.bak
 Choose **Tailnet IP** if:
 - you want the simplest possible setup
 - plain HTTP on the tailnet is fine
-- you are okay with Nerve binding to `0.0.0.0`
+- you are okay with Nerve Center binding to `0.0.0.0`
 
 Choose **Tailscale Serve** if:
-- you want Nerve to stay private on localhost
+- you want Nerve Center to stay private on localhost
 - you want an HTTPS URL for phone access
 - you want the least surprising path for microphone access on mobile browsers
 
 ## Option A: Tailnet IP
 
-This exposes Nerve on the machine's Tailscale IP and patches both Nerve and the gateway to allow that origin.
+This exposes Nerve Center on the machine's Tailscale IP and patches both Nerve Center and the gateway to allow that origin.
 
 ### 1. Get the Tailscale IPv4 address
 
@@ -57,7 +57,7 @@ Example output:
 
 Save that value, this guide calls it `<tailscale-ip>` below.
 
-### 2. Update Nerve `.env`
+### 2. Update Nerve Center `.env`
 
 Open `~/nerve/.env` and make sure these values are set:
 
@@ -71,8 +71,8 @@ NERVE_AUTH=true
 
 Notes:
 - `HOST=0.0.0.0` is required for direct tailnet-IP access
-- `NERVE_AUTH=true` is strongly recommended whenever Nerve is reachable over the network, including Tailscale
-- if you do not already have a password hash configured, Nerve accepts the `GATEWAY_TOKEN` as a fallback password
+- `NERVE_AUTH=true` is strongly recommended whenever Nerve Center is reachable over the network, including Tailscale
+- if you do not already have a password hash configured, Nerve Center accepts the `GATEWAY_TOKEN` as a fallback password
 - if `ALLOWED_ORIGINS` or `CSP_CONNECT_EXTRA` already contains other values you still need, append instead of replacing
 
 ### 3. Patch the gateway allowlist
@@ -96,7 +96,7 @@ console.log(`Added ${origin} to ${path}`);
 NODE
 ```
 
-### 4. Restart Nerve and the gateway
+### 4. Restart Nerve Center and the gateway
 
 ```bash
 sudo systemctl restart nerve.service
@@ -105,7 +105,7 @@ openclaw gateway restart
 
 ### 5. Validate
 
-On the Nerve machine:
+On the Nerve Center machine:
 
 ```bash
 curl -fsS http://127.0.0.1:3080/health
@@ -126,11 +126,11 @@ Expected result:
 
 ## Option B: Tailscale Serve
 
-This keeps Nerve on localhost and lets Tailscale publish a private HTTPS URL.
+This keeps Nerve Center on localhost and lets Tailscale publish a private HTTPS URL.
 
 ### 1. Enable Tailscale Serve
 
-On the Nerve machine:
+On the Nerve Center machine:
 
 ```bash
 tailscale serve --bg http://127.0.0.1:3080
@@ -163,7 +163,7 @@ https://example-node.tail0000.ts.net
 
 Save that value, this guide calls it `<serve-origin>` below.
 
-### 3. Update Nerve `.env`
+### 3. Update Nerve Center `.env`
 
 Open `~/nerve/.env` and make sure these values are set:
 
@@ -186,7 +186,7 @@ NERVE_AUTH=true
 ```
 
 Notes:
-- if `HOST` is missing entirely, Nerve defaults to localhost, which is also fine
+- if `HOST` is missing entirely, Nerve Center defaults to localhost, which is also fine
 - remove stale `WS_ALLOWED_HOSTS` if you previously used tailnet-IP mode and are switching to Serve-only access
 - `NERVE_AUTH=true` is still recommended, even though Serve is private by default
 
@@ -211,7 +211,7 @@ console.log(`Added ${origin} to ${path}`);
 NODE
 ```
 
-### 5. Restart Nerve and the gateway
+### 5. Restart Nerve Center and the gateway
 
 ```bash
 sudo systemctl restart nerve.service
@@ -220,7 +220,7 @@ openclaw gateway restart
 
 ### 6. Validate
 
-On the Nerve machine:
+On the Nerve Center machine:
 
 ```bash
 curl -fsS http://127.0.0.1:3080/health
@@ -238,13 +238,13 @@ Expected result:
 - the page loads over HTTPS
 - login works
 - chat connects without `origin not allowed`
-- phone access works without exposing Nerve directly on `0.0.0.0`
+- phone access works without exposing Nerve Center directly on `0.0.0.0`
 
 ## Switching from one mode to the other
 
 If you switch modes later, update both layers:
 
-- Nerve `.env`
+- Nerve Center `.env`
 - OpenClaw `gateway.controlUi.allowedOrigins`
 
 Common cleanup when switching to **Serve**:
@@ -278,7 +278,7 @@ Cause:
 
 Fix:
 - clean up `.env` so it matches the mode you actually want
-- restart Nerve
+- restart Nerve Center
 
 ### Microphone access is flaky on phone
 
@@ -288,7 +288,7 @@ Mobile browsers are much happier with HTTPS for microphone access.
 
 ## Security notes
 
-- Do **not** expose OpenClaw gateway port `18789` publicly just because Nerve is on Tailscale
+- Do **not** expose OpenClaw gateway port `18789` publicly just because Nerve Center is on Tailscale
 - Keep `NERVE_AUTH=true` for any non-localhost access
 - If you shared gateway tokens while debugging, rotate them afterward
 

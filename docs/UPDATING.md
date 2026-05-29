@@ -1,6 +1,6 @@
-# Updating Nerve
+# Updating Nerve Center
 
-Nerve ships a built-in updater that pulls the latest published release from GitHub, rebuilds, restarts the service, and verifies health — all in one command.
+Nerve Center ships a built-in updater that pulls the latest published release from GitHub, rebuilds, restarts the service, and verifies health — all in one command.
 
 ## Prerequisites
 
@@ -137,7 +137,7 @@ If no service manager is found, the updater skips restart and prints manual star
 
 ### 1.5.0, Kanban data path migration
 
-On first start after upgrading to 1.5.0, Nerve automatically migrates legacy Kanban runtime data from:
+On first start after upgrading to 1.5.0, Nerve Center automatically migrates legacy Kanban runtime data from:
 - `server-dist/data/kanban`
 - `server/data/kanban`
 

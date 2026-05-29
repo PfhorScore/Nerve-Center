@@ -1,6 +1,6 @@
 # API Reference
 
-Nerve exposes a REST + SSE API served by [Hono](https://hono.dev/) on the configured `PORT` (default **3080**). All API routes are prefixed with `/api/` except the health endpoint. Responses are JSON unless otherwise noted.
+Nerve Center exposes a REST + SSE API served by [Hono](https://hono.dev/) on the configured `PORT` (default **3080**). All API routes are prefixed with `/api/` except the health endpoint. Responses are JSON unless otherwise noted.
 
 > **Authentication:** When `NERVE_AUTH=true`, all API endpoints (except `/api/auth/*` and `/health`) require a valid session cookie. Obtain one via `POST /api/auth/login`. When `NERVE_AUTH=false` (default for localhost), no authentication is required. See [SECURITY.md](./SECURITY.md) for details.
 
@@ -180,7 +180,7 @@ Returns the application name and version from `package.json`.
 
 ### `GET /api/connect-defaults`
 
-Provides the official gateway WebSocket URL and trust metadata for the frontend's auto-connect flow. The `token` field is always `null`; when `serverSideAuth` is `true`, Nerve expects the browser to connect with an empty token and injects `GATEWAY_TOKEN` server-side during the WebSocket handshake.
+Provides the official gateway WebSocket URL and trust metadata for the frontend's auto-connect flow. The `token` field is always `null`; when `serverSideAuth` is `true`, Nerve Center expects the browser to connect with an empty token and injects `GATEWAY_TOKEN` server-side during the WebSocket handshake.
 
 **Rate Limit:** General (`60 requests / minute`)
 
@@ -208,9 +208,9 @@ Provides the official gateway WebSocket URL and trust metadata for the frontend'
 }
 ```
 
-`serverSideAuth` becomes `true` when Nerve can safely inject the configured gateway token for this request, such as:
+`serverSideAuth` becomes `true` when Nerve Center can safely inject the configured gateway token for this request, such as:
 - loopback / tunneled local access to the official gateway URL
-- authenticated sessions on a network-exposed Nerve instance
+- authenticated sessions on a network-exposed Nerve Center instance
 
 If the browser is pointed at a custom gateway URL, or the request is not trusted for server-side injection, the connect dialog keeps the token field visible and the user must supply it manually.
 
@@ -698,7 +698,7 @@ Session data is cached for 60 seconds to avoid repeated filesystem scans.
 
 ## Memories
 
-All memory routes accept an optional `agentId` scope. If omitted, Nerve uses `main`. The UI normally derives this from the owning top-level agent when you switch sessions.
+All memory routes accept an optional `agentId` scope. If omitted, Nerve Center uses `main`. The UI normally derives this from the owning top-level agent when you switch sessions.
 
 ### `GET /api/memories`
 
@@ -936,7 +936,7 @@ HTTP fallback for **model changes** when the frontend cannot apply `sessions.pat
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `sessionKey` | `string` | No | Target session. If omitted, Nerve tries to pick a preferred active root session |
+| `sessionKey` | `string` | No | Target session. If omitted, Nerve Center tries to pick a preferred active root session |
 | `model` | `string` | No | Model to apply via the gateway's `session_status` tool |
 | `thinkingLevel` | `string \| null` | No | Accepted by the schema, but not applied by this HTTP fallback |
 
@@ -1044,7 +1044,7 @@ If the transcript cannot be found, the endpoint returns `{ "ok": true, "model": 
 
 ## Workspace Files
 
-Workspace file routes accept an optional `agentId` scope. If omitted, Nerve uses the `main` workspace.
+Workspace file routes accept an optional `agentId` scope. If omitted, Nerve Center uses the `main` workspace.
 
 ### `GET /api/workspace`
 
@@ -1179,7 +1179,7 @@ Returns the last 10 run history entries for a cron job.
 
 Lists all OpenClaw skills via `openclaw skills list --json` for the selected workspace agent.
 
-Nerve scopes this by creating a temporary OpenClaw config whose `agents.defaults.workspace` points at the selected agent workspace, then runs the CLI against that workspace.
+Nerve Center scopes this by creating a temporary OpenClaw config whose `agents.defaults.workspace` points at the selected agent workspace, then runs the CLI against that workspace.
 
 **Rate Limit:** General (60/min)
 
@@ -1216,7 +1216,7 @@ Nerve scopes this by creating a temporary OpenClaw config whose `agents.defaults
 
 Browse, read, and edit workspace files. All paths are restricted to the selected workspace directory with traversal protection.
 
-All file-browser routes accept an optional `agentId` scope. If omitted, Nerve uses `main`. If `FILE_BROWSER_ROOT` is set, file-browser agent scoping is bypassed and all sessions browse the same custom root.
+All file-browser routes accept an optional `agentId` scope. If omitted, Nerve Center uses `main`. If `FILE_BROWSER_ROOT` is set, file-browser agent scoping is bypassed and all sessions browse the same custom root.
 
 ### `GET /api/files/tree`
 
@@ -1737,7 +1737,7 @@ Execute a task and move it to `in-progress`. The launch path depends on the task
 **Response:** The updated `KanbanTask` object with `status: "in-progress"` and a `run` object.
 
 **Execution paths:**
-- **Assigned tasks** create a real child session beneath the assignee's live root. Nerve verifies that the parent root exists, creates the child with `sessions.create(parentSessionKey=...)`, then sends the task into that child with `sessions.send`.
+- **Assigned tasks** create a real child session beneath the assignee's live root. Nerve Center verifies that the parent root exists, creates the child with `sessions.create(parentSessionKey=...)`, then sends the task into that child with `sessions.send`.
 - **Unassigned or `operator` tasks** use the normal `sessions_spawn` path.
 - **macOS fallback rule:** unassigned or `operator` tasks are rejected. Assign the task to a live worker root first.
 
@@ -1753,7 +1753,7 @@ Execute a task and move it to `in-progress`. The launch path depends on the task
 **Notes:**
 - The spawned worker receives the task title and description as its prompt.
 - Assigned-task runs keep both a deterministic run correlation key and the real `childSessionKey`.
-- When an assigned child session finishes or fails, Nerve sends a completion report back to the parent root session.
+- When an assigned child session finishes or fails, Nerve Center sends a completion report back to the parent root session.
 - Backend pollers run every 5 seconds for up to **720 attempts / 60 minutes**.
 - On success the task moves to `review`. On error it moves back to `todo`.
 

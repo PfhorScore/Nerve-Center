@@ -1,6 +1,6 @@
 # Architecture
 
-> **Nerve** is a web interface for OpenClaw — chat, voice input, TTS, and agent monitoring in the browser. It connects to the OpenClaw gateway over WebSocket and provides a rich UI for interacting with AI agents.
+> **Nerve Center** is a web interface for OpenClaw — chat, voice input, TTS, and agent monitoring in the browser. It connects to the OpenClaw gateway over WebSocket and provides a rich UI for interacting with AI agents.
 
 ## System Diagram
 
@@ -19,7 +19,7 @@
 └───────────────────────────────┼──────────────────────────────────┘
                                 │
 ┌───────────────────────────────┼──────────────────────────────────┐
-│  Nerve Server (Hono + Node)   │                                  │
+│  Nerve Center Server (Hono + Node)   │                                  │
 │                               │                                  │
 │  ┌────────────────────────────┴─────────────┐                    │
 │  │         WebSocket Proxy (ws-proxy.ts)     │                   │
@@ -79,7 +79,7 @@ Authentication gate and login UI.
 | File | Purpose |
 |------|---------|
 | `AuthGate.tsx` | Top-level component — shows loading spinner, login page, or the full app depending on auth state |
-| `LoginPage.tsx` | Full-screen password form matching Nerve's dark theme. Auto-focus, Enter-to-submit, gateway token hint |
+| `LoginPage.tsx` | Full-screen password form matching Nerve Center's dark theme. Auto-focus, Enter-to-submit, gateway token hint |
 | `useAuth.ts` | Auth state via `useSyncExternalStore`. Module-level fetch checks `/api/auth/status` once on load. Exposes `login`/`logout` callbacks |
 | `index.ts` | Barrel export |
 
@@ -129,7 +129,7 @@ Full workspace file browser with tabbed CodeMirror editor.
 | `EditorTab.tsx` | Single editor tab with modified indicator |
 | `FileEditor.tsx` | CodeMirror 6 editor — syntax highlighting, line numbers, search, Cmd+S save |
 | `TabbedContentArea.tsx` | Manages chat/editor tab switching (chat never unmounts) |
-| `editorTheme.ts` | One Dark-inspired CodeMirror theme matching Nerve's dark aesthetic |
+| `editorTheme.ts` | One Dark-inspired CodeMirror theme matching Nerve Center's dark aesthetic |
 | `hooks/useFileTree.ts` | File tree data fetching and directory toggle state |
 | `hooks/useOpenFiles.ts` | Open file tab management, save with mtime conflict detection |
 | `utils/fileIcons.tsx` | File extension → icon mapping |
@@ -451,7 +451,7 @@ Compiled separately via `config/tsconfig.bin.json` to avoid changing the server'
 Browser WS → /ws?target=ws://gateway:18789/ws → ws-proxy.ts → OpenClaw Gateway
 ```
 
-1. Client connects to `/ws` endpoint on Nerve server
+1. Client connects to `/ws` endpoint on Nerve Center server
 2. When auth is enabled, the session cookie is verified on the HTTP upgrade request (rejects with 401 if invalid)
 3. Proxy validates target URL against `WS_ALLOWED_HOSTS` allowlist
 4. Proxy opens upstream WebSocket to the gateway

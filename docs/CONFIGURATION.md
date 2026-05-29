@@ -1,12 +1,12 @@
 # Configuration
 
-Nerve is configured via a `.env` file in the project root. All variables have sensible defaults — only `GATEWAY_TOKEN` is strictly required.
+Nerve Center is configured via a `.env` file in the project root. All variables have sensible defaults — only `GATEWAY_TOKEN` is strictly required.
 
 ---
 
 ## Setup Wizard
 
-The interactive setup wizard is the recommended way to configure Nerve:
+The interactive setup wizard is the recommended way to configure Nerve Center:
 
 ```bash
 npm run setup               # Interactive setup (6 steps)
@@ -21,7 +21,7 @@ The wizard walks through **6 sections**:
 
 #### 1. Gateway Connection
 
-Connects Nerve to your OpenClaw gateway. The wizard auto-detects the gateway token from:
+Connects Nerve Center to your OpenClaw gateway. The wizard auto-detects the gateway token from:
 1. Existing `.env` (`GATEWAY_TOKEN`)
 2. Environment variable `OPENCLAW_GATEWAY_TOKEN`
 3. `~/.openclaw/openclaw.json` (auto-detected)
@@ -29,7 +29,7 @@ Connects Nerve to your OpenClaw gateway. The wizard auto-detects the gateway tok
 Tests the connection before proceeding. If the gateway is unreachable, setup stops so you can fix the gateway or token first. On current OpenClaw builds, the wizard also:
 - Reads the real gateway token from the systemd service file (works around a known bug where `openclaw onboard` writes different tokens to systemd and `openclaw.json`)
 - Bootstraps `paired.json` and `device-auth.json` with full operator scopes if they don't exist yet
-- Pre-pairs Nerve's device identity in the normal setup path so it can connect without manual approval (`openclaw devices approve`)
+- Pre-pairs Nerve Center's device identity in the normal setup path so it can connect without manual approval (`openclaw devices approve`)
 - Adds `cron`, `gateway`, and `sessions_spawn` to `gateway.tools.allow` when they are missing
 - Restarts the gateway to apply changes
 
@@ -39,13 +39,13 @@ Sets the `AGENT_NAME` displayed in the UI.
 
 #### 3. Access Mode
 
-Determines how you'll access Nerve. The wizard auto-configures `HOST`, `ALLOWED_ORIGINS`, `WS_ALLOWED_HOSTS`, and `CSP_CONNECT_EXTRA` based on your choice:
+Determines how you'll access Nerve Center. The wizard auto-configures `HOST`, `ALLOWED_ORIGINS`, `WS_ALLOWED_HOSTS`, and `CSP_CONNECT_EXTRA` based on your choice:
 
 | Mode | Bind | Description |
 |------|------|-------------|
 | **Localhost** | `127.0.0.1` | Only accessible from this machine. Safest option. |
 | **Tailscale IP** | `0.0.0.0` | Accessible from your Tailscale network over the machine's tailnet IP. Sets CORS + CSP for that IP. |
-| **Tailscale Serve** | `127.0.0.1` | Keeps Nerve loopback-only and exposes it through a Tailscale Serve HTTPS hostname when available. |
+| **Tailscale Serve** | `127.0.0.1` | Keeps Nerve Center loopback-only and exposes it through a Tailscale Serve HTTPS hostname when available. |
 | **Network (LAN)** | `0.0.0.0` | Accessible from your local network. Prompts for your LAN IP. Sets CORS + CSP for that IP. |
 | **Custom** | Manual | Full manual control: custom port, bind address, HTTPS certificate generation, CORS. |
 
@@ -109,7 +109,7 @@ HOST=127.0.0.1
 |----------|---------|----------|-------------|
 | `GATEWAY_TOKEN` | — | **Yes** | Authentication token for the OpenClaw gateway. The setup wizard auto-detects this. See note below |
 | `GATEWAY_URL` | `http://127.0.0.1:18789` | No | Gateway HTTP endpoint URL |
-| `NERVE_PUBLIC_ORIGIN` | *(empty)* | No | Explicit browser-facing Nerve origin used when server-side gateway RPC fallback must open its own WebSocket to OpenClaw. Useful for reverse-proxy, cloud, and hybrid deployments. |
+| `NERVE_PUBLIC_ORIGIN` | *(empty)* | No | Explicit browser-facing Nerve Center origin used when server-side gateway RPC fallback must open its own WebSocket to OpenClaw. Useful for reverse-proxy, cloud, and hybrid deployments. |
 
 ```bash
 GATEWAY_TOKEN=your-token-here
@@ -130,10 +130,10 @@ If remote workspace panels (Files, Memory, Config, Skills) fail with `origin not
 
 ### Token Injection
 
-Nerve performs **server-side token injection**. When a connection is established through the WebSocket proxy, Nerve automatically injects the configured `GATEWAY_TOKEN` into the connection request if the client is considered **trusted**.
+Nerve Center performs **server-side token injection**. When a connection is established through the WebSocket proxy, Nerve Center automatically injects the configured `GATEWAY_TOKEN` into the connection request if the client is considered **trusted**.
 
 **Trust is granted if:**
-1. The connection is from a **local loopback address** (`127.0.0.1` or `::1`). When Nerve is behind a trusted reverse proxy, proxy-aware client IP handling can preserve that loopback detection (see `TRUSTED_PROXIES`).
+1. The connection is from a **local loopback address** (`127.0.0.1` or `::1`). When Nerve Center is behind a trusted reverse proxy, proxy-aware client IP handling can preserve that loopback detection (see `TRUSTED_PROXIES`).
 2. OR, the connection has a valid **authenticated session** (`NERVE_AUTH=true`).
 
 This allows the browser UI to connect without having to manually enter or store the gateway token in the browser's persistent storage. If a connection is not trusted (e.g., remote access without authentication), the token field in the UI must be filled manually.
@@ -190,7 +190,7 @@ WHISPER_MODEL=base
 NERVE_LANGUAGE=en
 ```
 
-Nerve uses explicit language selection (`NERVE_LANGUAGE`) for voice flows; there is no user-facing auto-detect language mode.
+Nerve Center uses explicit language selection (`NERVE_LANGUAGE`) for voice flows; there is no user-facing auto-detect language mode.
 
 Local STT requires `ffmpeg` for audio format conversion (webm/ogg → 16kHz mono WAV). The installer handles this automatically. Models are downloaded from HuggingFace on first use.
 
@@ -217,11 +217,11 @@ WS_ALLOWED_HOSTS=100.64.0.5
 TRUSTED_PROXIES=127.0.0.1,::1,10.0.0.1
 ```
 
-If you are retrofitting Tailscale onto an existing install, see [Add Tailscale to an Existing Nerve Install](TAILSCALE.md).
+If you are retrofitting Tailscale onto an existing install, see [Add Tailscale to an Existing Nerve Center Install](TAILSCALE.md).
 
 ### Authentication
 
-Nerve includes a built-in authentication layer that protects all API endpoints, WebSocket connections, and SSE streams with a session cookie. Auth is opt-in for localhost users and auto-prompted during setup when binding to a network interface.
+Nerve Center includes a built-in authentication layer that protects all API endpoints, WebSocket connections, and SSE streams with a session cookie. Auth is opt-in for localhost users and auto-prompted during setup when binding to a network interface.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -388,7 +388,7 @@ Each column in the `columns` array:
 
 ## HTTPS
 
-Nerve automatically starts an HTTPS server on `SSL_PORT` when certificates exist at:
+Nerve Center automatically starts an HTTPS server on `SSL_PORT` when certificates exist at:
 
 ```
 certs/cert.pem    # Certificate

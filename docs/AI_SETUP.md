@@ -1,8 +1,8 @@
 # AI Agent Setup
 
-Nerve supports agent-driven installation.
+Nerve Center supports agent-driven installation.
 
-If you want an AI agent to install, configure, and validate Nerve, the canonical raw instruction file is:
+If you want an AI agent to install, configure, and validate Nerve Center, the canonical raw instruction file is:
 
 - [`INSTALL.md`](./INSTALL.md)
 - raw URL: `https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/docs/INSTALL.md`
@@ -13,7 +13,7 @@ Use this page for the human-readable explanation, boundaries, and topology map.
 ## Copy-paste prompt
 
 ```text
-Install, configure, and validate Nerve on this machine.
+Install, configure, and validate Nerve Center on this machine.
 
 Fetch and follow instructions from:
 https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/docs/INSTALL.md
@@ -31,9 +31,9 @@ Unless you say otherwise, agents should use these defaults:
 
 That means the common happy path is:
 1. detect an existing OpenClaw gateway
-2. install Nerve
+2. install Nerve Center
 3. run setup
-4. start or restart Nerve
+4. start or restart Nerve Center
 5. validate the UI and gateway connection
 
 ## What agents may do automatically
@@ -44,7 +44,7 @@ For the default local path, agents may automatically:
 - detect whether OpenClaw is installed and reachable
 - detect the gateway token and gateway URL
 - install missing core prerequisites for the local path
-- run the Nerve installer
+- run the Nerve Center installer
 - run the setup wizard
 - use defaults mode for local-only setup when no TTY is available
 - write a minimal local `.env` if the wizard cannot be used
@@ -59,7 +59,7 @@ Agents should ask before they do anything that changes exposure, trust, or insta
 
 That includes:
 - installing OpenClaw
-- exposing Nerve beyond localhost
+- exposing Nerve Center beyond localhost
 - LAN access
 - public internet exposure
 - reverse proxy setup
@@ -72,7 +72,7 @@ Short version: local repair and local setup can be automated. Public or destruct
 
 ## Dependency behavior
 
-Nerve is not a standalone app. It depends on an OpenClaw gateway.
+Nerve Center is not a standalone app. It depends on an OpenClaw gateway.
 
 Expected agent behavior:
 1. look for an existing reachable gateway first
@@ -80,15 +80,15 @@ Expected agent behavior:
 3. if none is found, explain the dependency clearly
 4. ask before installing OpenClaw
 
-For the default same-machine flow, agents may make the smallest safe local OpenClaw fixes required for Nerve to connect. For remote or public gateway changes, they should stop and ask.
+For the default same-machine flow, agents may make the smallest safe local OpenClaw fixes required for Nerve Center to connect. For remote or public gateway changes, they should stop and ask.
 
 ## Topology map
 
 Choose the guide that matches the intended setup:
 
 - **Local / same machine:** [DEPLOYMENT-A.md](./DEPLOYMENT-A.md)
-- **Hybrid / local Nerve + remote gateway:** [DEPLOYMENT-B.md](./DEPLOYMENT-B.md)
-- **Cloud / remote Nerve:** [DEPLOYMENT-C.md](./DEPLOYMENT-C.md)
+- **Hybrid / local Nerve Center + remote gateway:** [DEPLOYMENT-B.md](./DEPLOYMENT-B.md)
+- **Cloud / remote Nerve Center:** [DEPLOYMENT-C.md](./DEPLOYMENT-C.md)
 - **Add Tailscale to an existing install:** [TAILSCALE.md](./TAILSCALE.md)
 
 Recommended default: start with the local setup unless you already know you need something else.
@@ -96,8 +96,8 @@ Recommended default: start with the local setup unless you already know you need
 ## Done criteria
 
 An agent should only report success when all of these are true:
-- Nerve is installed at the intended path
-- Nerve starts successfully
+- Nerve Center is installed at the intended path
+- Nerve Center starts successfully
 - it points at the intended OpenClaw gateway
 - access and auth match the requested mode
 - the smoke test passes
@@ -108,7 +108,7 @@ A script finishing is not enough. A valid install must actually respond and conn
 
 Keep validation minimal and real:
 
-1. confirm the Nerve service or process is running
+1. confirm the Nerve Center service or process is running
 2. confirm the expected URL responds
 3. confirm the intended gateway responds
 4. confirm `.env` matches the intended gateway
@@ -130,7 +130,7 @@ Agents should fail clearly, not vaguely.
 
 ### No OpenClaw gateway found
 
-Explain that Nerve depends on OpenClaw and ask before installing it.
+Explain that Nerve Center depends on OpenClaw and ask before installing it.
 
 ### Installer or setup wizard unavailable
 
@@ -158,18 +158,18 @@ Ask for the missing details instead of guessing. This especially matters for Tai
 ### Default local install
 
 ```text
-Install, configure, and validate Nerve on this machine.
+Install, configure, and validate Nerve Center on this machine.
 Use the safest local-first path and keep it localhost-only unless you need my approval.
 
 Fetch and follow instructions from:
 https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/docs/INSTALL.md
 ```
 
-### Local Nerve + existing remote gateway
+### Local Nerve Center + existing remote gateway
 
 ```text
-Install Nerve on this machine and connect it to my existing remote OpenClaw gateway.
-Do not expose Nerve beyond localhost unless I approve it.
+Install Nerve Center on this machine and connect it to my existing remote OpenClaw gateway.
+Do not expose Nerve Center beyond localhost unless I approve it.
 If remote gateway config needs changing, tell me before you do it.
 
 Fetch and follow instructions from:
@@ -179,7 +179,7 @@ https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/docs/INS
 ### Tailscale setup
 
 ```text
-Install Nerve and make it reachable over Tailscale.
+Install Nerve Center and make it reachable over Tailscale.
 Ask before making any exposure or gateway allowlist changes.
 Use the repo's Tailscale guidance instead of inventing a new flow.
 
@@ -190,7 +190,7 @@ https://raw.githubusercontent.com/daggerhashimoto/openclaw-nerve/master/docs/INS
 ### Existing install repair
 
 ```text
-Inspect my existing Nerve install, repair it if needed, and validate it.
+Inspect my existing Nerve Center install, repair it if needed, and validate it.
 Do not reinstall or delete anything unless you ask first.
 
 Fetch and follow instructions from:
