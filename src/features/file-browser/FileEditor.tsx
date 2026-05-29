@@ -150,6 +150,18 @@ export function FileEditor({ file, onContentChange, onSave, onRetry }: FileEdito
     }
   }, [file.savedContent, file.content, file.loading, file.error]);
 
+  // Listen for save-file events from the tab bar button
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.path === file.path && filePathRef.current) {
+        onSaveRef.current(filePathRef.current);
+      }
+    };
+    window.addEventListener('nerve:save-file', handler);
+    return () => window.removeEventListener('nerve:save-file', handler);
+  }, [file.path]);
+
   // Loading state
   if (file.loading) {
     return (

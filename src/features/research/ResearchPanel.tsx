@@ -148,7 +148,7 @@ function generateId(): string {
 }
 
 /**
- * ResearchPanel — Full Perplexity-like research interface built into Nerve.
+ * ResearchPanel — Full Perplexity-like research interface built into Nerve Center.
  *
  * Features:
  * - Thread sidebar with AI-generated titles

@@ -916,4 +916,24 @@ app.get('/api/files/raw', async (c) => {
   }
 });
 
+// ── GET/POST /api/files/open-pending ──────────────────────────────────
+// Simple queue for AI-initiated file open requests.
+// AI sets the path via POST, frontend polls via GET (one-shot).
+let _pendingOpenPath: string | null = null;
+
+app.get('/api/files/open-pending', (c) => {
+  const path = _pendingOpenPath;
+  _pendingOpenPath = null;
+  return c.json({ ok: true, path });
+});
+
+app.post('/api/files/open-pending', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  if (body.path && typeof body.path === 'string') {
+    _pendingOpenPath = body.path;
+    return c.json({ ok: true });
+  }
+  return c.json({ ok: false, error: 'Missing path' }, 400);
+});
+
 export default app;

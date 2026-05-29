@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { EditorTab } from './EditorTab';
+import { Save } from 'lucide-react';
 import type { OpenFile } from './types';
 import type { OpenBeadTab } from '@/features/beads';
 
@@ -13,6 +14,8 @@ interface EditorTabBarProps {
   onNewFile?: () => void;
   /** Open file picker for import. */
   onOpenFile?: () => void;
+  /** Whether the agent is generating — pulses the chat tab. */
+  isGenerating?: boolean;
 }
 
 export function EditorTabBar({
@@ -23,6 +26,7 @@ export function EditorTabBar({
   onCloseTab,
   onNewFile,
   onOpenFile,
+  isGenerating,
 }: EditorTabBarProps) {
   return (
     <div
@@ -36,6 +40,7 @@ export function EditorTabBar({
         label="Chat"
         active={activeTab === 'chat'}
         pinned
+        glow={isGenerating}
         onSelect={() => onSelectTab('chat')}
       />
 
@@ -68,6 +73,21 @@ export function EditorTabBar({
           onMiddleClick={() => onCloseTab(bead.id)}
         />
       ))}
+
+      {/* Save button — visible when a file tab is active */}
+      {activeTab !== 'chat' && (
+        <button
+          onClick={() => {
+            // Dispatch a custom event that the FileEditor listens for
+            window.dispatchEvent(new CustomEvent('nerve:save-file', { detail: { path: activeTab } }));
+          }}
+          className="flex items-center justify-center h-full min-w-[28px] px-1 text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
+          title="Save file (Ctrl+S)"
+          aria-label="Save file"
+        >
+          <Save size={13} />
+        </button>
+      )}
 
       {/* New file / Open file dropdown */}
       {(onNewFile || onOpenFile) && <NewFileDropdown onNewFile={onNewFile} onOpenFile={onOpenFile} />}

@@ -23,7 +23,7 @@ const getSnapshot = () => authSnapshot;
 fetch('/api/auth/status')
   .then(r => r.json())
   .then(data => setAuthSnapshot(!data.authEnabled || data.authenticated ? 'authenticated' : 'login'))
-  .catch(() => setAuthSnapshot('authenticated'));
+  .catch(() => setAuthSnapshot('login'));
 
 export function useAuth() {
   const state = useSyncExternalStore(subscribe, getSnapshot);

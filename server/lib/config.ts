@@ -189,7 +189,7 @@ function sttProviderLabel(): string {
 
 /** Print startup banner with version and config summary. */
 export function printStartupBanner(version: string): void {
-  console.log(`\n  \x1b[33m⚡ Nerve v${version}\x1b[0m`);
+  console.log(`\n  \x1b[33m⚡ Nerve Center v${version}\x1b[0m`);
   console.log(`  Agent: ${config.agentName} | TTS: ${ttsProviderLabel()} | STT: ${sttProviderLabel()}`);
   console.log(`  Gateway: ${config.gatewayUrl}`);
   if (config.auth) {

@@ -97,14 +97,14 @@ interface PanelLayout {
  * Default panel layout used as the base for merging with persisted
  * user configs and as a fallback when `localStorage` is unavailable.
  */const DEFAULT_LAYOUT: PanelLayout = {
-  /** Left sidebar holds the workspace file-tree panel. */
-  left: ['workspace'],
-  /** Right sidebar panels, rendered top-to-bottom in this order. */
-  right: ['thoughts', 'references', 'activity'],
-  /** Initial collapse state. Thoughts and references start collapsed. */
-  collapsed: { thoughts: true, references: true, activity: false },
-  /** Flex weights for vertical space distribution (equal by default). */
-  flex: { thoughts: 1, references: 1, activity: 1 },
+  /** Left sidebar — workspace at top, thoughts at bottom. */
+  left: ['workspace', 'thoughts'],
+  /** Right sidebar — library/references on top, activity below. */
+  right: ['references', 'activity'],
+  /** All panels start expanded. */
+  collapsed: {},
+  /** Equal flex distribution across all panels. */
+  flex: { workspace: 1, thoughts: 1, references: 1, activity: 1 },
 };
 
 /**
@@ -163,9 +163,12 @@ function loadPanelLayout(): PanelLayout {
         parsed.right = [...parsed.right, 'activity'];
       }
 
-      // Migrate v2: remove agents and memory from right sidebar (moved to Agent Hub)
+      // Migrate v2: remove agents and memory from both sidebars (moved to Agent Hub)
       if (Array.isArray(parsed.right)) {
         parsed.right = parsed.right.filter((p: string) => p !== 'agents' && p !== 'memory');
+      }
+      if (Array.isArray(parsed.left)) {
+        parsed.left = parsed.left.filter((p: string) => p !== 'agents' && p !== 'memory');
       }
 
       // Migrate v3: remove tools panel (merged into activity panel)
@@ -763,7 +766,10 @@ export default function App({ onLogout }: AppProps) {
     if (rightSidebarCollapsed) {
       return rightHoverExpanded ? (savedRightPanelWidth ?? 280) : 40;
     }
-    if (panelLayout.right.every(p => panelLayout.collapsed[p])) return 0;
+    // Don't auto-collapse the sidebar when all panels are individually collapsed.
+    // The dedicated right-sidebar collapse toggle handles that — individual panel
+    // collapse state shouldn't affect sidebar width.
+    // (Intentionally removed: `every(p => collapsed[p])` branch)
     // Non-collapsed expanded mode: use percentage-based layout so the
     // right sidebar naturally shrinks/grows with the browser window.
     return null;
@@ -1264,6 +1270,21 @@ export default function App({ onLogout }: AppProps) {
     });
   }, [currentSession, getWorkspaceSwitchLabel, requestWorkspaceTransition, sessions, spawnSession]);
 
+
+  // Poll for AI-initiated file open requests from the server
+  useEffect(() => {
+    const iv = setInterval(async () => {
+      try {
+        const res = await fetch('/api/files/open-pending');
+        const data = await res.json();
+        if (data.ok && data.path && openFile) {
+          openFile(data.path);
+        }
+      } catch { /* silent */ }
+    }, 2000);
+    return () => clearInterval(iv);
+  }, [openFile]);
+
   // Boot sequence: fade in panels when connected
   useEffect(() => {
     if (connectionState === 'connected' && !booted) {
@@ -1365,6 +1386,8 @@ export default function App({ onLogout }: AppProps) {
       pathLinkPrefixes={chatPathLinkPrefixes}
       pathLinkAliases={chatPathLinkAliases}
       onNewFile={handleNewFile}
+      onOpenFile={() => {}}
+      isGenerating={isGenerating}
       chatPanel={
         <PanelErrorBoundary name="Chat">
           <ChatPanel

@@ -1,7 +1,7 @@
 {
-  "name": "openclaw-nerve",
+  "name": "nerve-center",
   "version": "0.2.1",
-  "description": "Web interface for OpenClaw — chat, voice input, TTS, and agent monitoring in the browser",
+  "description": "Nerve Center — Web interface for OpenClaw: chat, voice, TTS, research, and agent monitoring in the browser",
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"

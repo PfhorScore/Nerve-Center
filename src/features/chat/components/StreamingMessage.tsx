@@ -1,6 +1,7 @@
 import { useRef, useEffect, useLayoutEffect } from 'react';
 import { sanitizeHtml } from '@/lib/sanitize';
 import { formatElapsed } from '../utils';
+import { AvatarIcon } from '@/components/AvatarIcon';
 
 interface StreamingMessageProps {
   html: string;
@@ -58,10 +59,11 @@ export function StreamingMessage({ html, elapsedMs, agentName = 'Agent' }: Strea
 
   return (
     <div className="msg msg-assistant streaming relative max-w-full break-words bg-message-assistant">
-      <div className="flex items-center gap-2 px-4 py-2">
-        <span className="cockpit-badge" data-tone="success">{agentName}</span>
+      <div className="flex items-center gap-2 px-4 pt-2 pb-0">
+        <AvatarIcon name={agentName} size="sm" />
+        <span className="text-[0.733rem] font-semibold text-foreground/80">{agentName}</span>
         {elapsedMs > 0 && (
-          <span className="ml-auto font-mono text-[0.667rem] tabular-nums text-muted-foreground">{formatElapsed(elapsedMs)}</span>
+          <span className="ml-auto font-mono text-[0.6rem] tabular-nums text-muted-foreground/50">{formatElapsed(elapsedMs)}</span>
         )}
       </div>
       <div className="ml-4 border-l-2 border-green/60 px-4 pb-3 pl-6">

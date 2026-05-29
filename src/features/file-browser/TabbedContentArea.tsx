@@ -53,6 +53,8 @@ interface TabbedContentAreaProps {
   onDismissToast?: () => void;
   onNewFile?: () => void;
   onOpenFile?: () => void;
+  /** Whether the agent is currently generating — pulses the chat tab. */
+  isGenerating?: boolean;
   /** The chat panel rendered as-is (never unmounted). */
   chatPanel: ReactNode;
 }
@@ -76,6 +78,7 @@ export function TabbedContentArea({
   onDismissToast,
   onNewFile,
   onOpenFile,
+  isGenerating,
   chatPanel,
 }: TabbedContentAreaProps) {
   const hasOpenTabs = openFiles.length > 0 || openBeads.length > 0;
@@ -93,7 +96,8 @@ export function TabbedContentArea({
         onSelectTab={onSelectTab}
         onCloseTab={onCloseTab}
         onNewFile={onNewFile}
-          onOpenFile={onOpenFile}
+        onOpenFile={onOpenFile}
+        isGenerating={isGenerating}
       />
 
       {/* Content area */}

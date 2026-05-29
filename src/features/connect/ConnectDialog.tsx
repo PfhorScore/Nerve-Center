@@ -71,12 +71,12 @@ export function ConnectDialog({
               <div>
                 <div className="text-[0.667rem] font-medium uppercase tracking-[0.3em] text-primary/80">Gateway Handshake</div>
                 <DialogTitle className="mt-1 text-lg font-semibold tracking-[-0.03em] text-foreground sm:text-xl">
-                  Connect Nerve to your OpenClaw gateway
+                  Connect Nerve Center to your OpenClaw gateway
                 </DialogTitle>
               </div>
             </div>
             <DialogDescription className="max-w-[42ch] text-sm leading-6 text-muted-foreground">
-              Point Nerve at the gateway endpoint, provide your token when needed, and bring the cockpit online.
+              Point Nerve Center at the gateway endpoint, provide your token when needed, and bring the cockpit online.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -87,7 +87,7 @@ export function ConnectDialog({
               <div className="text-[0.667rem] font-medium uppercase tracking-[0.24em] text-muted-foreground">Connection</div>
               <div className="mt-2 text-sm font-medium text-foreground">Secure local bridge</div>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                Nerve talks to your gateway over WebSocket and keeps the session state in sync live.
+                Nerve Center talks to your gateway over WebSocket and keeps the session state in sync live.
               </p>
             </div>
             <div className="shell-panel rounded-2xl px-4 py-3">
@@ -132,7 +132,7 @@ export function ConnectDialog({
 
           <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-[34ch] text-xs leading-5 text-muted-foreground">
-              Keep Nerve bound to localhost unless you explicitly want remote access.
+              Keep Nerve Center bound to localhost unless you explicitly want remote access.
             </p>
             <Button
               onClick={handleConnect}

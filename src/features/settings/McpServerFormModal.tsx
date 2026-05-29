@@ -236,7 +236,7 @@ export function McpServerFormModal({ server, saving, onSave, onClose }: McpServe
                     className="cockpit-input cockpit-input-mono"
                     placeholder="/home/user/projects (optional)"
                   />
-                  <span className="cockpit-field-hint">Optional. Leave blank to inherit Nerve's working directory.</span>
+                  <span className="cockpit-field-hint">Optional. Leave blank to inherit Nerve Center's working directory.</span>
                 </label>
               </>
             )}

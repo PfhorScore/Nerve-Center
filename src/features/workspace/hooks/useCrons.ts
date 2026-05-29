@@ -48,7 +48,7 @@ export interface CronRun {
 const CRON_TOOL_UNAVAILABLE_RE = /tool not available:\s*cron/i;
 
 export const CRON_GATEWAY_TOOL_ALLOWLIST = ['cron', 'gateway', 'sessions_spawn'] as const;
-export const CRON_WARNING_SUMMARY = 'This gateway does not expose cron management, so Nerve can’t load or edit crons right now.';
+export const CRON_WARNING_SUMMARY = 'This gateway does not expose cron management, so Nerve Center can’t load or edit crons right now.';
 
 export function getCronWarning(error: string | null | undefined): string | null {
   if (!error || !CRON_TOOL_UNAVAILABLE_RE.test(error)) return null;

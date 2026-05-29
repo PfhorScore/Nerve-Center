@@ -8,6 +8,8 @@ interface EditorTabProps {
   dirty?: boolean;
   locked?: boolean;
   tooltip?: string;
+  /** Show a pulsing glow animation on the tab (used on the Chat tab during generation). */
+  glow?: boolean;
   onSelect: () => void;
   onClose?: () => void;
   onMiddleClick?: () => void;
@@ -21,6 +23,7 @@ export function EditorTab({
   dirty,
   locked,
   tooltip,
+  glow,
   onSelect,
   onClose,
   onMiddleClick,
@@ -41,11 +44,13 @@ export function EditorTab({
       aria-selected={active}
       aria-controls={`tabpanel-${id}`}
       id={`tab-${id}`}
-      className={`flex items-center gap-1.5 px-3 h-full text-[0.8rem] whitespace-nowrap border-b-2 transition-colors shrink-0 ${
-        active
-          ? 'border-primary text-foreground bg-background'
-          : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
-      }`}
+      className={`flex items-center gap-1.5 px-3 h-full text-[0.8rem] whitespace-nowrap border-b-2 shrink-0 ${
+        glow && active
+          ? 'border-primary text-foreground bg-background animate-pulse shadow-[0_0_12px_-2px_var(--color-primary)]'
+          : active
+            ? 'border-primary text-foreground bg-background'
+            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
+      } transition-colors`}
       onClick={onSelect}
       onMouseDown={handleMouseDown}
       title={tooltip || label}
