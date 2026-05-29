@@ -260,6 +260,22 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
 
   const thoughts = useMemo(() => parseThoughts(content), [content]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+
+  /** Detect whether user has scrolled up from the bottom. */
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    setShowScrollButton(!atBottom);
+  }, []);
+
+  /** Scroll to the bottom of the thought list. */
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, []);
 
   /** Rebuild the content string from the current thought array, preserving order. */
   const rebuildContent = useCallback((updatedThoughts: Thought[]) => {
@@ -353,7 +369,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Thought list */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 space-y-1.5">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-2 space-y-1.5 relative">
         {/* Active thoughts */}
         {thoughts.map((thought) => (
           <ThoughtCard
@@ -380,7 +396,21 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           />
         ))}
 
-
+        {/* Scroll-to-bottom button */}
+        {showScrollButton && (
+          <div className="sticky bottom-2 flex justify-center pointer-events-none">
+            <button
+              onClick={scrollToBottom}
+              className="pointer-events-auto size-7 flex items-center justify-center rounded-full bg-muted/80 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm transition-all duration-200 animate-in fade-in zoom-in-50"
+              title="Scroll to bottom"
+              aria-label="Scroll to bottom"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* New thought input */}

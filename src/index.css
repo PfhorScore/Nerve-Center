@@ -238,6 +238,16 @@
 }
 
 /* Search bar slide-down */
+/* Tab bar breathing border animation */
+@keyframes tab-border-pulse {
+  0%, 100% {
+    border-bottom-color: color-mix(in srgb, var(--color-primary) 80%, transparent);
+  }
+  50% {
+    border-bottom-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  }
+}
+
 @keyframes slide-down {
   from {
     opacity: 0;

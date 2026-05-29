@@ -44,13 +44,15 @@ export function EditorTab({
       aria-selected={active}
       aria-controls={`tabpanel-${id}`}
       id={`tab-${id}`}
-      className={`flex items-center gap-1.5 px-3 h-full text-[0.8rem] whitespace-nowrap border-b-2 shrink-0 ${
+      className={`flex items-center gap-1.5 px-3 h-full text-[0.8rem] whitespace-nowrap shrink-0 ${
+        active
+          ? 'text-foreground bg-background border-b border-primary/80'
+          : 'text-muted-foreground bg-muted/20 hover:text-foreground hover:bg-muted/40 border-b border-transparent'
+      } transition-colors ${
         glow && active
-          ? 'border-primary text-foreground bg-background animate-pulse shadow-[0_0_12px_-2px_var(--color-primary)]'
-          : active
-            ? 'border-primary text-foreground bg-background'
-            : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'
-      } transition-colors`}
+          ? 'animate-tab-border-pulse'
+          : ''
+      }`}
       onClick={onSelect}
       onMouseDown={handleMouseDown}
       title={tooltip || label}

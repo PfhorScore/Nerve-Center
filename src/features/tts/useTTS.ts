@@ -62,6 +62,13 @@ export function useTTS(enabled: boolean, provider: TTSProvider = 'openai', model
     currentAudio.current = null;
   }, []);
 
+  // Clean up audio when disabled mid-reply
+  useEffect(() => {
+    if (!enabled) {
+      cleanupAudio();
+    }
+  }, [enabled, cleanupAudio]);
+
   useEffect(() => {
     return () => {
       cleanupAudio();
