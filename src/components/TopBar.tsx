@@ -139,7 +139,7 @@ export function TopBar({
   viewMode = "chat",
   onViewModeChange,
   showKanbanView = true,
-  leftSidebarOffset = 0,
+
 }: TopBarProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(null);
   const [hoveredView, setHoveredView] = useState<ViewMode | null>(null);
@@ -257,9 +257,7 @@ export function TopBar({
         </div>
         {/* View mode toggle */}
         {onViewModeChange && (
-          <div className="order-3 flex w-full items-center gap-2 max-[371px]:gap-1 sm:order-none sm:w-auto relative"
-            style={leftSidebarOffset ? { paddingLeft: leftSidebarOffset } : undefined}
-          >
+          <div className="order-3 flex w-full items-center justify-center gap-2 max-[371px]:gap-1 sm:order-none sm:w-auto sm:mx-auto relative">
             <button
               onClick={() => onViewModeChange("chat")}
               onMouseEnter={() => setHoveredView("chat")}

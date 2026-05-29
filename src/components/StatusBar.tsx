@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ContextMeter } from './ContextMeter';
 import { UpdateBadge } from './UpdateBadge';
 import { useGateway } from '@/contexts/GatewayContext';
@@ -248,8 +249,8 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
         <UpdateBadge />
       </div>
 
-      {/* Changelog dialog */}
-      {changelogOpen && (
+      {/* Changelog dialog — portal to body to escape shell-panel's backdrop-filter */}
+      {changelogOpen && createPortal(
         <>
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setChangelogOpen(false)} />
           <div className="fixed inset-4 z-50 m-auto flex max-h-[80vh] max-w-[600px] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-[0_32px_90px_rgba(0,0,0,0.4)] sm:inset-auto">
@@ -265,7 +266,8 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
               </pre>
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

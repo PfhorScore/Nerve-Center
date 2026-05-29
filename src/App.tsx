@@ -682,14 +682,14 @@ export default function App({ onLogout }: AppProps) {
       fetch('/api/files/write', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: 'scratchpad.md', content: scratchPadRef.current }),
+        body: JSON.stringify({ path: 'Thoughts.md', content: scratchPadRef.current }),
       }).catch(() => {});
     }, 500);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/files/read?path=scratchpad.md')
+    fetch('/api/files/read?path=Thoughts.md')
       .then((r) => r.json())
       .then((data) => {
         if (cancelled || !data.ok) return;

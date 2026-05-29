@@ -56,3 +56,4 @@ node_modules
 *.log
 .temp/
 server-dist/
+Thoughts.md
