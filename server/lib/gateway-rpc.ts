@@ -7,7 +7,7 @@
  * connections.
  *
  * Used as a fallback when the workspace directory is not locally accessible
- * (e.g. Nerve on DGX host, workspace in OpenShell sandbox).
+ * (e.g. Nerve Center on DGX host, workspace in OpenShell sandbox).
  * @module
  */
 

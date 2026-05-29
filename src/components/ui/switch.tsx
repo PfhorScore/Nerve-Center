@@ -12,7 +12,7 @@ interface SwitchProps {
 }
 
 /**
- * Minimal toggle switch styled for the Nerve UI.
+ * Minimal toggle switch styled for the Nerve Center UI.
  *
  * A `role="switch"` button that toggles between checked/unchecked states
  * with a sliding thumb indicator and green highlight when active.

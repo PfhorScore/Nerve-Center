@@ -1,5 +1,5 @@
 /**
- * main.tsx — Nerve application entry point.
+ * main.tsx — Nerve Center application entry point.
  *
  * Mounts the React root and wraps the app in ErrorBoundary → StrictMode → AuthGate.
  * The auth gate checks `/api/auth/status` before rendering the main app.

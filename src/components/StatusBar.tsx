@@ -45,7 +45,7 @@ async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedA
 }
 
 /**
- * Bottom status bar for the Nerve cockpit.
+ * Bottom status bar for the Nerve Center cockpit.
  *
  * Shows connection state, server time, session count, gateway uptime,
  * an optional context-window meter, a sparkline, and the app version.
@@ -88,7 +88,7 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
     if (typeof data.gatewayStartedAt === 'number') {
       setGatewayStartedAt(data.gatewayStartedAt);
     } else if (typeof data.serverStartedAt === 'number') {
-      // Fallback to Nerve server start time when gateway PID is not found
+      // Fallback to Nerve Center server start time when gateway PID is not found
       setGatewayStartedAt(data.serverStartedAt);
     }
   }, []);

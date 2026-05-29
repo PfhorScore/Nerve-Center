@@ -77,7 +77,7 @@ app.post('/api/research/search', rateLimitGeneral, async (c) => {
 
     // Perplexity path
     const systemPrompt = isQuick
-      ? `You are a research assistant inside Nerve UI. Provide concise, accurate answers with citations.
+      ? `You are a research assistant inside Nerve Center UI. Provide concise, accurate answers with citations.
 
 Answer structure:
 - Start with a direct 1-2 sentence answer.
@@ -89,7 +89,7 @@ Citations:
 - Each claim should have at least one citation.
 
 Tone: Direct, calm, matter-of-fact. Avoid hype and filler.`
-      : `You are a research assistant inside Nerve UI. Produce comprehensive, in-depth research reports.
+      : `You are a research assistant inside Nerve Center UI. Produce comprehensive, in-depth research reports.
 
 Structure:
 - Start with a brief executive summary of the key finding.

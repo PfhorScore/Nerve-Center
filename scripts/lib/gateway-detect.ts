@@ -71,7 +71,7 @@ export function detectGatewayConfig(): DetectedGateway {
       result.token = config.gateway.auth.token;
     }
 
-    // Derive URL from port — always use 127.0.0.1 since Nerve connects locally
+    // Derive URL from port — always use 127.0.0.1 since Nerve Center connects locally
     const port = config.gateway?.port || 18789;
     result.url = `http://127.0.0.1:${port}`;
   } catch {
@@ -174,12 +174,12 @@ export function patchGatewayAllowedOrigins(origin: string): GatewayPatchResult {
 
 const REQUIRED_HTTP_TOOLS = ['cron', 'gateway', 'sessions_spawn'] as const;
 
-// Must match the connect metadata sent by Nerve's browser WS client
+// Must match the connect metadata sent by Nerve Center's browser WS client
 // (src/hooks/useWebSocket.ts) to avoid OpenClaw 2026.2.26+ metadata-repair prompts.
 const NERVE_PAIRED_PLATFORM = 'web';
 const NERVE_PAIRED_CLIENT_ID = 'webchat-ui';
 const NERVE_PAIRED_CLIENT_MODE = 'webchat';
-const NERVE_PAIRED_DISPLAY_NAME = 'Nerve UI';
+const NERVE_PAIRED_DISPLAY_NAME = 'Nerve Center UI';
 
 /**
  * Patch the OpenClaw gateway config to allow required HTTP tools.
@@ -512,7 +512,7 @@ export function fixGatewayDeviceScopes(opts: {
 }
 
 /**
- * Approve only the pending pairing request that can be safely matched to Nerve.
+ * Approve only the pending pairing request that can be safely matched to Nerve Center.
  * If the request cannot be identified unambiguously, fail closed and require manual approval.
  */
 export function approvePendingNerveDevice(deps: {
@@ -524,7 +524,7 @@ export function approvePendingNerveDevice(deps: {
     return {
       ok: false,
       approved: 0,
-      message: 'Could not identify Nerve device identity, approve manually with `openclaw devices list`',
+      message: 'Could not identify Nerve Center device identity, approve manually with `openclaw devices list`',
     };
   }
 
@@ -541,7 +541,7 @@ export function approvePendingNerveDevice(deps: {
         return {
           ok: false,
           approved: 0,
-          message: 'Could not safely inspect pending requests, approve Nerve manually with `openclaw devices list`',
+          message: 'Could not safely inspect pending requests, approve Nerve Center manually with `openclaw devices list`',
         };
       }
       pendingItems = parsed.pending;
@@ -549,7 +549,7 @@ export function approvePendingNerveDevice(deps: {
       return {
         ok: false,
         approved: 0,
-        message: 'Could not safely inspect pending requests, approve Nerve manually with `openclaw devices list`',
+        message: 'Could not safely inspect pending requests, approve Nerve Center manually with `openclaw devices list`',
       };
     }
 
@@ -566,7 +566,7 @@ export function approvePendingNerveDevice(deps: {
       return {
         ok: false,
         approved: 0,
-        message: 'Could not safely identify the Nerve request, approve manually with `openclaw devices list`',
+        message: 'Could not safely identify the Nerve Center request, approve manually with `openclaw devices list`',
       };
     }
 
@@ -574,23 +574,23 @@ export function approvePendingNerveDevice(deps: {
       return {
         ok: false,
         approved: 0,
-        message: 'Could not safely identify a single Nerve request, approve manually with `openclaw devices list`',
+        message: 'Could not safely identify a single Nerve Center request, approve manually with `openclaw devices list`',
       };
     }
 
     run(`openclaw devices approve ${matches[0].requestId}`, { timeout: 10000, stdio: 'pipe' });
-    return { ok: true, approved: 1, message: 'Approved Nerve pending device request' };
+    return { ok: true, approved: 1, message: 'Approved Nerve Center pending device request' };
   } catch {
-    return { ok: false, approved: 0, message: 'Could not inspect pending requests safely, approve Nerve manually with `openclaw devices list`' };
+    return { ok: false, approved: 0, message: 'Could not inspect pending requests safely, approve Nerve Center manually with `openclaw devices list`' };
   }
 }
 
 /**
- * Pre-pair Nerve's device identity in the gateway's paired.json.
+ * Pre-pair Nerve Center's device identity in the gateway's paired.json.
  *
- * Generates the Nerve device identity (Ed25519 keypair) if it doesn't exist,
+ * Generates the Nerve Center device identity (Ed25519 keypair) if it doesn't exist,
  * then registers it directly in paired.json with full operator scopes.
- * This means Nerve can connect to the gateway immediately on first start
+ * This means Nerve Center can connect to the gateway immediately on first start
  * without any manual `openclaw devices approve` step.
  */
 export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; message: string; needsRestart: boolean } {
@@ -605,7 +605,7 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
   }
 
   try {
-    // Load or generate Nerve device identity
+    // Load or generate Nerve Center device identity
     let deviceId: string;
     let publicKeyB64url: string;
 
@@ -637,7 +637,7 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
     // Register in paired.json
     const paired = JSON.parse(readFileSync(pairedPath, 'utf-8')) as Record<string, unknown>;
 
-    // Use the gateway auth token — Nerve's WS proxy forwards the browser's
+    // Use the gateway auth token — Nerve Center's WS proxy forwards the browser's
     // connect request which includes this token. The gateway validates that
     // the token in the connect request matches the device's stored token.
     const now = Date.now();
@@ -662,7 +662,7 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
       let changed = false;
       const changedFields: string[] = [];
 
-      // Keep token aligned with gateway auth token used by Nerve
+      // Keep token aligned with gateway auth token used by Nerve Center
       if (!existing.tokens) {
         existing.tokens = {};
         changed = true;
@@ -688,7 +688,7 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
       }
 
       // OpenClaw 2026.2.26+ pins platform/device metadata on paired devices.
-      // These must match the browser connect metadata Nerve sends.
+      // These must match the browser connect metadata Nerve Center sends.
       if (existing.platform !== NERVE_PAIRED_PLATFORM) {
         existing.platform = NERVE_PAIRED_PLATFORM;
         changed = true;
@@ -711,14 +711,14 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
       }
 
       if (!changed) {
-        return { ok: true, message: 'Nerve device already paired', needsRestart: false };
+        return { ok: true, message: 'Nerve Center device already paired', needsRestart: false };
       }
 
       writeFileSync(pairedPath, JSON.stringify(paired, null, 2) + '\n');
       const fieldsLabel = changedFields.length > 0 ? ` (${[...new Set(changedFields)].join(', ')})` : '';
       return {
         ok: true,
-        message: `Updated Nerve paired device ${deviceId.substring(0, 12)}…${fieldsLabel}`,
+        message: `Updated Nerve Center paired device ${deviceId.substring(0, 12)}…${fieldsLabel}`,
         needsRestart: true,
       };
     }
@@ -746,7 +746,7 @@ export function prePairNerveDevice(gatewayToken?: string): { ok: boolean; messag
     };
 
     writeFileSync(pairedPath, JSON.stringify(paired, null, 2) + '\n');
-    return { ok: true, message: `Pre-paired Nerve device ${deviceId.substring(0, 12)}…`, needsRestart: true };
+    return { ok: true, message: `Pre-paired Nerve Center device ${deviceId.substring(0, 12)}…`, needsRestart: true };
   } catch (err) {
     return {
       ok: false,
@@ -798,7 +798,7 @@ function needsDeviceScopeFix(): boolean {
 }
 
 /**
- * Detect whether Nerve device pre-pairing is needed.
+ * Detect whether Nerve Center device pre-pairing is needed.
  * Returns false when paired.json is absent; device-scope bootstrap will create it first.
  */
 function needsPrePair(gatewayToken?: string): boolean {
@@ -811,12 +811,12 @@ function needsPrePair(gatewayToken?: string): boolean {
   try {
     const paired = JSON.parse(readFileSync(pairedPath, 'utf-8')) as Record<string, unknown>;
 
-    if (!existsSync(identityPath)) return true; // No Nerve identity yet
+    if (!existsSync(identityPath)) return true; // No Nerve Center identity yet
 
     const stored = JSON.parse(readFileSync(identityPath, 'utf-8'));
     const deviceId = stored.deviceId;
 
-    if (!paired[deviceId]) return true; // Nerve not registered
+    if (!paired[deviceId]) return true; // Nerve Center not registered
 
     const existing = paired[deviceId] as {
       scopes?: string[];
@@ -896,7 +896,7 @@ export function detectNeededConfigChanges(opts: {
   if (deviceScopeFixNeeded) {
     changes.push({
       id: 'device-scopes',
-      description: 'Fix gateway device scopes (required for Nerve to connect)',
+      description: 'Fix gateway device scopes (required for Nerve Center to connect)',
       apply: () => fixGatewayDeviceScopes(),
     });
   }
@@ -906,7 +906,7 @@ export function detectNeededConfigChanges(opts: {
   if ((!existsSync(pairedPath) && deviceScopeFixNeeded) || needsPrePair(opts.gatewayToken)) {
     changes.push({
       id: 'pre-pair',
-      description: 'Pre-pair Nerve device identity (skip manual approval step)',
+      description: 'Pre-pair Nerve Center device identity (skip manual approval step)',
       apply: () => prePairNerveDevice(opts.gatewayToken),
     });
   }

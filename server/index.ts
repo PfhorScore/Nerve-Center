@@ -1,5 +1,5 @@
 /**
- * Nerve server entry point.
+ * Nerve Center server entry point.
  *
  * Starts HTTP and optional HTTPS servers (for secure-context features like
  * microphone access), sets up WebSocket proxying to the OpenClaw gateway,

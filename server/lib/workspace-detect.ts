@@ -2,7 +2,7 @@
  * Workspace locality detection.
  *
  * Determines whether the agent workspace directory exists on the local
- * filesystem. When it doesn't (e.g. Nerve running on DGX host while the
+ * filesystem. When it doesn't (e.g. Nerve Center running on DGX host while the
  * workspace lives inside an OpenShell sandbox), route handlers fall back
  * to gateway RPC for file access.
  *

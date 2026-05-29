@@ -1,4 +1,4 @@
-// Theme definitions for Nerve UI
+// Theme definitions for Nerve Center UI
 
 export type ThemeName =
   | 'midnight'

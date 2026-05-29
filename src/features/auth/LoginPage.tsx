@@ -1,7 +1,7 @@
 /**
- * LoginPage — Full-screen login gate for Nerve authentication.
+ * LoginPage — Full-screen login gate for Nerve Center authentication.
  *
- * Renders a password form matching Nerve's dark cockpit theme.
+ * Renders a password form matching Nerve Center's dark cockpit theme.
  * Supports Enter-to-submit and auto-focuses the password input on mount.
  */
 

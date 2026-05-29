@@ -49,7 +49,7 @@ const cronJobSchema = z.object({
     agentId: sessionAgentIdSchema,
     enabled: z.boolean().optional(),
     notify: z.boolean().optional(),
-    // Legacy compat — Nerve may send these flat fields
+    // Legacy compat — Nerve Center may send these flat fields
     prompt: z.string().max(10000).optional(),
     model: z.string().max(200).optional(),
     thinkingLevel: z.string().max(50).optional(),

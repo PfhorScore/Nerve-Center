@@ -29,7 +29,7 @@ interface ResizablePanelsProps {
  *
  * Supports drag resizing, clamped min/max constraints, and double-click
  * to auto-size the right panel to fit its content. Used as the main
- * layout container in the Nerve cockpit (sessions list + chat area).
+ * layout container in the Nerve Center cockpit (sessions list + chat area).
  */
 export function ResizablePanels({
   left,

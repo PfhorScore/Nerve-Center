@@ -6,7 +6,7 @@
  *
  * Strict allowlist of keys → files. No directory traversal.
  *
- * When the workspace directory is not locally accessible (e.g. Nerve on
+ * When the workspace directory is not locally accessible (e.g. Nerve Center on
  * DGX host, workspace inside OpenShell sandbox), falls back to gateway
  * RPC via `agents.files.get/set/list`.
  */

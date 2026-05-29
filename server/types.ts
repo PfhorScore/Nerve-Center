@@ -1,5 +1,5 @@
 /**
- * Shared types for the Nerve server.
+ * Shared types for the Nerve Center server.
  *
  * Centralised type definitions used across routes, services, and lib modules.
  * @module

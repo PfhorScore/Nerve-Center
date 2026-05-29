@@ -35,7 +35,7 @@ function timeoutSignal(ms: number): AbortSignal {
   return controller.signal;
 }
 
-/** Fetch gateway connection defaults from the Nerve server. */
+/** Fetch gateway connection defaults from the Nerve Center server. */
 async function fetchConnectDefaults(): Promise<{ wsUrl: string; token: string | null; authEnabled?: boolean; serverSideAuth?: boolean } | null> {
   try {
     const resp = await fetch('/api/connect-defaults', { signal: timeoutSignal(3000) });

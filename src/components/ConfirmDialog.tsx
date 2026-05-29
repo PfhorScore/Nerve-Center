@@ -24,7 +24,7 @@ interface ConfirmDialogProps {
 
 /**
  * Modal confirmation dialog with keyboard support (Enter to confirm, Escape to cancel)
- * and a focus-trapped overlay. Used for destructive or important actions in the Nerve UI.
+ * and a focus-trapped overlay. Used for destructive or important actions in the Nerve Center UI.
  */
 export function ConfirmDialog({
   open,

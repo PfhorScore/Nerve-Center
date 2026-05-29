@@ -1,7 +1,7 @@
 /**
  * Server configuration — all env vars, paths, and constants.
  *
- * Single source of truth for every tuneable value in the Nerve server.
+ * Single source of truth for every tuneable value in the Nerve Center server.
  * Validated at startup via {@link validateConfig}. Also exports the
  * startup banner printer and a non-blocking gateway health probe.
  * @module

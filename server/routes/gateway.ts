@@ -415,7 +415,7 @@ const GATEWAY_RESTART_TIMEOUT_MS = 15_000;
 
 app.post('/api/gateway/restart', rateLimitRestart, async (c) => {
   // DBus session vars are required for `systemctl --user` commands.
-  // When Nerve runs as a system service these may be absent; provide fallbacks.
+  // When Nerve Center runs as a system service these may be absent; provide fallbacks.
   const uid = process.getuid?.() ?? 1000;
   const xdgRuntime = process.env.XDG_RUNTIME_DIR || `/run/user/${uid}`;
 

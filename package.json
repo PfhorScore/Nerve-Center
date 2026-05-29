@@ -8,9 +8,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/daggerhashimoto/openclaw-nerve.git"
+    "url": "https://github.com/PfhorScore/Nerve-Center.git"
   },
-  "homepage": "https://github.com/daggerhashimoto/openclaw-nerve",
+  "homepage": "https://github.com/PfhorScore/Nerve-Center",
   "keywords": [
     "openclaw",
     "nerve",
@@ -36,7 +36,7 @@
     "setup": "tsx scripts/setup.ts",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "postinstall": "node -e \"try{require('fs').accessSync('.env')}catch{console.log('\\n  Run \\x1b[33mnpm run setup\\x1b[0m to configure Nerve.\\n')}\""
+    "postinstall": "node -e \"try{require('fs').accessSync('.env')}catch{console.log('\\n  Run \\x1b[33mnpm run setup\\x1b[0m to configure Nerve Center.\\n')}\""
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.2",

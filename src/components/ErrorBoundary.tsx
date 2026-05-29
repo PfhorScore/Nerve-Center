@@ -10,7 +10,7 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Root-level React error boundary for the Nerve application.
+ * Root-level React error boundary for the Nerve Center application.
  *
  * Catches unhandled render errors and displays a full-screen crash page
  * with the error message and a reload button. Wrap the entire app tree

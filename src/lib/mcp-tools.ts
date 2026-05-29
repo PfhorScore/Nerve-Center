@@ -28,7 +28,7 @@ let cachePromise: Promise<McpServerEntry[]> | null = null;
 let cacheTime = 0;
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
-/** Fetch configured MCP servers from the Nerve API, with caching. */
+/** Fetch configured MCP servers from the Nerve Center API, with caching. */
 async function fetchMcpServers(): Promise<McpServerEntry[]> {
   const now = Date.now();
   if (cachedServers && (now - cacheTime) < CACHE_TTL_MS) {

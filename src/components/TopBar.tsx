@@ -118,9 +118,9 @@ interface TopBarProps {
 }
 
 /**
- * Top navigation bar for the Nerve cockpit.
+ * Top navigation bar for the Nerve Center cockpit.
  *
- * Displays the Nerve logo/brand, and provides toggle buttons for the
+ * Displays the Nerve Center logo/brand, and provides toggle buttons for the
  * Agent Log, Events, Token Usage, and (in compact mode) Sessions +
  * Workspace panels.
  */

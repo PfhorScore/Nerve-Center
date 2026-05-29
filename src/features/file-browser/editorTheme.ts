@@ -1,5 +1,5 @@
 /**
- * CodeMirror theme matching the Nerve dark UI.
+ * CodeMirror theme matching the Nerve Center dark UI.
  *
  * Uses CSS custom properties from the app's theme system so it
  * automatically adapts to whatever theme is active.
@@ -107,7 +107,7 @@ export const nerveTheme = EditorView.theme(
   { dark: true },
 );
 
-/** Syntax highlighting colors for the Nerve theme. */
+/** Syntax highlighting colors for the Nerve Center theme. */
 export const nerveHighlighting = syntaxHighlighting(
   HighlightStyle.define([
     { tag: t.keyword, color: '#c678dd' },

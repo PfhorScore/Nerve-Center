@@ -32,7 +32,7 @@ interface InlineSelectProps {
  *
  * Styled as a tiny mono-font trigger that opens an absolutely-positioned
  * listbox. Supports arrow keys, Home/End, Escape, and optional drop-up
- * positioning. Used in the Nerve status bar and panel headers.
+ * positioning. Used in the Nerve Center status bar and panel headers.
  */
 export function InlineSelect({
   value,

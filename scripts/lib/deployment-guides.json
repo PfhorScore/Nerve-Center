@@ -4,11 +4,11 @@
     "url": "https://docs.nerve.zone/guide/deployment-local"
   },
   {
-    "title": "Use a cloud Gateway with Nerve on your laptop",
+    "title": "Use a cloud Gateway with Nerve Center on your laptop",
     "url": "https://docs.nerve.zone/guide/deployment-remote-gateway"
   },
   {
-    "title": "Run both Nerve and Gateway in the cloud",
+    "title": "Run both Nerve Center and Gateway in the cloud",
     "url": "https://docs.nerve.zone/guide/deployment-cloud"
   }
 ]

@@ -1,4 +1,4 @@
-// Font definitions for Nerve UI
+// Font definitions for Nerve Center UI
 
 export type FontName = 'instrument-sans' | 'space-grotesk' | 'jetbrains-mono';
 

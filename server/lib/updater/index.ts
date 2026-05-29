@@ -1,5 +1,5 @@
 /**
- * Nerve Updater — barrel export.
+ * Nerve Center Updater — barrel export.
  */
 
 export { orchestrate } from './orchestrator.js';
