@@ -50,9 +50,9 @@ Work with your agents instead of just delegating and waiting.
 - **Research** — Deep research mode generates reports with inline citations, sources, and images
 - **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
 
-### 🧠 AI-Powered Research
+### 🧠 Deep Research
 
-A Perplexity-class research interface built right in:
+Perform research with your agent
 
 - **Quick & Deep** search modes using any OpenClaw-compatible provider
 - **Rich markdown answers** with inline citation links `[1]`
@@ -63,9 +63,21 @@ A Perplexity-class research interface built right in:
 - **Thread sidebar** with AI-generated titles
 - **No middleman** — your API keys, your models, your data
 
-### 📐 Panels & Customizable UI
+#### 🎭 Customize your UI
 
-Nerve Center's workspace is built around draggable, resizable panels. Customize the layout to match how you work — move panels between sides, resize them, or collapse them to icon strips.
+Panel based, modular UI
+
+**Collapsible Sidebars** — Both sidebars collapse to thin icon strips, VS Code style:
+
+- **Hover to expand** or click to pin open
+- **Right-click the strip** to toggle hover-to-expand behavior
+
+**Drag-and-Drop Layout** — Panels aren't stuck where we put them:
+
+- Drag any panel between the left and right sidebar
+- Reorder panels within each sidebar by dragging
+- Layout is persisted to localStorage and survives page reloads
+- Resizable** — Sidebar widths are adjustable via drag handles. Right sidebar uses percentage-based sizing so it adapts to any window width.
 
 #### 📁 Workspace Panel
 
@@ -84,11 +96,10 @@ Full file management right in the sidebar:
 Your brain, organized into thought bubbles:
 
 - **`Ctrl+Enter`** separates your notes into individual cards
-- **Check off completed** thoughts (dimmed, stays for reference)
-- **Auto-detect completion** — send to chat, auto-checks when the AI finishes
+- **Send to Chat / Research** - One-click to share your thoughts with your agent
+- **Auto-detect completion** — After you send to chat, your agent follows the thought to check it off the list automatically
 - **Hover actions** — copy, send to chat, or research each thought
-- **Click to edit** any thought inline
-- **Server-backed sync** via `scratchpad.md` — notes available across all devices
+- **Server-backed sync** via `Thoughts.md` — notes available across all devices
 
 #### 📚 Library Panel
 
@@ -120,22 +131,7 @@ Central drawer for managing your agent fleet:
 - **Avatars** — upload per-agent profile images that appear in chat headers and the session list
 - **System monitoring** — token usage, connection status, gateway health
 
-#### 🎭 UI Customization
 
-**Collapsible Sidebars** — Both sidebars collapse to thin icon strips, VS Code style:
-
-- **Hover to expand** with 250ms delay, or click to pin open
-- **Right-click the strip** to toggle hover-to-expand behavior
-- Independent collapse per sidebar
-- Smooth 400ms width animation
-
-**Drag-and-Drop Layout** — Panels aren't stuck where we put them:
-
-- Drag any panel between the left and right sidebar
-- Reorder panels within each sidebar by dragging
-- Layout is persisted to localStorage and survives page reloads
-
-**Resizable** — Sidebar widths are adjustable via drag handles. Right sidebar uses percentage-based sizing so it adapts to any window width.
 
 ### ⌨️ Perplexity-Style Input
 
