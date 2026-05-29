@@ -52,6 +52,7 @@ import kanbanRoutes from './routes/kanban.js';
 import beadsRoutes from './routes/beads.js';
 import mcpRoutes from './routes/mcp.js';
 import researchRoutes from './routes/research.js';
+import updateRoutes from './routes/update.js';
 // activity routes removed — tab dropped from workspace panel
 
 const app = new Hono();
@@ -81,7 +82,7 @@ app.use(
 app.use('*', authMiddleware);
 // Apply compression to all routes except SSE (compression buffers chunks and breaks streaming)
 app.use('*', async (c, next) => {
-  if (c.req.path === '/api/events' || c.req.path === '/api/files/raw') return next();
+  if (c.req.path === '/api/events' || c.req.path === '/api/files/raw' || c.req.path === '/api/update') return next();
   return compress()(c, next);
 });
 app.use('*', cacheHeaders);
@@ -95,7 +96,7 @@ const routes = [
   gatewayRoutes, connectDefaultsRoutes,
   workspaceRoutes, cronsRoutes, sessionsRoutes, skillsRoutes, filesRoutes, apiKeysRoutes,
   subagentsRoutes,
-  voicePhrasesRoutes, fileBrowserRoutes, uploadConfigRoutes, uploadReferenceRoutes, channelsRoutes, kanbanRoutes, beadsRoutes, mcpRoutes, researchRoutes,
+  voicePhrasesRoutes, fileBrowserRoutes, uploadConfigRoutes, uploadReferenceRoutes, channelsRoutes, kanbanRoutes, beadsRoutes, mcpRoutes, researchRoutes, updateRoutes,
 ];
 for (const route of routes) app.route('/', route);
 
