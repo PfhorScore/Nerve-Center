@@ -16,9 +16,9 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 ---
 ### 🧩 Work, Research, and Tasks
-Work alongside your agents, not delegate and wait
+Work alongside your agents
 - **Work** - Chat with your agents, create and edit files, and browse your agent workspace
-- **Research** - Use your agent to perform deep research, generating reports with citations
+- **Research** - Use your agent to perform deep research
 - **Tasks** - Kanban board with agent control
 
 ### 📝 Thoughts
@@ -61,23 +61,6 @@ Both sidebars collapse to icon strips — like VS Code:
 - **Right-click** the strip to toggle hover behavior
 - Independent collapse per sidebar
 - Smooth 400ms width animation
-
-### 🎯 Quality-of-Life
-- **Smooth streaming text** — append-only DOM, no flickering
-- **Tab title pulses** during generation ("⚡ Thinking...")
-- **Smooth scroll** on new messages
-- **Brain icon** on send during generation
-- **Copy button** on messages (hover to reveal)
-- **"Still thinking…"** indicator at 15s
-- **Collapse only chevron** — no accidentally collapsing messages
-- **Cmd+K** command palette
-- **Research This?** tooltip — select text, send to research
-- **Changelog dialog** — click version in StatusBar
-- **Right-click context menus** — Copy, Paste, Move panel
-- **NERVE CENTER** branding
-
-### 🎨 And everything Nerve already gives you
-Multi-agent fleet control, voice I/O, kanban workflows, workspace management, session trees, crons, charts, and more.
 
 ---
 
