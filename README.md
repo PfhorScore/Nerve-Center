@@ -2,7 +2,7 @@
 ```bash
 curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
 ```
-> *Nerve Center - All-in-one Dashboard for your Agent Fleet*
+> *Nerve Center - All-in-one Workstation for your Agent Fleet*
 
 <div align="center">
   <a href="docs/screenshot-2.png"><img src="docs/screenshot-2.png" width="45%" alt="Thoughts panel and workspace" /></a>
@@ -15,15 +15,15 @@ curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/instal
 
 
 ---
-### 🧩 Work, Research, and manage Tasks
+### 🧩 Work, Research, and Tasks
 Work alongside your agents, not delegate and wait
-- **Work** Chat with your agents, create and edit files, and browse your agent workspace
-- **Research** Use your agent to perform deep research, generating reports with citations
-- **Tasks** Kanban board with agent control
+- **Work** - Chat with your agents, create and edit files, and browse your agent workspace
+- **Research** - Use your agent to perform deep research, generating reports with citations
+- **Tasks** - Kanban board with agent control
 
 ### 📝 Thoughts
 Your brain, organized into thought bubbles:
-- **`---` separates thoughts** — split your notes into individual cards
+- **`Crtl+Enter` separates your thoughts** — split your notes into individual cards
 - **Check off completed** thoughts (dimmed, stays visible for history)
 - **Auto-detect completion** — send to chat, auto-checks when AI finishes
 - **Hover actions** — copy, send to chat, research each thought
@@ -38,7 +38,7 @@ References, citations, and images from your chats:
 - **Search** filter to find specific references
 - **Favicon previews** and image thumbnails
 
-### 🧠 AI-Powered Research Tab
+### 🧠 Research
 Full Perplexity-class research experience:
 - **Quick & Deep search modes** using any OpenClaw-compatible provider
 - **Rich markdown answers** with inline citation links `[1]`
@@ -61,12 +61,6 @@ Both sidebars collapse to icon strips — like VS Code:
 - **Right-click** the strip to toggle hover behavior
 - Independent collapse per sidebar
 - Smooth 400ms width animation
-
-### ⌨️ Perplexity-Style Input
-Clean messaging layout:
-- **Buttons below text** — attach, research, send below the input area
-- **Live markdown preview** — toggle with the 👁️ icon
-- **File upload** now accepts all file types (.md, .txt, etc.)
 
 ### 🎯 Quality-of-Life
 - **Smooth streaming text** — append-only DOM, no flickering
