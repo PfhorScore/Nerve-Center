@@ -121,7 +121,7 @@ From Thoughts, to brainstorming, to research, and back again.
 ## Panels — How Ideas Flow
 Nerve Center's panels aren't a static dashboard — they're stations in a workflow. **Capture** in Thoughts. **Discuss** in Chat. **Research** deeper. **Save** to files. **Track** with tasks. Each one feeds the next, and your agent moves alongside you.
 Drag any panel between sides, resize, or collapse to icon strips — set up your flow how it makes sense for what you're doing right now.
-# 📁 Workspace Panel
+### 📁 Workspace Panel
 > *Edit files and browse your agent's workspace without leaving the chat.*
 Full file management in the sidebar:
 - **File tree** browser with folder navigation and context menus
@@ -163,7 +163,7 @@ Central drawer for managing your agent fleet:
 - **Settings** — configure TTS, STT, theme, panel layout, and more
 - **Avatars** — upload per-agent profile images for chat headers and session list
 - **System monitoring** — token usage, connection status, gateway health
-*Tip: Customize the layout further with collapsible sidebars, drag-and-drop panel reordering, and resizable panels — see [Quality of Life](#-quality-of-life).*
+*Tip: Customize the layout further with collapsible sidebars, drag-and-drop panel reordering, and resizable panels.*
 ---
 ## First Launch
 Once Nerve Center is running (`node server-dist/index.js` or via the install script), here's your first 5 minutes:
