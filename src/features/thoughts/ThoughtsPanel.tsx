@@ -55,9 +55,9 @@ function parseThoughts(content: string): Thought[] {
 }
 
 /** Storage key for completion state (localStorage fallback). */
-const COMPLETED_KEY = 'nerve-scratch-pad-completed';
+const COMPLETED_KEY = 'nerve-center-thoughts-completed';
 /** Storage key for pending-completion thought index (localStorage fallback). */
-const PENDING_KEY = 'nerve-scratch-pad-pending';
+const PENDING_KEY = 'nerve-center-thoughts-pending';
 /** Server-side state file — stores completed/pending so the agent and other devices can see it. */
 const STATE_FILE = '.thoughts-state.json';
 
