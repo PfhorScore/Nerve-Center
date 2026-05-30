@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.3.0] - 2026-05-30
 
-### Highlights — 2026-05-29/30 — Massive Session 🚀
+### Highlights — Massive Session 🚀
 
 **Message flow bugs fixed (finally!).** Three separate bugs were causing out-of-order messages: empty `chat_final` triggering false recovery, stale stream content bleeding into new responses, and assistant messages being duplicated when `chat_final` arrived after the user sent a new message. Multiple passes across three files — confirmed working after extended testing.
 
