@@ -2,7 +2,7 @@
   <h1>⚡ Nerve Center</h1>
   <p><em>Create alongside your agents</em></p>
 
-  <p align="center"><strong>More than a chat window.</strong> Nerve Center is a connected workspace where your ideas flow — jot a thought, turn it into a research query, drop the results into a file, discuss it with your agent, track it on the Kanban board. No app-switching. No copy-paste between tabs. Just you and your agents, building together.</p>
+  <p align="center"><strong>More than a chat window.</strong> Nerve Center is a connected workspace built on your <strong>OpenClaw gateway</strong> — where your ideas flow between thought, research, chat, files, and tasks. No app-switching. No copy-paste between tabs. Just you and your agents, building together.</p>
 
   <a href="docs/screenshot-2.png"><img src="docs/screenshot-2.png" width="45%" alt="Thoughts panel and workspace" /></a>
   <br />
