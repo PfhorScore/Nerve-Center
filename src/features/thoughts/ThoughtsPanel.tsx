@@ -17,7 +17,8 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { CheckSquare, Square, Copy, Check, MessageSquare, ExternalLink, Clock, Trash2 } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingsContext';
+import { CheckSquare, Square, Copy, Check, MessageSquare, ExternalLink, Clock, Trash2, Send, Paperclip } from 'lucide-react';
 
 /** Props for {@link ThoughtsPanel}. */
 interface ThoughtsPanelProps {
@@ -97,8 +98,12 @@ function savePending(idx: number | null) {
  */
 function ThoughtCard({
   thought,
+  thoughtNumber,
   completed,
   pending,
+  selectMode,
+  selected,
+  onToggleSelect,
   onToggleComplete,
   onEdit,
   onDelete,
@@ -108,8 +113,12 @@ function ThoughtCard({
   onCopy,
 }: {
   thought: Thought;
+  thoughtNumber: number;
   completed: boolean;
   pending: boolean;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (shiftKey: boolean) => void;
   onToggleComplete: () => void;
   onEdit: (newText: string) => void;
   onDelete: () => void;
@@ -143,7 +152,14 @@ function ThoughtCard({
           : 'border-border/40 bg-card/30 hover:border-border/60'
       }`}
     >
-      <div className="flex items-start gap-2 px-2.5 py-2">
+      <div className="flex items-start gap-1.5 px-2.5 py-2">
+        {selectMode ? (
+          <button onClick={(e) => { e.stopPropagation(); onToggleSelect?.(e.shiftKey); }} className="mt-0.5 shrink-0 text-muted-foreground/40 hover:text-primary transition-colors" aria-label={selected ? 'Deselect' : 'Select'}>
+            {selected ? <CheckSquare size={14} className="text-primary" /> : <Square size={14} />}
+          </button>
+        ) : (
+          <span className="mt-0.5 shrink-0 text-[0.6rem] font-mono font-semibold text-muted-foreground/30 min-w-[1.2em] text-right select-none">{thoughtNumber}</span>
+        )}
         {/* Status: pending / completed / active */}
         <button
           onClick={onToggleComplete}
@@ -239,6 +255,11 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   const [pendingIdx, setPendingIdx] = useState<number | null>(() => loadPending());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [newThought, setNewThought] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [thoughtsTab, setThoughtsTab] = useState<'active' | 'completed'>('active');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedThoughts, setSelectedThoughts] = useState<Set<number>>(new Set());
+  const [lastSelectedIdx, setLastSelectedIdx] = useState<number | null>(null);
   const newThoughtRef = useRef<HTMLTextAreaElement>(null);
   const wasGeneratingRef = useRef(isGenerating);
 
@@ -259,8 +280,47 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   }, [isGenerating, pendingIdx]);
 
   const thoughts = useMemo(() => parseThoughts(content), [content]);
+
+  const sendSelectedThoughts = useCallback(() => {
+    if (selectedThoughts.size === 0 || !onSendToChat) return;
+    const texts = thoughts.filter(t => selectedThoughts.has(t.index)).sort((a, b) => a.index - b.index).map(t => t.text);
+    onSendToChat(texts.join('\n\n---\n\n'));
+    setSelectedThoughts(new Set());
+    setSelectMode(false);
+  }, [selectedThoughts, thoughts, onSendToChat]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const { ctrlEnterToSend } = useSettings();
+
+  /** Handle file attachment for new thought */
+  const handleFileAttach = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const prefix = file.type.startsWith('image/') ? '![]' : '[]';
+      const link = `${prefix}(uploads/${file.name})`;
+      setNewThought(prev => prev ? `${prev}\n${link}` : link);
+    } catch { /* ignore */ }
+    e.target.value = '';
+  }, []);
+
+  const toggleSelectThought = useCallback((index: number, shiftKey: boolean) => {
+    setSelectedThoughts(prev => {
+      const next = new Set(prev);
+      if (shiftKey && lastSelectedIdx !== null) {
+        const start = Math.min(lastSelectedIdx, index);
+        const end = Math.max(lastSelectedIdx, index);
+        for (let i = start; i <= end; i++) next.add(i);
+      } else if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+    setLastSelectedIdx(index);
+  }, [lastSelectedIdx]);
 
   /** Detect whether user has scrolled up from the bottom. */
   const handleScroll = useCallback(() => {
@@ -355,28 +415,46 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
             onChange={(e) => setNewThought(e.target.value)}
             onKeyDown={(e) => {
               if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); addThought(); }
+              if (ctrlEnterToSend && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addThought(); }
               if (e.key === 'Escape') setNewThought('');
             }}
             placeholder="Write a thought…"
             className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-sm text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors min-h-[60px]"
             rows={3}
           />
+          <div className="flex items-center gap-1">
+            <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 rounded-md text-[0.6rem] text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Attach file"><Paperclip size={12} /></button>
+            <input ref={fileInputRef} type="file" accept="image/*,.pdf,.md,.txt" className="hidden" onChange={handleFileAttach} />
+          </div>
         </div>
       </div>
     );
   }
 
+  const filteredThoughts = thoughtsTab === 'active' ? thoughts.filter(t => !completed.has(t.index)) : thoughts.filter(t => completed.has(t.index));
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
+      {/* Tab bar */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/20 shrink-0">
+        <button onClick={() => setThoughtsTab('active')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'active' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Active ({thoughts.length - completed.size})</button>
+        {completed.size > 0 && <button onClick={() => setThoughtsTab('completed')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'completed' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Done ({completed.size})</button>}
+        <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedThoughts(new Set()); }} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ml-auto ${selectMode ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>{selectMode ? 'Done' : 'Select'}</button>
+      </div>
       {/* Thought list */}
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-2 space-y-1.5 relative">
-        {/* Active thoughts */}
-        {thoughts.map((thought) => (
+        {filteredThoughts.length === 0 ? (
+          <div className="flex items-center justify-center py-8 text-[0.667rem] text-muted-foreground/40">{thoughtsTab === 'active' ? 'No active thoughts' : 'No completed thoughts'}</div>
+        ) : filteredThoughts.map(thought => (
           <ThoughtCard
             key={thought.index}
             thought={thought}
+            thoughtNumber={thought.index + 1}
             completed={completed.has(thought.index)}
             pending={pendingIdx === thought.index}
+            selectMode={selectMode}
+            selected={selectedThoughts.has(thought.index)}
+            onToggleSelect={(shiftKey) => toggleSelectThought(thought.index, shiftKey)}
             onToggleComplete={() => toggleComplete(thought.index)}
             onEdit={(newText) => {
               const updated = thoughts.map((t) =>
@@ -396,8 +474,14 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           />
         ))}
 
+        {/* Batch send bar */}
+        {selectedThoughts.size > 0 && (
+          <div className="sticky bottom-2 flex justify-center pointer-events-none">
+            <button onClick={sendSelectedThoughts} className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors px-4 py-2 text-[0.667rem] font-semibold uppercase tracking-wider shadow-sm"><Send size={12} /> Send {selectedThoughts.size} thought{selectedThoughts.size > 1 ? 's' : ''} to chat</button>
+          </div>
+        )}
         {/* Scroll-to-bottom button */}
-        {showScrollButton && (
+        {showScrollButton && selectedThoughts.size === 0 && (
           <div className="sticky bottom-2 flex justify-center pointer-events-none">
             <button
               onClick={scrollToBottom}
@@ -421,14 +505,18 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           onChange={(e) => setNewThought(e.target.value)}
           onKeyDown={(e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); addThought(); }
+            if (ctrlEnterToSend && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addThought(); }
             if (e.key === 'Escape') setNewThought('');
           }}
           placeholder="New thought…"
           className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-sm text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors min-h-[60px]"
           rows={3}
         />
+        <div className="flex items-center gap-1">
+          <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 rounded-md text-[0.6rem] text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Attach file"><Paperclip size={12} /></button>
+          <input ref={fileInputRef} type="file" accept="image/*,.pdf,.md,.txt" className="hidden" onChange={handleFileAttach} />
+        </div>
       </div>
     </div>
   );
 }
-  // Reference to suppress TS unused warning
