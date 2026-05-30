@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo, lazy, Suspense } from 'react';
-import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, Search } from 'lucide-react';
+import { Mic, Paperclip, X, Loader2, ArrowUp, FileText, FolderOpen, Command, Volume2, VolumeOff, Eye, EyeOff, BookOpen } from 'lucide-react';
 import type { TreeEntry } from '@/features/file-browser';
 import { useVoiceInput } from '@/features/voice/useVoiceInput';
 import { useTabCompletion } from '@/hooks/useTabCompletion';
@@ -1345,7 +1345,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
               title="Send conversation to deep research"
               aria-label="Send to deep research"
             >
-              <Search size={14} />
+              <BookOpen size={14} />
               <span className="text-[11px]">Research</span>
             </button>
           )}

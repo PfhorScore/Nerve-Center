@@ -68,9 +68,8 @@ Flow between modes with your agents in tow
 ## 💬 Work
 Your main workspace — chat, create, and edit alongside your agents.
 - **Chat** — Talk to your agents with streaming responses, tool calls, and rich markdown
-- **Split view** — Open a file while keeping the chat visible side-by-side. Drag the divider to resize, or collapse the chat to a thin strip for full document width
+- **Split view** — Chat alongside your documents. Open any file and keep the conversation going beside it. Drag the divider to resize, or collapse the chat for full document focus
 - **Panels** — Workspace (file tree), Thoughts (notes), Library (references), Activity (agent logs)
-- **Split view** — Open a file while keeping the chat visible side-by-side. Documents on the right, conversation on the left. Drag the divider to resize.
   
 ## 🧠 Research
 Deep research interface for your agent
@@ -124,9 +123,8 @@ Extend your agents with third-party tools through the Model Context Protocol.
 From Thoughts, to brainstorming, to research, and back again.
 - **Think about...** — Hover any message and send it to the Thoughts panel to capture a note
 - **Research this** — Highlight text or hover a message to kick off deep research
-- **Chat about...** — Hover a thought to send it straight into the conversation
+- **Discuss this...** — Send a thought straight into the conversation
 - **Flow between modes** without context-switching. Your agent follows you between Work, Research, and Tasks.
-- **Split view** keeps your chat accessible while you browse files, docs, and code — no more tabbing back and forth 
 ## Panels — How Ideas Flow
 Nerve Center's panels aren't a static dashboard — they're stations in a workflow. **Capture** in Thoughts. **Discuss** in Chat. **Research** deeper. **Save** to files. **Track** with tasks. Each one feeds the next, and your agent moves alongside you.
 Drag any panel between sides, resize, or collapse to icon strips — set up your flow how it makes sense for what you're doing right now.

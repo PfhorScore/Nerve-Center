@@ -188,7 +188,7 @@ function ThoughtCard({
     <div
       className={`group relative rounded-xl border overflow-hidden transition-none ${
         completed
-          ? 'border-border/20 bg-muted/10 opacity-50'
+          ? 'border-border/20 bg-muted/10'
           : 'border-border/40 bg-card/30 hover:border-border/60'
       }`}
     >

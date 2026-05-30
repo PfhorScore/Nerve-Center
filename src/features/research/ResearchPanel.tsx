@@ -167,7 +167,7 @@ export function ResearchPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [briefing] = useState(false);
-  const [mode, setMode] = useState<'quick' | 'deep'>('deep');
+  const [mode, setMode] = useState<'quick' | 'deep'>('quick');
   const [showSidebar, setShowSidebar] = useState(true);
   const [copied, setCopied] = useState(false);
   const [hoveredThread, setHoveredThread] = useState<string | null>(null);

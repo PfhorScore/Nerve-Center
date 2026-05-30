@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, lazy, Suspense, memo } from 'react';
-import { ClipboardCopy, Brain, Search, Volume2, Trash2 } from 'lucide-react';
+import { ClipboardCopy, Brain, BookOpen, Volume2, Trash2 } from 'lucide-react';
 import { MemoriesSection } from './MemoriesSection';
 import { ImageLightbox } from './ImageLightbox';
 import { isMessageCollapsible } from './types';
@@ -416,7 +416,7 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
                 aria-label="Research this"
                 title="Research this"
               >
-                <Search size={13} />
+                <BookOpen size={13} />
               </button>
               <span className="text-[0.6rem] text-muted-foreground/30">·</span>
               <button
