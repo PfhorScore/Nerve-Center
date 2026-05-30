@@ -40,33 +40,34 @@ npm install
 npm run build
 npm run setup
 ```
-
-> **New to Nerve Center?** The install script handles everything. Unhappy with it? `npm run setup` walks through every option.
-
 ---
 ## Features
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
 
-### 🧩 Work, Research, and Tasks
-
-Work with your agents instead of just delegating and waiting.
-
+### 🧩 3 Modes - Work, Research, and Tasks
+Flow between modes with your agents in tow
 - **Work** — Chat with agents, create and edit files, browse the workspace in real time
 - **Research** — Deep research mode generates reports with inline citations, sources, and images
 - **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
 
-### 🧠 Deep Research
-A Perplexity-class research interface built right into your agent workspace:
+### 💬 Work
+
+Your main workspace — chat, create, and edit alongside your agents.
+
+- **Chat** — Talk to your agents with streaming responses, tool calls, and rich markdown
+- **Panels** — Workspace (file tree), Thoughts (notes), Library (references), Activity (agent logs)
+- **Split view** — Open a file while keeping the chat visible side-by-side. Documents on the right, conversation on the left. Drag the divider to resize.
+  
+### 🧠 Research
+Deep research interface for your agent
 - **Quick & Deep** search modes using any OpenClaw-compatible model provider
 - **Rich markdown answers** with inline citation links `[1]`, sources, and images
-- **AI auto-sort** — one click splits a conversation into topic-based threads _(no other AI service offers this)_
+- **AI auto-sort** — one click splits a conversation into topic-based threads
 - **Hover previews** on every source — favicon, title, snippet at a glance
 - **Tabbed results**: All, Sources, Images, Links
 - **Follow-up suggestions** — click to dive deeper without retyping
-- **Thread sidebar** with AI-generated titles
-- **Fullscreen research view** — workspace sidebar hides, just you and the research
-- **No middleman** — your API keys, your models, your data stay yours
-### 📋 Kanban & Tasks
+- **Thread sidebar** with  agent-generated titles that evolve with your discussion
+### 📋 Tasks
 A full Kanban board for managing work alongside your agent. Not a toy — real columns, real workflows.
 - **Drag-and-drop cards** between columns (Backlog, In Progress, Review, Done)
 - **AI-assisted card creation** — describe the task, the agent helps flesh it out
@@ -76,39 +77,44 @@ A full Kanban board for managing work alongside your agent. Not a toy — real c
 - **Configurable columns** — adapt the workflow to match your process
 ### 🔌 MCP Integration
 Extend your agents with third-party tools through the Model Context Protocol.
-- **MCP Server Manager** — register, enable, and disable MCP servers from the UI
-- **Tool call visibility** — toggle MCP tool blocks on/off in chat with one click
-- **MCP server badges** — see which server a tool belongs to at a glance
-- **Inline embedded apps** — MCP servers that return interactive content (like tldraw canvases) render inline in the chat stream
-### 📊 Monitoring & Management
+- *rewrite this*
+### 📊 Agent Monitoring & Management
 Keep tabs on your agents without context-switching.
-- **Dashboard** — token usage charts, memory list, usage limits at a glance
+- **Analytics Dashboard** — Monitor your token usage via charts, memory list, usage limits at a glance *rewrite this to mention the Agent Hub*
 - **Full Memory Browser** — add, edit, delete, and search agent memories. Not just read-only — you can refine what your agent remembers
 - **Charts & data viz** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
-### 🔗 Connect & Security
-- **Node pairing dialog** — pair Nerve Center with remote machines via Tailscale or LAN
-- **Password-protected login** — enable `NERVE_AUTH=true` for a gate before anyone accesses your workspace
-- **Gateway token auth** — secure communication between Nerve Center and your OpenClaw gateway
-### ⌨️ Clean Input
-- Buttons below the text area — attach files, research, send
-- Live markdown preview toggle
-- File upload accepts all types (`.md`, `.txt`, images, etc.)
-- Send button becomes a stop button during generation
-- **Image lightbox** — click any chat image to view full size
-- **Cmd+K command palette** — panel switching, view controls, file creation
-- **Right-click context menus** — Copy, Paste, Move panel
-### 🔄 One-Click Updates
-- Update Nerve Center with a single button click from the UI
-- Real-time SSE progress bar during the update
-- Automatic restart when complete — no terminal required
-### 🛠 Everything OpenClaw Provides
-Multi-agent fleet control, voice I/O (TTS/STT), Kanban workflows, workspace file management, session trees, cron jobs, system monitoring charts, and more.
+### 🎤 Voice
+
+Speak to your agents and hear them respond.
+
+- **Speech-to-text** — Dictate messages using local Whisper or OpenAI Whisper
+- **Text-to-speech** — Agent replies read aloud via Edge TTS, OpenAI TTS, or Replicate
+- **Voice activation** — Double-tap Shift to start recording, press again to send
+- **Live transcription preview** — See your speech being transcribed in real time before sending
+
+### Other Features
+
+- **One-Click Updates** — Update Nerve Center from the UI with real-time progress streaming
+- **Hover commands** — Hover over messages for copy, think, research, and read-aloud actions
+- **Command Palette** — `Cmd+K` to quickly switch panels, views, and create files
+- **Image Lightbox** — Click any chat image to view full size
+- **Notification sounds** — Subtle audio cues for message completion and errors 
+
 ---
+### Workflow
+
+From Thoughts, to brainstorming, to research, and back again.
+
+- **Think about...** — Hover any message and send it to the Thoughts panel to capture a note
+- **Research this** — Highlight text or hover a message to kick off deep research
+- **Chat about...** — Hover a thought to send it straight into the conversation
+- **Flow between modes** without context-switching. Your agent follows you between Work, Research, and Tasks.
+- **Split view** keeps your chat accessible while you browse files, docs, and code — no more tabbing back and forth 
 ## Panels — How Ideas Flow
 Nerve Center's panels aren't a static dashboard — they're stations in a workflow. **Capture** in Thoughts. **Discuss** in Chat. **Research** deeper. **Save** to files. **Track** with tasks. Each one feeds the next, and your agent moves alongside you.
 Drag any panel between sides, resize, or collapse to icon strips — set up your flow how it makes sense for what you're doing right now.
-### 📁 Workspace Panel
+# 📁 Workspace Panel
 > *Edit files and browse your agent's workspace without leaving the chat.*
 Full file management in the sidebar:
 - **File tree** browser with folder navigation and context menus
