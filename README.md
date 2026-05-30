@@ -135,27 +135,14 @@ Keep tabs on your agents without context-switching.
 - File upload accepts all types (`.md`, `.txt`, images, etc.)
 - Send button becomes a stop button during generation
 - **Image lightbox** — click any chat image to view full size
+- **Cmd+K command palette** — panel switching, view controls, file creation
+- **Right-click context menus** — Copy, Paste, Move panel
 
 ### 🔄 One-Click Updates
 
 - Update Nerve Center with a single button click from the UI
 - Real-time SSE progress bar during the update
 - Automatic restart when complete — no terminal required
-
-### 🎯 Quality of Life
-
-- **Smooth streaming text** — append-only DOM, no flickering
-- **Tab title pulses** during generation ("⚡ Thinking...")
-- **Avatars** — per-agent images in chat headers and session list
-- **Discord-style messages** — username on its own line, timestamp, avatar
-- **Clickable "↑ older messages"** — loads more history
-- **Changelog dialog** — click the version in the status bar
-- **Cmd+K command palette** — panel switching, view controls, file creation
-- **Right-click context menus** — Copy, Paste, Move panel
-- **Research This?** tooltip on selected text
-- **Collapsible sidebars** — VS Code-style hover-to-expand or click to pin, per-side
-- **Drag-and-drop layout** — move panels between sides, reorder, persists across reloads
-- **Resizable panels** — drag handles with percentage-based right sidebar
 
 ### 🛠 Everything OpenClaw Provides
 
