@@ -76,11 +76,18 @@ A full Kanban board for managing work alongside your agent. Not a toy — real c
 - **Quick view** — peek at task details without leaving the board
 - **Configurable columns** — adapt the workflow to match your process
 ### 🔌 MCP Integration
+
 Extend your agents with third-party tools through the Model Context Protocol.
-- *rewrite this*
+
+- **MCP Server Manager** — Register, enable, and disable MCP servers from the Settings drawer
+- **Tool call visibility** — Toggle MCP tool blocks on and off in chat with one click
+- **Server badges** — See which MCP server a tool belongs to at a glance
+- **Inline embedded apps** — MCP servers that return interactive content (like tldraw canvases) render inline in the chat stream
+- **Any MCP-compatible tool** — Connect to databases, APIs, file systems, and more through the standardized protocol
 ### 📊 Agent Monitoring & Management
 Keep tabs on your agents without context-switching.
-- **Analytics Dashboard** — Monitor your token usage via charts, memory list, usage limits at a glance *rewrite this to mention the Agent Hub*
+- **Agent Hub** — Central drawer for switching agents, browsing memory, managing settings, and uploading per-agent avatars
+- **Analytics Dashboard** — Token usage charts, memory list, usage limits at a glance, accessible from the Agent Hub
 - **Full Memory Browser** — add, edit, delete, and search agent memories. Not just read-only — you can refine what your agent remembers
 - **Charts & data viz** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
