@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Voice toggle now stops playback immediately when toggled off
 
 ### Fixed
+- **Message flow ordering** — Multiple passes fixed empty `chat_final` recovery, stream ghost bleed, and assistant message duplication. Confirmed working after extended testing.
 - `setup.ts`: `!config.NERVE_AUTH` → `config.NERVE_AUTH !== 'true'` (string truthy bug)
 - `useAuth.ts`: network errors now show login page instead of `authenticated`
 - Sidebar: panel collapse no longer collapses entire right sidebar
