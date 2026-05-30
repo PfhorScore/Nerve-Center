@@ -549,3 +549,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Documentation
 - Updated API, architecture, configuration, troubleshooting, installer notes, and README to match multilingual voice behavior and runtime config.
 - Removed internal planning notes from public docs.
+
+## Unreleased
+
+### Added
+- **Split view** — Chat and documents side-by-side with draggable resize handle. Collapse chat to thin strip when you need full document width. (#chat-as-panel)
+- **Thoughts panel tabs** — Active and Done tabs to filter thoughts by completion state.
+- **Thought numbers** — Each thought card shows a `#N` label for easy reference in chat.
+- **Thought attachments** — Paperclip button to attach images/files to new thoughts.
+- **Ctrl+Enter to send toggle** — Setting in Audio preferences to switch between Enter and Ctrl+Enter as the primary send key. Shift+Enter also works in Ctrl+Enter mode.
+- **Tab refresh button** — Reload file from disk without closing and reopening.
+- **AgentOS competitive research** — Architecture analysis, adapter pattern, readiness model, and UI inspiration documented in `docs/BACKEND-ADAPTER.md`.
+
+### Changed
+- **Research view** — Thoughts panel moved to left column, consistent sidebar width with Work view.
+- **Message hover buttons** — Larger icons (13px), more padding, higher hover opacity.
+- **Library images** — Use button instead of link to prevent accidental navigation.
+- **README** — Reordered screenshots to follow first-time user flow, added post-install next-steps.
+
+### Fixed
+- **Message duplicates** — `mergeFinalMessages` now scans recent 30 messages for matching assistant messages, preventing duplicates when `chat_final` arrives after user sends a new message.
+- **Stream ghost content** — `lastStreamHtmlRef` cleared when `isGenerating` transitions, preventing old response text from bleeding into new streams.
+- **Empty `chat_final` recovery** — No longer triggers `triggerRecovery('unrenderable-final')` on empty finals (was causing double history reload and viewport desync).
