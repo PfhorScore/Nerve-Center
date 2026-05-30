@@ -257,7 +257,7 @@ export function TopBar({
         </div>
         {/* View mode toggle */}
         {onViewModeChange && (
-          <div className="order-3 flex w-full items-center justify-center gap-2 max-[371px]:gap-1 sm:order-none sm:w-auto sm:mx-auto relative">
+          <div className="order-3 flex w-full flex-1 items-center justify-center gap-2 max-[371px]:gap-1 sm:order-none sm:flex-1 sm:mx-6 relative">
             <button
               onClick={() => onViewModeChange("chat")}
               onMouseEnter={() => setHoveredView("chat")}
