@@ -54,15 +54,48 @@ function parseThoughts(content: string): Thought[] {
     .map((text, i) => ({ index: i, text }));
 }
 
-/** Storage key for completion state. */
+/** Storage key for completion state (localStorage fallback). */
 const COMPLETED_KEY = 'nerve-scratch-pad-completed';
-/** Storage key for pending-completion thought index. */
+/** Storage key for pending-completion thought index (localStorage fallback). */
 const PENDING_KEY = 'nerve-scratch-pad-pending';
+/** Server-side state file — stores completed/pending so the agent and other devices can see it. */
+const STATE_FILE = '.thoughts-state.json';
 
 /**
- * Load the set of completed thought indices from localStorage.
+ * Sync thoughts state to a server-side JSON file so the agent and other
+ * browser sessions can read/write completion state. Local storage is kept
+ * as an immediate local cache — the server file is the source of truth.
+ */
+interface ThoughtsState {
+  completed: number[];
+  pending: number | null;
+}
+
+async function loadServerState(): Promise<ThoughtsState | null> {
+  try {
+    const res = await fetch(`/api/files/read?path=${STATE_FILE}`);
+    if (!res.ok) return null;
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch { return null; }
+}
+
+async function writeServerState(state: ThoughtsState): Promise<void> {
+  try {
+    await fetch('/api/files/write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: STATE_FILE, content: JSON.stringify(state, null, 2) }),
+    });
+  } catch { /* ignore */ }
+}
+
+/**
+ * Load completed set — try server first, fall back to localStorage.
  */
 function loadCompleted(): Set<number> {
+  // Server state loaded asynchronously; use localStorage as immediate cache.
+  // The component re-fetches server state in useEffect after mount.
   try {
     const raw = localStorage.getItem(COMPLETED_KEY);
     if (raw) return new Set(JSON.parse(raw));
@@ -71,13 +104,16 @@ function loadCompleted(): Set<number> {
 }
 
 /**
- * Persist the set of completed thought indices to localStorage.
+ * Persist completed set to BOTH localStorage (instant) and server (sync).
  */
 function saveCompleted(set: Set<number>) {
-  try { localStorage.setItem(COMPLETED_KEY, JSON.stringify([...set])); } catch { /* ignore */ }
+  const arr = [...set];
+  try { localStorage.setItem(COMPLETED_KEY, JSON.stringify(arr)); } catch { /* ignore */ }
+  // Fire-and-forget server sync — don't block the UI on file writes.
+  writeServerState({ completed: arr, pending: null });
 }
 
-/** Load the pending-completion thought index from localStorage. */
+/** Load pending index from localStorage. */
 function loadPending(): number | null {
   try {
     const raw = localStorage.getItem(PENDING_KEY);
@@ -85,12 +121,16 @@ function loadPending(): number | null {
   } catch { return null; }
 }
 
-/** Save the pending-completion thought index. */
+/** Save pending index to both localStorage and server. */
 function savePending(idx: number | null) {
   try {
     if (idx !== null) localStorage.setItem(PENDING_KEY, String(idx));
     else localStorage.removeItem(PENDING_KEY);
   } catch { /* ignore */ }
+  // Fire-and-forget server sync.
+  if (idx !== null) {
+    writeServerState({ completed: [], pending: idx });
+  }
 }
 
 /**
@@ -254,6 +294,27 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   const [completed, setCompleted] = useState<Set<number>>(loadCompleted);
   const [pendingIdx, setPendingIdx] = useState<number | null>(() => loadPending());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // On mount, try to load completion state from the server-side JSON file.
+  // If the server has data that our localStorage doesn't know about (e.g.
+  // the agent checked off thoughts from another session), merge it in.
+  useEffect(() => {
+    loadServerState().then(serverState => {
+      if (!serverState) return;
+      // Merge server completed indices with local state — union wins.
+      if (serverState.completed.length > 0) {
+        setCompleted(prev => {
+          const merged = new Set(prev);
+          for (const idx of serverState.completed) merged.add(idx);
+          return merged;
+        });
+      }
+      // Server pending index overrides local (agent can mark a thought pending).
+      if (serverState.pending !== null) {
+        setPendingIdx(serverState.pending);
+      }
+    });
+  }, []);
   const [newThought, setNewThought] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [thoughtsTab, setThoughtsTab] = useState<'active' | 'completed'>('active');
