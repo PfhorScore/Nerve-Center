@@ -14,10 +14,10 @@
 
   <br /><br />
 
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#first-launch">First Launch</a> •
   <a href="#features">Features</a> •
   <a href="#panels">Panels</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#first-launch">First Launch</a> •
   <a href="#what-makes-nerve-center-different">Why Nerve Center</a> •
   <a href="#architecture">Architecture</a> •
   <a href="#credits">Credits</a>
@@ -25,58 +25,7 @@
 
 ---
 
-## Quick Start
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
-```
-
-**Runs on:** Node.js 22+ and a running [OpenClaw gateway](https://openclaw.ai).
-
-### Manual install
-
-```bash
-git clone https://github.com/PfhorScore/Nerve-Center.git
-cd Nerve-Center
-npm install
-npm run build
-npm run setup
-```
-
-> **New to Nerve Center?** The install script handles everything. Unhappy with it? `npm run setup` walks through every option.
-
----
-
-## First Launch
-
-Once Nerve Center is running (`node server-dist/index.js` or via the install script), here's your first 5 minutes:
-
-1. **Open your browser** to `http://localhost:3080`
-2. **Nerve Center auto-detects your gateway** — if OpenClaw is running, you're authenticated
-3. **Pick an agent** from the Agent Hub (icon in the top-right toolbar)
-4. **Say hello** — type a message and hit send. Watch the response stream in real time
-5. **Try research** — click the Research tab in the view switcher and ask a deep question
-6. **Open the panels** — Workspace on the left, Library on the right. Drag them between sides to see how panels move
-7. **Hit `Cmd+K`** (or `Ctrl+K`) — the command palette pops up. Search for "thoughts" to jump to the Thoughts panel
-8. **Jot a note** — type something in the Thoughts panel and press `Ctrl+Enter` to split it into a card
-
-> **Pro tip:** If you're accessing from another machine (like your phone), set `HOST=0.0.0.0` in `.env` or use Tailscale for a secure tunnel.
-
-### Troubleshooting
-
-| Symptom | Fix |
-|---|---|
-| Browser says "Connection refused" | Make sure OpenClaw gateway is running (`openclaw gateway status`) |
-| Port 3080 already in use | Change `PORT` in `.env` and restart |
-| `NERVE_AUTH` locked me out | Check the password you set in `.env` |
-| Can't reach from another device | Set `HOST=0.0.0.0` in `.env` or connect via Tailscale |
-| Research tab shows no models | Make sure your gateway has at least one model provider configured |
-| Panels look wrong or missing | Try a hard refresh (`Ctrl+Shift+R`). Layout resets to defaults if you clear localStorage |
-
----
-
 ## Features
-
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
 
 ### 🧠 Deep Research
@@ -150,8 +99,8 @@ Multi-agent fleet control, voice I/O (TTS/STT), Kanban workflows, workspace file
 
 ---
 
-## Panels — How Ideas Flow
 
+## Panels — How Ideas Flow
 Nerve Center's panels aren't a static dashboard — they're stations in a workflow. **Capture** in Thoughts. **Discuss** in Chat. **Research** deeper. **Save** to files. **Track** with tasks. Each one feeds the next, and your agent moves alongside you.
 
 Drag any panel between sides, resize, or collapse to icon strips — set up your flow how it makes sense for what you're doing right now.
@@ -217,8 +166,58 @@ Central drawer for managing your agent fleet:
 
 ---
 
-## What Makes Nerve Center Different
 
+## Quick Start
+```bash
+curl -fsSL https://raw.githubusercontent.com/PfhorScore/Nerve-Center/main/install.sh | bash
+```
+
+**Runs on:** Node.js 22+ and a running [OpenClaw gateway](https://openclaw.ai).
+
+### Manual install
+
+```bash
+git clone https://github.com/PfhorScore/Nerve-Center.git
+cd Nerve-Center
+npm install
+npm run build
+npm run setup
+```
+
+> **New to Nerve Center?** The install script handles everything. Unhappy with it? `npm run setup` walks through every option.
+
+---
+
+
+## First Launch
+Once Nerve Center is running (`node server-dist/index.js` or via the install script), here's your first 5 minutes:
+
+1. **Open your browser** to `http://localhost:3080`
+2. **Nerve Center auto-detects your gateway** — if OpenClaw is running, you're authenticated
+3. **Pick an agent** from the Agent Hub (icon in the top-right toolbar)
+4. **Say hello** — type a message and hit send. Watch the response stream in real time
+5. **Try research** — click the Research tab in the view switcher and ask a deep question
+6. **Open the panels** — Workspace on the left, Library on the right. Drag them between sides to see how panels move
+7. **Hit `Cmd+K`** (or `Ctrl+K`) — the command palette pops up. Search for "thoughts" to jump to the Thoughts panel
+8. **Jot a note** — type something in the Thoughts panel and press `Ctrl+Enter` to split it into a card
+
+> **Pro tip:** If you're accessing from another machine (like your phone), set `HOST=0.0.0.0` in `.env` or use Tailscale for a secure tunnel.
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Browser says "Connection refused" | Make sure OpenClaw gateway is running (`openclaw gateway status`) |
+| Port 3080 already in use | Change `PORT` in `.env` and restart |
+| `NERVE_AUTH` locked me out | Check the password you set in `.env` |
+| Can't reach from another device | Set `HOST=0.0.0.0` in `.env` or connect via Tailscale |
+| Research tab shows no models | Make sure your gateway has at least one model provider configured |
+| Panels look wrong or missing | Try a hard refresh (`Ctrl+Shift+R`). Layout resets to defaults if you clear localStorage |
+
+---
+
+
+## What Makes Nerve Center Different
 Nerve Center is a **feature fork** of the original Nerve. It adds capabilities you won't find in the upstream:
 
 | Feature | Nerve Center |
@@ -247,8 +246,8 @@ All of this sits on top of the rock-solid OpenClaw gateway and agent infrastruct
 
 ---
 
-## Architecture
 
+## Architecture
 ```text
 Browser ─── Nerve Center (:3080) ─── OpenClaw Gateway (:18789)
  │            │
@@ -276,8 +275,8 @@ Run `npm run setup` for an interactive configuration walkthrough.
 
 ---
 
-## Development
 
+## Development
 ```bash
 git clone https://github.com/PfhorScore/Nerve-Center.git
 cd Nerve-Center
@@ -295,18 +294,19 @@ Dev server runs on `localhost:5173` — API calls proxy to the production server
 
 ---
 
-## Changelog
 
+## Changelog
 See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 ---
 
-## Credits
 
+## Credits
 A fork of **[Nerve](https://github.com/daggerhashimoto/openclaw-nerve)** by daggerhashimoto. All original work belongs to the Nerve contributors. This fork pushes further into research workflows, panel customization, and AI-assisted productivity.
 
 ---
 
-## License
 
+## License
 [MIT](LICENSE)
+
