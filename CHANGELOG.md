@@ -21,6 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **AgentOS competitive research.** Full architecture analysis, adapter pattern, readiness model, and UI inspiration documented in `docs/BACKEND-ADAPTER.md`.
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Split view: chat + document side-by-side with draggable resize handle
 - Chat collapse toggle in split view (hide chat to full-width document)
 - Thoughts panel tabs (Active / Done) with counts
@@ -40,6 +46,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `docs/BACKEND-ADAPTER.md` — backend adapter architecture blueprint
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Research view: Thoughts panel moved to left column
 - Research view sidebar width matches Work view (uses saved `leftSidebarWidth`)
 - Memory panel: refreshed visual design (removed OG Nerve purple/diamond styling)
@@ -77,11 +86,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Left sidebar hover animation fixed.** Transition now uses the permanent collapsed state so hover-to-expand animates smoothly.
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - AvatarIcon component (`src/components/AvatarIcon.tsx`) — per-agent avatars with initial fallback
 - AvatarSection in Agent Hub — upload UI with agent dropdown
 - Avatars shown in SessionNode (session list) and MessageBubble (chat headers)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - ChatHeader removed entirely — Model/Effort/Reset now in StatusBar
 - InputBar send button becomes stop button during generation
 - MessageBubble: Discord-style username header with avatar, no inline name prefix
@@ -119,6 +137,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **AgentActivityPanel reverted to individual entries.** The grouping experiment was reverted for stability. Each tool call is its own expandable entry in the activity panel.
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - ThoughtsPanel component (`src/features/thoughts/ThoughtsPanel.tsx`) — thought-bubble scratch pad
 - LibraryPanel component (`src/features/references/LibraryPanel.tsx`) — auto-extracted references from chat
 - Server-backed scratchpad sync via `scratchpad.md` with one-time cross-browser merge
@@ -128,6 +152,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tooltip on Thoughts panel header explaining `---` workflow
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - InputBar: moved from inline button row to Perplexity-style button bar below textarea
 - InputBar: file accept changed from `image/*` to `*/*`
 - ChatHeader: removed collapse sidebar and agent activity toggle buttons
@@ -174,6 +201,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Full documentation audit.** All touched files (ResizablePanels, ToolCallsPanel, App.tsx, commands.ts, StreamingMessage) now have comprehensive JSDoc with `@param`/`@returns`/`@link` cross-references and inline architecture notes.
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Tool Calls panel (`src/features/tools/ToolCallsPanel.tsx`) integrated into the right sidebar panel system
 - SidebarStrip component (`src/components/SidebarStrip.tsx`) for collapsed sidebar icon strips
 - Cmd+K command for "Expand/Collapse Tool Calls Panel"
@@ -182,6 +215,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `sharp` dependency for image attachment processing
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Double-click on resize handle now auto-fits right panel to content (was: reset to 55%)
 - Research and Kanban panels stay mounted (CSS-hidden) instead of unmounting on tab switch
 - Streaming message rendering uses append-only DOM updates via ref for smooth animation
@@ -205,7 +241,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Panel header labels in ALL CAPS (removed `uppercase` CSS class)
 - OCR dependency: installed `sharp` for image attachment processing
 
-### Added (continued)
+### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment (continued)
 - Right-click context menu on sidebar strips: Show on hover toggle, Expand/Collapse
 - Right-click context menu on panel headers: Move to left/right sidebar
 - Hover delay (250ms) before sidebar expands to prevent accidental triggers
@@ -232,6 +274,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Uploads and shell controls got cleaner.** The paperclip is now the primary upload flow, attachments use a canonical upload reference contract, and the command palette has clearer launchers and visibility toggles across desktop and mobile layouts (PR #229, PR #231, PR #291, PR #292, PR #293).
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - In-app PDF viewing with file type checks in the file browser (PR #254)
 - An in-app bead viewer with context-safe bead links (PR #275)
 - Configurable workspace path links plus `CHAT_PATH_LINKS` alias mapping for chat references (PR #239, PR #288)
@@ -240,6 +288,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Support for adaptive thinking selection in the UI (PR #302)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - The paperclip is now the primary upload entry point in chat (PR #231)
 - Workspace markdown documents now render in a dedicated navigable document view instead of forcing raw file reads (PR #248)
 - Compact file-browser actions now live behind kebab menus to reduce accidental taps and visual noise (PR #307)
@@ -275,6 +326,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Docs and setup guidance caught back up to reality.** AI setup docs landed, setup now prints the right deployment guide links, and stale operator docs were refreshed to match the current runtime and installer behavior (PR #179, PR #182, PR #191).
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Installer support for `--gateway-url` so Nerve can target a remote gateway from first boot (PR #181)
 - AI agent setup docs and a raw install contract for agent-driven installs (PR #182)
 - A dedicated `GET /api/kanban/tasks/:id` endpoint for direct Kanban task lookup by id (PR #176)
@@ -283,6 +340,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Shebang-based syntax highlighting for extensionless executable files (PR #190)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Setup now prints deployment guide links after configuration so operators can jump straight to the right topology docs (PR #179)
 - Setup now ensures `sessions_spawn` is allowlisted alongside the other required gateway tools for Kanban execution on current OpenClaw builds (PR #159)
 - Model selection now comes from the active OpenClaw config instead of Nerve-side fallback lists (PR #174)
@@ -320,6 +380,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Workspace navigation got smoother**. Markdown and chat workspace path references can now resolve and reveal files safely in the file browser, with follow-up fixes for missing-path semantics and refreshed open handlers (PR #148, PR #149).
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Tailscale IP and Tailscale Serve setup flows in the installer, with matching installer-step documentation (PR #116)
 - An **After run** selector for one-shot subagents, with **Keep** and **Delete** cleanup options (PR #120)
 - **Font size setting** in Appearance settings, adjustable from 10px to 24px via dropdown, stored in `localStorage`, and applied instantly via a CSS custom property (PR #128)
@@ -328,6 +394,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Safe workspace path resolve and reveal** from markdown and chat references into the file browser (PR #148)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Workspace scope is now derived from the owning top-level agent, including when viewing subagent sessions (PR #123)
 - File browser tabs, selection state, drafts, Memory, Config, and Skills now persist per top-level agent instead of globally (PR #123)
 - Cross-agent workspace switches now show **Save and switch**, **Discard and switch**, or **Cancel** when dirty editor tabs exist (PR #123)
@@ -367,11 +436,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **UX got a broad polish pass** — cron runs, session surfacing, mobile responsiveness, and chat chrome all got tighter and more usable on real screens (PR #112, PR #113, PR #114).
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Custom workspace root support via `FILE_BROWSER_ROOT` (PR #92, thanks @jamesjmartin)
 - Server-side token injection for trusted clients (PR #109, thanks @jamesjmartin)
 - Support for multiple top-level agents (PR #111)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - File browser now collapses responsively on mobile layouts (PR #96, thanks @jamesjmartin)
 - Shell, responsive layout, and Kanban UX refined (PR #108)
 - Cron runs, session surfacing, and general UX polished (PR #112)
@@ -404,6 +482,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 **Kanban skill bundled** — `nerve-kanban` skill now auto-installs during setup. Agents can use the kanban skill to manage the Nerve task board directly: create tasks, move columns, update status, all through natural conversation.
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Bundled `nerve-kanban` skill with auto-install during setup (PR #83)
 - Improved free voice input modes and finalization (PR #80)
 
@@ -435,6 +519,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.4.7] — 2026-03-03
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Added a **Live Transcription Preview** toggle in Audio settings so browser interim transcript rendering can be enabled/disabled per user (PR #78)
 - Fresh defaults for local Whisper STT now use multilingual `base` across installer, server fallback, and fresh UI state (PR #78)
 - Installer Whisper bootstrap now resolves and normalizes `WHISPER_MODEL` from `.env` (supports quotes/comments/aliases like `tiny`, `base`, `small` and `.en` variants) (PR #78)
@@ -449,11 +536,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.4.6] — 2026-03-03
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Live interim transcription preview in chat input during voice recording (PR #75)
 - OpenAI TTS voice options expanded to all 13 supported voices (PR #72)
 - Voice interaction sounds upgraded from oscillator beeps to custom MP3 effects (PR #70)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - System notifications in chat now render as collapsible strips (PR #69)
 - Kanban task IDs and session labels are now human-readable (PR #67)
 
@@ -467,6 +563,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.4.5] — 2026-03-01
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - **Task board** with full kanban workflow: drag-and-drop, agent execution, proposals, SSE live updates, board configuration, and audit log (PR #61)
 - **Gateway restart button** in the top bar for one-click gateway restarts (PR #49 by @jamesjmartin)
 - **File browser operations**: rename, move, trash, and restore files from the workspace panel (PR #44)
@@ -487,6 +589,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.4.3] — 2026-02-27
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Update-available badge in status bar with server-side version check (PR #31)
 - Cron UX rework: "When done" framing, auto-detected channels, context-aware placeholders (PR #32)
 - WS proxy and SSE connections tagged with unique IDs for structured logging
@@ -510,6 +618,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Cron delivery-only failures show warning instead of error (PR #32)
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - ChatContext split into 4 composable hooks (useChatMessages, useChatStreaming, useChatRecovery, useChatTTS)
 - Normalized config references across .env.example, README, and CONFIGURATION.md
 
@@ -518,6 +629,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.4.0] — 2026-02-26
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - **`nerve update` command** — git-based updater with automatic rollback. Supports `--dry-run`, `--version`, `--rollback`, `--no-restart`, and `--verbose` flags. See [docs/UPDATING.md](docs/UPDATING.md).
 - Memory filenames are no longer restricted to `YYYY-MM-DD.md` format — any safe filename is accepted (PR #29).
 
@@ -530,6 +647,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.3.0] — 2026-02-18
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - Multilingual voice control across 12 languages: `en`, `zh`, `hi`, `es`, `fr`, `ar`, `bn`, `pt`, `ru`, `ja`, `de`, `tr`.
 - Language and phrase APIs for runtime voice configuration:
   - `GET/PUT /api/language`
@@ -542,6 +665,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Mutex-protected env writer (`server/lib/env-file.ts`) to serialize `.env` updates.
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - Voice language is now explicit (auto-detect removed from UI flow).
 - Default/fallback language behavior is English (`en`) for missing/invalid values.
 - Primary env key is now `NERVE_LANGUAGE` (legacy `LANGUAGE` remains a read fallback).
@@ -571,6 +697,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## Unreleased
 
 ### Added
+- `/BTW` background research routing — type `/btw` + query to send to Research tab while chat continues
+- Research button icon changed to BookOpen, text to "Research this…"
+- Research mode defaults to Quick instead of Deep
+- Thoughts panel: localStorage keys rebranded to nerve-center-* prefix
+- Progress indicator: subtle `box-shadow` glow during generation
+- Modes buttons centering: `flex-1` layout for proper alignment
 - **Split view** — Chat and documents side-by-side with draggable resize handle. Collapse chat to thin strip when you need full document width. (#chat-as-panel)
 - **Thoughts panel tabs** — Active and Done tabs to filter thoughts by completion state.
 - **Thought numbers** — Each thought card shows a `#N` label for easy reference in chat.
@@ -580,6 +712,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **AgentOS competitive research** — Architecture analysis, adapter pattern, readiness model, and UI inspiration documented in `docs/BACKEND-ADAPTER.md`.
 
 ### Changed
+- Research button: icon Search → BookOpen, text "Research" → "Research this…"
+- Voice section in README: rewritten to emphasize real-time voice USP
+- MCP section in README: trimmed from 5 bullets to 3
 - **Research view** — Thoughts panel moved to left column, consistent sidebar width with Work view.
 - **Message hover buttons** — Larger icons (13px), more padding, higher hover opacity.
 - **Library images** — Use button instead of link to prevent accidental navigation.

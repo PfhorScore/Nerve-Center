@@ -96,20 +96,19 @@ Keep tabs on your agents without context-switching.
 - **Full Memory Browser** — add, edit, delete, and search agent memories. Not just read-only — you can refine what your agent remembers
 - **Charts & data** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
-### 🎤 Voice
-Talk with your agents, hear them speak back
-- **Speech-to-text** — Dictate messages using local Whisper or OpenAI Whisper
-- **Text-to-speech** — Agent replies read aloud via Edge TTS, OpenAI TTS, or Replicate
-- **Voice activation** — Double-tap Shift to start recording, press again to send
-- **Voice Phrases** - Customize wake, pause, and stop phrases for hands-free conversation
+### 🎤 Real-Time Voice
+One of the few open-source AI tools with full real-time voice support — speak to your agents and hear them respond, all hands-free.
+- **Speech-to-text** — Dictate messages using local Whisper (offline, private) or OpenAI Whisper
+- **Text-to-speech** — Agent replies read aloud via Edge TTS (free), OpenAI TTS, or Replicate
+- **Push-to-talk** — Double-tap Shift to start recording, press again to send. No buttons needed
+- **Live transcription** — See your speech transcribed in real time before it sends
+- **Voice toggle** — Disable voice replies mid-response — cuts audio immediately
 
 ### 🔌 MCP Integration
-Extend your agents with third-party tools through the Model Context Protocol.
-- **MCP Server Manager** — Register, enable, and disable MCP servers from the Settings drawer
-- **Tool call visibility** — Toggle MCP tool blocks on and off in chat with one click
-- **Server badges** — See which MCP server a tool belongs to at a glance
-- **Inline embedded apps** — MCP servers that return interactive content render inline in the chat stream
-- **Any MCP-compatible tool** — Connect to databases, APIs, file systems, and more through the standardized protocol
+Extend agents with third-party tools via the Model Context Protocol.
+- **Server Manager** — Register, enable, and disable MCP servers from Settings
+- **Tool call visibility** — See and toggle MCP tool blocks in chat
+- **Inline embedded apps** — Interactive MCP content renders inline in the chat stream
 
 ### Other Features
 - **Doctor CLI** — Run `npm run doctor` to check gateway connectivity, server health, and model readiness
