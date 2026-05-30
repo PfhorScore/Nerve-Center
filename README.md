@@ -9,7 +9,7 @@
   <a href="docs/screenshot-research.png"><img src="docs/screenshot-research.png" width="45%" alt="Research view and library" /></a>
   <a href="docs/screenshot-thoughts.png"><img src="docs/screenshot-thoughts.png" width="45%" alt="Custom panel layout" /></a>
   <br />
-  <em>📸 Screenshots from v0.3.0 — showing the current layout with Thoughts v2, Create mode, and Research view.</em>
+  <em>📸 Screenshots from v0.3.5 — showing the current layout with Thoughts v2, Create mode, Research view, and Kanban.</em>
   <br /><em>Click any image to view full size</em>
 
   <br /><br />
