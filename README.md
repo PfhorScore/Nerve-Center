@@ -4,10 +4,11 @@
 
   <p align="center"><strong>More than a chat window.</strong> Nerve Center is a connected workspace built on your <strong>OpenClaw gateway</strong> — where your ideas flow between thought, research, chat, files, and tasks. No app-switching. No copy-paste between tabs. Just you and your agents, building together.</p>
 
-  <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="45%" alt="Thoughts panel and workspace" /></a>
+  <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="45%" alt="Nerve Center workspace with chat, panels, and thoughts" /></a>
+  <a href="docs/screenshot-create.png"><img src="docs/screenshot-create.png" width="45%" alt="Create mode with code editor and live preview" /></a>
   <br />
-  <a href="docs/screenshot-research.png"><img src="docs/screenshot-research.png" width="45%" alt="Research view and library" /></a>
-  <a href="docs/screenshot-thoughts.png"><img src="docs/screenshot-thoughts.png" width="45%" alt="Custom panel layout" /></a>
+  <a href="docs/screenshot-research.png"><img src="docs/screenshot-research.png" width="45%" alt="Research view with deep search and citations" /></a>
+  <a href="docs/screenshot-kanban.png"><img src="docs/screenshot-kanban.png" width="45%" alt="Tasks/Kanban board for project management" /></a>
   <br />
   <em>📸 Screenshots from v0.3.5 — showing the current layout with Thoughts v2, Create mode, Research view, and Kanban.</em>
   <br /><em>Click any image to view full size</em>
