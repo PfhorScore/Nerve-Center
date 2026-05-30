@@ -298,9 +298,14 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   // On mount, try to load completion state from the server-side JSON file.
   // If the server has data that our localStorage doesn't know about (e.g.
   // the agent checked off thoughts from another session), merge it in.
+  // Also polls every 3 seconds so agent-side changes appear in real time.
   useEffect(() => {
-    loadServerState().then(serverState => {
-      if (!serverState) return;
+    let cancelled = false;
+
+    async function sync() {
+      const serverState = await loadServerState();
+      if (cancelled || !serverState) return;
+
       // Merge server completed indices with local state — union wins.
       if (serverState.completed.length > 0) {
         setCompleted(prev => {
@@ -313,7 +318,14 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
       if (serverState.pending !== null) {
         setPendingIdx(serverState.pending);
       }
-    });
+    }
+
+    // Initial fetch
+    sync();
+
+    // Poll every 3s for live updates from the agent or other sessions
+    const iv = setInterval(sync, 3000);
+    return () => { cancelled = true; clearInterval(iv); };
   }, []);
   const [newThought, setNewThought] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -492,14 +504,14 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
     );
   }
 
-  const filteredThoughts = thoughtsTab === 'active' ? thoughts.filter(t => !completed.has(t.index)) : thoughts.filter(t => completed.has(t.index));
+  const filteredThoughts = thoughtsTab === 'active' ? thoughts.filter(t => !completed.has(t.index)) : [...thoughts.filter(t => completed.has(t.index))].reverse();
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Tab bar */}
       <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/20 shrink-0">
         <button onClick={() => setThoughtsTab('active')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'active' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Active ({thoughts.length - completed.size})</button>
-        {completed.size > 0 && <button onClick={() => setThoughtsTab('completed')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'completed' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Done ({completed.size})</button>}
+        {completed.size > 0 && <button onClick={() => setThoughtsTab('completed')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'completed' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Completed ({completed.size})</button>}
         <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedThoughts(new Set()); }} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ml-auto ${selectMode ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>{selectMode ? 'Done' : 'Select'}</button>
       </div>
       {/* Thought list */}

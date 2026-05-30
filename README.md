@@ -56,7 +56,7 @@ open http://localhost:3080
 
 ---
 
-## Features
+# Features
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
 
 ### 🧩 3 Modes - Work, Research, and Tasks
@@ -98,33 +98,30 @@ Keep tabs on your agents without context-switching.
 - **Charts & data** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
 ### 🎤 Voice
-Speak to your agents and hear them respond.
+Talk with your agents, hear them speak back
 - **Speech-to-text** — Dictate messages using local Whisper or OpenAI Whisper
 - **Text-to-speech** — Agent replies read aloud via Edge TTS, OpenAI TTS, or Replicate
 - **Voice activation** — Double-tap Shift to start recording, press again to send
-- **Live transcription preview** — See your speech being transcribed in real time before sending
+- **Voice Phrases** - Customize wake, pause, and stop phrases for hands-free conversation
+
 ### 🔌 MCP Integration
 Extend your agents with third-party tools through the Model Context Protocol.
 - **MCP Server Manager** — Register, enable, and disable MCP servers from the Settings drawer
 - **Tool call visibility** — Toggle MCP tool blocks on and off in chat with one click
 - **Server badges** — See which MCP server a tool belongs to at a glance
-- **Inline embedded apps** — MCP servers that return interactive content (like tldraw canvases) render inline in the chat stream
+- **Inline embedded apps** — MCP servers that return interactive content render inline in the chat stream
 - **Any MCP-compatible tool** — Connect to databases, APIs, file systems, and more through the standardized protocol
 
 ### Other Features
-
 - **Doctor CLI** — Run `npm run doctor` to check gateway connectivity, server health, and model readiness
 - **One-Click Updates** — Update Nerve Center from the UI with real-time progress streaming
-- **Hover commands** — Hover over messages for copy, think, research, and read-aloud actions
+- **Hover Commands** — Hover over messages for copy, think, research, and read-aloud actions
 - **Command Palette** — `Cmd+K` to quickly switch panels, views, and create files
-- **
 - **Notifications** — Subtle audio cues for message completion and errors 
 
 ---
 ### Workflow
-
 From Thoughts, to brainstorming, to research, and back again.
-
 - **Think about...** — Hover any message and send it to the Thoughts panel to capture a note
 - **Research this** — Highlight text or hover a message to kick off deep research
 - **Chat about...** — Hover a thought to send it straight into the conversation
@@ -144,8 +141,6 @@ Full file management in the sidebar:
 - **Create, rename, move, and delete** files directly from the panel
 - **File watcher** — live updates when files change on disk
 ### 🧠 Thoughts Panel
-> *Jot ideas while your agent works. They don't wait for each other.*
-Your brain, organized into thought bubbles — capture while your agent is mid-research, then send thoughts to chat when you're ready:
 - **`Ctrl+Enter`** splits your notes into individual cards
 - **Check off completed** thoughts (dimmed, stays for reference)
 - **Auto-detect completion** — send to chat, auto-checks when the AI finishes
@@ -178,6 +173,7 @@ Central drawer for managing your agent fleet:
 - **Settings** — configure TTS, STT, theme, panel layout, and more
 - **Avatars** — upload per-agent profile images for chat headers and session list
 - **System monitoring** — token usage, connection status, gateway health
+
 *Tip: Customize the layout further with collapsible sidebars, drag-and-drop panel reordering, and resizable panels.*
 ---
 ## First Launch

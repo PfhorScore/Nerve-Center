@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Zap,
   Wrench,
   Eye,
   EyeOff,
@@ -342,7 +343,7 @@ export function McpSettings({ onChange }: McpSettingsProps) {
                     >
                       {testResult?.status === 'testing'
                         ? <Loader2 size={13} className="animate-spin" />
-                        : <Wrench size={13} />
+                        : <Zap size={13} />
                       }
                     </button>
                     <button
