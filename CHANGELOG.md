@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Highlights — 2026-05-29 — README Overhaul, Auth Fixes, Rebrand 🧹
+
+**README completely rewritten.** New tagline ("Create alongside your agents"), First Launch walkthrough, flow-based Panels section, expanded features (Deep Research, Kanban, MCP, Monitoring, Connect/Security), and trimmed QoL section. Full feature inventory from actual codebase. 3 pushes to GitHub.
+
+**Auth bugs fixed.** `setup.ts` had a truthy check bug (`!config.NERVE_AUTH` always true since `.env` values are strings). Network errors in `useAuth` now show login page instead of silently authenticating. Login hint cleaned up.
+
+**Nerve → Nerve Center rebrand** across all user-facing text: LoginPage, ConnectDialog, UpdateBadge, SettingsDrawer, CronDialog, StatusBar, page title, and startup banner.
+
+**Sidebar behavior fixed.** Individual panel collapse no longer collapses the entire right sidebar — only the dedicated toggle does.
+
+### Added
+- README: First Launch walkthrough (8 steps + troubleshooting table)
+- README: SEO-friendly feature sections for Deep Research, Kanban, MCP, Monitoring, Connect, Updates
+- README: "Panels — How Ideas Flow" with workflow station framing
+- README: Screenshot placeholder warning (needs v0.2.0 updates)
+- Thoughts panel: scroll-to-bottom floating button
+- Tab bar: active tab breathing border-bottom animation; inactive tabs get `bg-muted/20`
+- Chat tab: subtle pulsing border glow during generation
+
+### Changed
+- README tagline: "Create alongside your agents" with flow-concept blurb
+- README: Features → Deep Research (renamed from AI-Powered Research)
+- README: QoL section trimmed — keepers moved to Clean Input
+- Brand: Nerve → Nerve Center in all user-facing text
+- `HOST` changed from `192.168.12.6` to `0.0.0.0` (local + LAN)
+- `PORT` changed back to `3080` (was `8500`)
+- `FILE_BROWSER_ROOT` set to `/home/pfhor/nerve-center`
+- Default panel layout: Workspace → Thoughts left, Library → Activity right
+- Voice toggle now stops playback immediately when toggled off
+
+### Fixed
+- `setup.ts`: `!config.NERVE_AUTH` → `config.NERVE_AUTH !== 'true'` (string truthy bug)
+- `useAuth.ts`: network errors now show login page instead of `authenticated`
+- Sidebar: panel collapse no longer collapses entire right sidebar
+- Panel migration: v2 cleanup now applies to both sidebars, not just right
+
+## [Unreleased]
+
 ### Highlights — 2026-05-27 — Avatars, Chat Cleanup, Polish 🎨
 
 **Avatars!** Agent Hub now has an avatar section — upload per-agent images shown in message headers and session lists. Falls back to colored initials. Stored in localStorage keyed by agent name.
