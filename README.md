@@ -40,7 +40,22 @@ npm install
 npm run build
 npm run setup
 ```
+
+### Next steps
+
+```bash
+# Check version
+node server-dist/index.js --version
+
+# Start Nerve Center
+node server-dist/index.js
+
+# Open in your browser
+open http://localhost:3080
+```
+
 ---
+
 ## Features
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
 
