@@ -1376,11 +1376,11 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
               type="button"
               onClick={onResearch}
               className="bg-transparent border-none text-muted-foreground hover:text-primary cursor-pointer px-2 py-1.5 rounded-lg hover:bg-foreground/[0.04] flex items-center gap-1.5"
-              title="Send conversation to deep research"
-              aria-label="Send to deep research"
+              title="Research this"
+              aria-label="Research this"
             >
               <BookOpen size={14} />
-              <span className="text-[11px]">Research</span>
+              <span className="text-[11px]">Research this</span>
             </button>
           )}
           {showCommandPaletteButton && onOpenCommandPalette && (
