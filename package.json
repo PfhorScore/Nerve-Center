@@ -28,6 +28,7 @@
     "build": "tsc -b && vite build && npm run build:server",
     "build:server": "tsc -p config/tsconfig.server.json --outDir server-dist --noEmit false --declaration false && tsc -p config/tsconfig.bin.json",
     "update": "node bin-dist/bin/nerve-update.js",
+    "doctor": "node bin-dist/bin/nerve-center-doctor.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server-dist/index.js",

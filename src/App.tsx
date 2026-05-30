@@ -313,6 +313,13 @@ export default function App({ onLogout }: AppProps) {
   })();
 
   // File browser collapse state for mobile optimization
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2000);
+  }, []);
+
   const [fileBrowserCollapsed, setFileBrowserCollapsedState] = useState(() => (
     initialCompactLayout ? true : initialDesktopFileBrowserCollapsed
   ));
@@ -544,8 +551,11 @@ export default function App({ onLogout }: AppProps) {
 
   /** Toggle file browser collapse state (mobile). */
   const handleToggleFileBrowser = useCallback(() => {
-    setFileBrowserCollapsed(prev => !prev);
-  }, [setFileBrowserCollapsed]);
+    setFileBrowserCollapsed(prev => {
+      showToast(prev ? 'Sidebar visible' : 'Sidebar hidden');
+      return !prev;
+    });
+  }, [setFileBrowserCollapsed, showToast]);
 
   const workspaceAgentId = useMemo(() => getWorkspaceAgentId(currentSession), [currentSession]);
 
@@ -1834,6 +1844,11 @@ export default function App({ onLogout }: AppProps) {
        * Gateway state banners.
        * Kept compact and centered so they read as transient shell notices instead of old alarm strips.
        */}
+      {toastMessage && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-2xl border border-border/40 bg-card/94 px-4 py-2 text-xs font-medium text-foreground shadow-[0_20px_48px_rgba(0,0,0,0.28)] backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          {toastMessage}
+        </div>
+      )}
       {connectionState === 'reconnecting' && !gatewayRestarting && (
         <div className="fixed left-1/2 top-12 z-50 flex max-w-[calc(100vw-1.067rem)] -translate-x-1/2 items-start gap-2 rounded-2xl border border-destructive/25 bg-card/94 px-4 py-2 text-xs font-medium text-foreground shadow-[0_20px_48px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           <span className="inline-flex size-7 items-center justify-center rounded-xl bg-destructive/10 text-destructive">

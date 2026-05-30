@@ -66,9 +66,7 @@ Flow between modes with your agents in tow
 - **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
 
 ### 💬 Work
-
 Your main workspace — chat, create, and edit alongside your agents.
-
 - **Chat** — Talk to your agents with streaming responses, tool calls, and rich markdown
 - **Panels** — Workspace (file tree), Thoughts (notes), Library (references), Activity (agent logs)
 - **Split view** — Open a file while keeping the chat visible side-by-side. Documents on the right, conversation on the left. Drag the divider to resize.
@@ -90,15 +88,6 @@ A full Kanban board for managing work alongside your agent. Not a toy — real c
 - **Proposal inbox** — agents can propose tasks for your approval
 - **Quick view** — peek at task details without leaving the board
 - **Configurable columns** — adapt the workflow to match your process
-### 🔌 MCP Integration
-
-Extend your agents with third-party tools through the Model Context Protocol.
-
-- **MCP Server Manager** — Register, enable, and disable MCP servers from the Settings drawer
-- **Tool call visibility** — Toggle MCP tool blocks on and off in chat with one click
-- **Server badges** — See which MCP server a tool belongs to at a glance
-- **Inline embedded apps** — MCP servers that return interactive content (like tldraw canvases) render inline in the chat stream
-- **Any MCP-compatible tool** — Connect to databases, APIs, file systems, and more through the standardized protocol
 ### 📊 Agent Monitoring & Management
 Keep tabs on your agents without context-switching.
 - **Agent Hub** — Central drawer for switching agents, browsing memory, managing settings, and uploading per-agent avatars
@@ -107,13 +96,18 @@ Keep tabs on your agents without context-switching.
 - **Charts & data viz** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
 ### 🎤 Voice
-
 Speak to your agents and hear them respond.
-
 - **Speech-to-text** — Dictate messages using local Whisper or OpenAI Whisper
 - **Text-to-speech** — Agent replies read aloud via Edge TTS, OpenAI TTS, or Replicate
 - **Voice activation** — Double-tap Shift to start recording, press again to send
 - **Live transcription preview** — See your speech being transcribed in real time before sending
+### 🔌 MCP Integration
+Extend your agents with third-party tools through the Model Context Protocol.
+- **MCP Server Manager** — Register, enable, and disable MCP servers from the Settings drawer
+- **Tool call visibility** — Toggle MCP tool blocks on and off in chat with one click
+- **Server badges** — See which MCP server a tool belongs to at a glance
+- **Inline embedded apps** — MCP servers that return interactive content (like tldraw canvases) render inline in the chat stream
+- **Any MCP-compatible tool** — Connect to databases, APIs, file systems, and more through the standardized protocol
 
 ### Other Features
 

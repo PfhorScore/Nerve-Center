@@ -225,8 +225,8 @@ export function MemoryList({ agentId, memories: initialMemories, onRefresh, isLo
     <div className="flex-1 min-h-0 flex flex-col">
       {/* Header — only when used standalone (not in workspace tabs) */}
       {!hideHeader && (
-        <div className="panel-header border-l-[3px] border-l-purple">
-          <span className="panel-label text-purple">
+        <div className="panel-header border-l-[3px] border-l-primary/60">
+          <span className="panel-label text-primary">
             <span className="panel-diamond">◆</span>
             MEMORY
           </span>
@@ -260,7 +260,7 @@ export function MemoryList({ agentId, memories: initialMemories, onRefresh, isLo
           {error}
           <button
             onClick={clearError}
-            className="ml-auto text-red/60 hover:text-red focus-visible:ring-2 focus-visible:ring-purple/50 focus-visible:ring-offset-0 rounded-sm"
+            className="ml-auto text-red/60 hover:text-red focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-sm"
             aria-label="Dismiss error"
           >
             ×
@@ -286,7 +286,7 @@ export function MemoryList({ agentId, memories: initialMemories, onRefresh, isLo
             <p>No memories yet</p>
             <button
               onClick={() => setAddDialogOpen(true)}
-              className="mt-2 text-purple hover:underline bg-transparent border-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-purple/50 focus-visible:ring-offset-0 rounded-sm"
+              className="mt-2 text-primary hover:underline bg-transparent border-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 rounded-sm"
             >
               Add your first memory
             </button>
@@ -296,20 +296,20 @@ export function MemoryList({ agentId, memories: initialMemories, onRefresh, isLo
           <div className="flex items-center border-b border-border/40">
             <button
               onClick={openAddDialog}
-              className="group flex items-center gap-2 px-3 py-1.5 text-[0.733rem] hover:bg-foreground/[0.02] transition-colors cursor-pointer flex-1 bg-transparent border-0 text-left focus-visible:ring-2 focus-visible:ring-purple/50 focus-visible:ring-offset-0"
+              className="group flex items-center gap-2 px-3 py-1.5 text-[0.733rem] hover:bg-foreground/[0.02] transition-colors cursor-pointer flex-1 bg-transparent border-0 text-left focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0"
               aria-label="Add new memory"
             >
-              <span className="shrink-0 text-muted-foreground group-hover:text-purple transition-colors">
+              <span className="shrink-0 text-muted-foreground group-hover:text-primary transition-colors">
                 <Plus size={12} />
               </span>
-              <span className="text-muted-foreground group-hover:text-purple transition-colors">
+              <span className="text-muted-foreground group-hover:text-primary transition-colors">
                 Add memory
               </span>
             </button>
             <button
               onClick={() => { clearError(); onRefresh(); }}
               disabled={isLoading}
-              className="shrink-0 px-2 py-1.5 bg-transparent border-0 text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-purple/50 focus-visible:ring-offset-0"
+              className="shrink-0 px-2 py-1.5 bg-transparent border-0 text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0"
               title="Refresh memories"
               aria-label="Refresh memories"
             >
