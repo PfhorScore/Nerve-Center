@@ -46,6 +46,15 @@ npm run setup
 ---
 ## Features
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
+
+### 🧩 Work, Research, and Tasks
+
+Work with your agents instead of just delegating and waiting.
+
+- **Work** — Chat with agents, create and edit files, browse the workspace in real time
+- **Research** — Deep research mode generates reports with inline citations, sources, and images
+- **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
+
 ### 🧠 Deep Research
 A Perplexity-class research interface built right into your agent workspace:
 - **Quick & Deep** search modes using any OpenClaw-compatible model provider
