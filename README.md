@@ -152,7 +152,7 @@ Once Nerve Center is running (`node server-dist/index.js` or via the install scr
 5. **Try research** — click the Research tab in the view switcher and ask a deep question
 6. **Open the panels** — Workspace on the left, Library on the right. Drag them between sides to see how panels move
 7. **Hit `Cmd+K`** (or `Ctrl+K`) — the command palette pops up. Search for "thoughts" to jump to the Thoughts panel
-8. **Jot a note** — type something in the Thoughts panel and press `Ctrl+Enter` to split it into a card
+8. **Save your thoughts** — type something in the Thoughts panel and press `Ctrl+Enter` to split it into a card
 > **Pro tip:** If you're accessing from another machine (like your phone), set `HOST=0.0.0.0` in `.env` or use Tailscale for a secure tunnel.
 ### Troubleshooting
 | Symptom | Fix |
