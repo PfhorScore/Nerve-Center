@@ -66,6 +66,18 @@ export function mergeFinalMessages(existing: ChatMsg[], incoming: ChatMsg[]): Ch
       if (duplicateRecentUser) continue;
     }
 
+    // Avoid duplicating assistant messages that already exist in the buffer.
+    // This can happen when the user sends a new message before the previous
+    // chat_final has been processed — the buffer already has the assistant
+    // reply, but the incoming chat_final tries to add it again.
+    if (msg.role === 'assistant') {
+      const recentAssistant = merged.slice(-30);
+      const duplicateAssistant = recentAssistant.some(
+        (m) => m.role === 'assistant' && isLikelyDuplicateMessage(m, msg)
+      );
+      if (duplicateAssistant) continue;
+    }
+
     merged.push(msg.msgId ? msg : { ...msg, msgId: generateMsgId() });
   }
 

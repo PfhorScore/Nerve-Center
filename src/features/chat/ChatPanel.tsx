@@ -253,6 +253,17 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
 
   /** Holds the last streaming HTML to prevent flash when stream transitions to final message. */
   const lastStreamHtmlRef = useRef('');
+  const prevGeneratingRef = useRef(isGenerating);
+
+  // Clear the streaming ghost when a new generation starts.
+  // This prevents old stream content from showing during the transition
+  // between handleSend clearing stream.html and the first chat_delta arriving.
+  useEffect(() => {
+    if (isGenerating && !prevGeneratingRef.current) {
+      lastStreamHtmlRef.current = '';
+    }
+    prevGeneratingRef.current = isGenerating;
+  }, [isGenerating]);
 
   // Clear the streaming ghost when a new non-streaming message is added.
   // We delay slightly to let the final message render first, preventing flash.

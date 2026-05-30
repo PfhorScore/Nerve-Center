@@ -26,7 +26,6 @@ import { getSessionKey } from '@/types';
 import { useConnectionManager } from '@/hooks/useConnectionManager';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { useGatewayRestart } from '@/hooks/useGatewayRestart';
-import { ConnectDialog } from '@/features/connect/ConnectDialog';
 import { TopBar } from '@/components/TopBar';
 import { StatusBar } from '@/components/StatusBar';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -285,10 +284,10 @@ export default function App({ onLogout }: AppProps) {
   const {
     dialogOpen,
     editableUrl, setEditableUrl,
-    officialUrl,
+   
     editableToken, setEditableToken,
-    handleConnect, handleReconnect,
-    serverSideAuth,
+    handleReconnect,
+   
   } = useConnectionManager();
 
   // Track file change events for tree refresh. Sequence keeps repeated same-path updates visible.
@@ -1784,6 +1783,45 @@ export default function App({ onLogout }: AppProps) {
 
   return (
     <div className="scan-lines relative h-screen flex flex-col overflow-hidden" data-booted={booted}>
+      {/* Onboarding / unavailable state — shown when gateway can't be reached */}
+      {connectionState === 'disconnected' && dialogOpen && (
+        <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-background px-4">
+          <div className="max-w-md text-center">
+            <h1 className="text-2xl font-semibold tracking-[-0.04em] text-foreground mb-3">
+              ⚡ Nerve Center
+            </h1>
+            <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+              Nerve Center needs a running OpenClaw gateway to connect.
+              Make sure the gateway is installed and running.
+            </p>
+            <div className="space-y-2 text-left">
+              <div className="shell-panel rounded-2xl px-4 py-3">
+                <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">Gateway Status</p>
+                <p className="text-sm text-red">
+                  {connectError
+                    ? `Connection failed: ${connectError}`
+                    : 'Waiting for gateway...'}
+                </p>
+              </div>
+              <div className="shell-panel rounded-2xl px-4 py-3">
+                <p className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-1">Quick Fixes</p>
+                <ul className="text-xs text-muted-foreground space-y-1.5">
+                  <li>1. Run <code className="text-foreground font-mono bg-secondary px-1 rounded">openclaw gateway start</code> in your terminal</li>
+                  <li>2. Verify with <code className="text-foreground font-mono bg-secondary px-1 rounded">curl http://127.0.0.1:18789/health</code></li>
+                  <li>3. If this is your first install, run <code className="text-foreground font-mono bg-secondary px-1 rounded">npm run setup</code> in your Nerve Center directory</li>
+                  <li>4. Refresh this page once the gateway is running</li>
+                </ul>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors px-5 py-2.5 text-[0.733rem] font-semibold uppercase tracking-wider"
+            >
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      )}
       {/* Skip to main content link for keyboard navigation */}
       <a
         href="#main-chat"
@@ -1791,15 +1829,6 @@ export default function App({ onLogout }: AppProps) {
       >
         Skip to chat
       </a>
-      <ConnectDialog
-        open={dialogOpen && connectionState !== 'connected' && connectionState !== 'reconnecting'}
-        onConnect={handleConnect}
-        error={connectError}
-        defaultUrl={editableUrl}
-        defaultToken={editableToken}
-        officialUrl={officialUrl}
-        serverSideAuth={serverSideAuth}
-      />
 
       {/*
        * Gateway state banners.
@@ -2030,14 +2059,10 @@ export default function App({ onLogout }: AppProps) {
         </div>
         {/* Research view — kept mounted but hidden when inactive to preserve threads + history */}
         <div style={{ display: viewMode === 'research' ? undefined : 'none' }} className="shell-panel boot-panel flex-1 flex flex-row min-w-0 min-h-0 overflow-hidden rounded-[28px]">
-          {/* Research panel — left column */}
-          <div className="flex-1 flex flex-col min-w-0">
-            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
-              <ResearchPanel />
-            </Suspense>
-          </div>
-          {/* Thoughts scratch-pad — right column, collapsible */}
-          <div className={`${researchThoughtsCollapsed ? 'w-8' : 'w-64'} shrink-0 border-l border-border/40 flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}
+          {/* Thoughts scratch-pad — left column, collapsible */}
+          <div
+            style={{ width: researchThoughtsCollapsed ? 32 : leftSidebarWidth }}
+            className="shrink-0 border-r border-border/40 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
           >
             {/* Collapse toggle header */}
             <div className="flex items-center gap-1 px-1.5 py-1 shrink-0 border-b border-border/30">
@@ -2106,6 +2131,12 @@ export default function App({ onLogout }: AppProps) {
                 )}
               </>
             )}
+          </div>
+          {/* Research panel — right column */}
+          <div className="flex-1 flex flex-col min-w-0">
+            <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+              <ResearchPanel />
+            </Suspense>
           </div>
         </div>  {/* end research view */}
         {isCompactLayout ? (

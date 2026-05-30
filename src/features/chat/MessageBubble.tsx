@@ -393,39 +393,39 @@ function MessageBubbleInner({ msg, index, isCollapsed, isMemoryCollapsed, memory
 
           {/* Bottom toolbar — visible on hover with improved visibility */}
           {!msg.streaming && (
-            <div className="flex items-center gap-0.5 mt-1.5 opacity-0 transition-opacity duration-200 delay-300 group-hover:opacity-75 hover:!opacity-100">
+            <div className="flex items-center gap-1 mt-1.5 opacity-0 transition-opacity duration-200 delay-300 group-hover:opacity-85 hover:!opacity-100">
               <button
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
                 aria-label="Copy message to clipboard"
                 title="Copy message"
                 onClick={handleCopy}
               >
-                <ClipboardCopy size={11} className={copied ? 'text-green' : ''} />
+                <ClipboardCopy size={13} className={copied ? 'text-green' : ''} />
               </button>
-              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <span className="text-[0.6rem] text-muted-foreground/30">·</span>
               <button
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
                 aria-label="Think about this"
                 title="Think about this"
               >
-                <Brain size={11} />
+                <Brain size={13} />
               </button>
-              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <span className="text-[0.6rem] text-muted-foreground/30">·</span>
               <button
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
                 aria-label="Research this"
                 title="Research this"
               >
-                <Search size={11} />
+                <Search size={13} />
               </button>
-              <span className="text-[0.5rem] text-muted-foreground/30">·</span>
+              <span className="text-[0.6rem] text-muted-foreground/30">·</span>
               <button
-                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.533rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[0.6rem] text-muted-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
                 aria-label="Read aloud"
                 title="Read aloud"
                 onClick={() => speak(msg.rawText)}
               >
-                <Volume2 size={11} />
+                <Volume2 size={13} />
               </button>
               <span className="text-[0.5rem] text-muted-foreground/30">·</span>
               <button

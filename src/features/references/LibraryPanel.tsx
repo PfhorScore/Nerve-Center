@@ -260,46 +260,63 @@ export function LibraryPanel({ messages }: LibraryPanelProps) {
             <p className="text-[0.6rem] text-muted-foreground/40">No matching references</p>
           </div>
         ) : (
-          filtered.map((entry) => (
-            <a
-              key={entry.id}
-              href={entry.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg hover:bg-foreground/[0.03] transition-colors group"
-            >
-              {/* Icon */}
-              <div className="mt-0.5 shrink-0 size-5 flex items-center justify-center rounded bg-muted/30">
-                {entry.type === 'image' ? (
-                  <Image size={10} className="text-muted-foreground/50" />
-                ) : entry.type === 'citation' ? (
-                  <FileText size={10} className="text-primary/60" />
-                ) : (
-                  <Link size={10} className="text-muted-foreground/50" />
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  {entry.favicon && (
-                    <img src={entry.favicon} alt="" className="size-3 rounded shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          filtered.map((entry) => {
+            const common = (
+              <>
+                {/* Icon */}
+                <div className="mt-0.5 shrink-0 size-5 flex items-center justify-center rounded bg-muted/30">
+                  {entry.type === 'image' ? (
+                    <Image size={10} className="text-muted-foreground/50" />
+                  ) : entry.type === 'citation' ? (
+                    <FileText size={10} className="text-primary/60" />
+                  ) : (
+                    <Link size={10} className="text-muted-foreground/50" />
                   )}
-                  <span className="text-[0.6rem] font-medium text-foreground/80 truncate">{entry.title}</span>
                 </div>
-                <div className="text-[0.533rem] text-muted-foreground/50 truncate mt-0.5">{entry.url}</div>
-              </div>
 
-              {/* Thumbnail for images */}
-              {entry.thumbnail && (
-                <div className="shrink-0 size-8 rounded overflow-hidden border border-border/30 bg-muted/20">
-                  <img src={entry.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    {entry.favicon && (
+                      <img src={entry.favicon} alt="" className="size-3 rounded shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                    <span className="text-[0.6rem] font-medium text-foreground/80 truncate">{entry.title}</span>
+                  </div>
+                  <div className="text-[0.533rem] text-muted-foreground/50 truncate mt-0.5">{entry.url}</div>
                 </div>
-              )}
 
-              <ExternalLink size={10} className="text-muted-foreground/30 group-hover:text-foreground/60 transition-colors shrink-0 mt-1" />
-            </a>
-          ))
+                {/* Thumbnail for images */}
+                {entry.thumbnail && (
+                  <div className="shrink-0 size-8 rounded overflow-hidden border border-border/30 bg-muted/20">
+                    <img src={entry.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  </div>
+                )}
+
+                <ExternalLink size={10} className="text-muted-foreground/30 group-hover:text-foreground/60 transition-colors shrink-0 mt-1" />
+              </>
+            );
+
+            // Images open inline via lightbox, links open in new tab
+            return entry.type === 'image' ? (
+              <button
+                key={entry.id}
+                onClick={() => window.open(entry.url, '_blank')}
+                className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg hover:bg-foreground/[0.03] transition-colors group w-full text-left"
+              >
+                {common}
+              </button>
+            ) : (
+              <a
+                key={entry.id}
+                href={entry.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 px-2.5 py-1.5 rounded-lg hover:bg-foreground/[0.03] transition-colors group"
+              >
+                {common}
+              </a>
+            );
+          })
         )}
       </div>
     </div>

@@ -310,7 +310,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
 
   // Tab completion for session names
   const { sessions, agentName: ctxAgentName } = useSessionContext();
-  const { liveTranscriptionPreview, sttInputMode, sttProvider, ttsEnabled, toggleTts } = useSettings();
+  const { liveTranscriptionPreview, sttInputMode, sttProvider, ttsEnabled, toggleTts, ctrlEnterToSend } = useSettings();
   const getSessionLabels = useMemo(() => {
     // Build a closure that returns current session labels
     const labels = sessions.map((s) => {
@@ -1125,17 +1125,26 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
       return;
     }
 
-    // Cmd+Enter or Ctrl+Enter to send (works even with Shift held)
+    // Ctrl+Enter always sends regardless of mode
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       void handleSend();
       return;
     }
-    // Plain Enter sends (Shift+Enter for newline)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void handleSend();
-      return;
+    if (ctrlEnterToSend) {
+      // Ctrl+Enter mode: Shift+Enter also sends, plain Enter inserts newline
+      if (e.key === 'Enter' && e.shiftKey) {
+        e.preventDefault();
+        void handleSend();
+        return;
+      }
+    } else {
+      // Default mode: plain Enter sends (Shift+Enter for newline)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        void handleSend();
+        return;
+      }
     }
 
     // Up arrow history behavior for single-line inputs:

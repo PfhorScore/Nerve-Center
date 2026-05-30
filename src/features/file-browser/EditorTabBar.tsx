@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { EditorTab } from './EditorTab';
-import { Save } from 'lucide-react';
+import { Save, RotateCw } from 'lucide-react';
 import type { OpenFile } from './types';
 import type { OpenBeadTab } from '@/features/beads';
 
@@ -74,6 +74,19 @@ export function EditorTabBar({
         />
       ))}
 
+      {/* Reload button — visible when a file tab is active */}
+      {activeTab !== 'chat' && (
+        <button
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('nerve:reload-file', { detail: { path: activeTab } }));
+          }}
+          className="flex items-center justify-center h-full min-w-[28px] px-1 text-muted-foreground/50 hover:text-foreground transition-colors shrink-0"
+          title="Reload file from disk"
+          aria-label="Reload file"
+        >
+          <RotateCw size={12} />
+        </button>
+      )}
       {/* Save button — visible when a file tab is active */}
       {activeTab !== 'chat' && (
         <button

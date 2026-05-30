@@ -10,6 +10,8 @@ export type STTInputMode = 'browser' | 'local' | 'hybrid';
 interface SettingsContextValue {
   soundEnabled: boolean;
   toggleSound: () => void;
+  ctrlEnterToSend: boolean;
+  toggleCtrlEnterToSend: () => void;
   ttsEnabled: boolean;
   toggleTts: () => void;
   ttsProvider: TTSProvider;
@@ -115,6 +117,10 @@ function resolveInitialFont(): FontName {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [soundEnabled, setSoundEnabled] = useState(localStorage.getItem('oc-sound') === 'true');
+  const [ctrlEnterToSend, setCtrlEnterToSend] = useState(() => {
+    const saved = localStorage.getItem('nerve:ctrlEnterToSend');
+    return saved === 'true'; // default off — Enter sends by default
+  });
   const [ttsEnabled, setTtsEnabled] = useState(() => {
     const saved = localStorage.getItem('nerve:ttsEnabled');
     return saved !== null ? saved === 'true' : true;
@@ -209,6 +215,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSoundEnabled(prev => {
       const next = !prev;
       localStorage.setItem('oc-sound', String(next));
+      return next;
+    });
+  }, []);
+
+  const toggleCtrlEnterToSend = useCallback(() => {
+    setCtrlEnterToSend(prev => {
+      const next = !prev;
+      localStorage.setItem('nerve:ctrlEnterToSend', String(next));
       return next;
     });
   }, []);
@@ -401,6 +415,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setTtsProvider: changeTtsProvider,
     setTtsModel: changeTtsModel,
     toggleTtsProvider,
+    ctrlEnterToSend,
+    toggleCtrlEnterToSend,
     sttProvider,
     setSttProvider: changeSttProvider,
     sttInputMode,

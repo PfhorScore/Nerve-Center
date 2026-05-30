@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { InlineSelect } from '@/components/ui/InlineSelect';
 import type { TTSProvider } from '@/features/tts/useTTS';
 import type { STTInputMode, STTProvider } from '@/contexts/SettingsContext';
+import { useSettings } from '@/contexts/SettingsContext';
 import { useTTSConfig } from '@/features/tts/useTTSConfig';
 import { VoicePhrasesModal } from './VoicePhrasesModal';
 import { buildPrimaryWakePhrase } from '@/lib/constants';
@@ -718,6 +719,8 @@ export function AudioSettings({
           />
         </div>
       )}
+      {/* Input keybinding toggle */}
+      <KeyboardInputToggle />
 
       {/* TTS Provider */}
       {showOutput && (
@@ -1044,6 +1047,32 @@ export function AudioSettings({
         languageName={phrasesModal.name}
         languageNativeName={phrasesModal.nativeName}
       />
+    </div>
+  );
+}
+
+/** Toggle between Enter-to-send and Ctrl+Enter-to-send keyboard mode. */
+function KeyboardInputToggle() {
+  const { ctrlEnterToSend, toggleCtrlEnterToSend } = useSettings();
+  return (
+    <div>
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-foreground" id="keybind-label">
+            {ctrlEnterToSend ? 'Ctrl+Enter to send' : 'Enter to send'}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {ctrlEnterToSend
+              ? 'Ctrl+Enter or Shift+Enter sends, Enter inserts newline'
+              : 'Enter sends, Shift+Enter inserts newline'}
+          </span>
+        </div>
+        <Switch
+          checked={ctrlEnterToSend}
+          onCheckedChange={toggleCtrlEnterToSend}
+          aria-label="Toggle send keybinding"
+        />
+      </div>
     </div>
   );
 }

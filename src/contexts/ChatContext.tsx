@@ -473,9 +473,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             ? patchThinkingDuration(merged, thinkingDuration)
             : merged;
           applyMessageWindow(withDuration, false);
-        } else {
-          triggerRecovery('unrenderable-final');
         }
+        // Empty chat_final is noise — actual messages come in a subsequent event.
 
         handleFinalTTS(finalData, isActiveRun);
         resetThinking();
@@ -543,7 +542,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
 
         if (isActiveRun) {
-          triggerRecovery('unrenderable-final');
+          // Intentionally silent — recovery from empty chat_aborted was causing
+          // a history reload + merge that desynced the visible window.
         }
 
         resetThinking();

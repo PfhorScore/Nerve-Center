@@ -31,8 +31,10 @@ export function FileEditor({ file, onContentChange, onSave, onRetry }: FileEdito
   // Stable callback refs to avoid recreating the editor on every render
   const onContentChangeRef = useRef(onContentChange);
   const onSaveRef = useRef(onSave);
+  const onRetryRef = useRef(onRetry);
   onContentChangeRef.current = onContentChange;
   onSaveRef.current = onSave;
+  onRetryRef.current = onRetry;
   const filePathRef = useRef(file.path);
   filePathRef.current = file.path;
 
@@ -150,16 +152,26 @@ export function FileEditor({ file, onContentChange, onSave, onRetry }: FileEdito
     }
   }, [file.savedContent, file.content, file.loading, file.error]);
 
-  // Listen for save-file events from the tab bar button
+  // Listen for save-file and reload-file events from the tab bar
   useEffect(() => {
-    const handler = (e: Event) => {
+    const saveHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.path === file.path && filePathRef.current) {
         onSaveRef.current(filePathRef.current);
       }
     };
-    window.addEventListener('nerve:save-file', handler);
-    return () => window.removeEventListener('nerve:save-file', handler);
+    const reloadHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.path === file.path && filePathRef.current) {
+        onRetryRef.current(filePathRef.current);
+      }
+    };
+    window.addEventListener('nerve:save-file', saveHandler);
+    window.addEventListener('nerve:reload-file', reloadHandler);
+    return () => {
+      window.removeEventListener('nerve:save-file', saveHandler);
+      window.removeEventListener('nerve:reload-file', reloadHandler);
+    };
   }, [file.path]);
 
   // Loading state
