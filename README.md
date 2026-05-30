@@ -59,10 +59,11 @@ open http://localhost:3080
 # Features
 Nerve Center is built around a simple idea: your ideas shouldn't be trapped in one mode. Jot thoughts while your agent researches in the background. Send them to chat when you're ready. Refine into a file, a task, or the next research query — all without leaving the page. The modes connect. The work flows.
 
-### 🧩 3 Modes - Work, Research, and Tasks
+### 🧩 4 Modes - Work, Research, Create, and Tasks
 Flow between modes with your agents in tow
 - **Work** — Chat with agents, create and edit files, browse the workspace in real time
 - **Research** — Deep research mode generates reports with inline citations, sources, and images
+- **Create** - Work with Markdown,.txt, and website designer with live preview 
 - **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
 
 ## 💬 Work
