@@ -65,13 +65,14 @@ Flow between modes with your agents in tow
 - **Research** — Deep research mode generates reports with inline citations, sources, and images
 - **Tasks** — Full Kanban board with AI-assisted card management and agent-driven workflows
 
-### 💬 Work
+## 💬 Work
 Your main workspace — chat, create, and edit alongside your agents.
 - **Chat** — Talk to your agents with streaming responses, tool calls, and rich markdown
+- **Split view** — Open a file while keeping the chat visible side-by-side. Drag the divider to resize, or collapse the chat to a thin strip for full document width
 - **Panels** — Workspace (file tree), Thoughts (notes), Library (references), Activity (agent logs)
 - **Split view** — Open a file while keeping the chat visible side-by-side. Documents on the right, conversation on the left. Drag the divider to resize.
   
-### 🧠 Research
+## 🧠 Research
 Deep research interface for your agent
 - **Quick & Deep** search modes using any OpenClaw-compatible model provider
 - **Rich markdown answers** with inline citation links `[1]`, sources, and images
@@ -80,7 +81,7 @@ Deep research interface for your agent
 - **Tabbed results**: All, Sources, Images, Links
 - **Follow-up suggestions** — click to dive deeper without retyping
 - **Thread sidebar** with  agent-generated titles that evolve with your discussion
-### 📋 Tasks
+## 📋 Tasks
 A full Kanban board for managing work alongside your agent. Not a toy — real columns, real workflows.
 - **Drag-and-drop cards** between columns (Backlog, In Progress, Review, Done)
 - **AI-assisted card creation** — describe the task, the agent helps flesh it out
@@ -88,12 +89,13 @@ A full Kanban board for managing work alongside your agent. Not a toy — real c
 - **Proposal inbox** — agents can propose tasks for your approval
 - **Quick view** — peek at task details without leaving the board
 - **Configurable columns** — adapt the workflow to match your process
+
 ### 📊 Agent Monitoring & Management
 Keep tabs on your agents without context-switching.
-- **Agent Hub** — Central drawer for switching agents, browsing memory, managing settings, and uploading per-agent avatars
+- **Agent Hub** — Central drawer for moderating agents, browsing memory, managing settings
 - **Analytics Dashboard** — Token usage charts, memory list, usage limits at a glance, accessible from the Agent Hub
 - **Full Memory Browser** — add, edit, delete, and search agent memories. Not just read-only — you can refine what your agent remembers
-- **Charts & data viz** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
+- **Charts & data** — inline charts, lightweight financial charts, and TradingView widget support for data-rich conversations
 - **Agent system monitoring** — connection status, gateway health, session list
 ### 🎤 Voice
 Speak to your agents and hear them respond.
@@ -111,11 +113,12 @@ Extend your agents with third-party tools through the Model Context Protocol.
 
 ### Other Features
 
+- **Doctor CLI** — Run `npm run doctor` to check gateway connectivity, server health, and model readiness
 - **One-Click Updates** — Update Nerve Center from the UI with real-time progress streaming
 - **Hover commands** — Hover over messages for copy, think, research, and read-aloud actions
 - **Command Palette** — `Cmd+K` to quickly switch panels, views, and create files
-- **Image Lightbox** — Click any chat image to view full size
-- **Notification sounds** — Subtle audio cues for message completion and errors 
+- **
+- **Notifications** — Subtle audio cues for message completion and errors 
 
 ---
 ### Workflow
@@ -149,6 +152,9 @@ Your brain, organized into thought bubbles — capture while your agent is mid-r
 - **Hover actions** — copy, send to chat, or research each thought
 - **Click to edit** any thought inline
 - **Server-backed sync** via `Thoughts.md` — notes available across all devices
+- **Multi-select** — toggle select mode, batch select thoughts with Shift+click, send multiple thoughts to chat at once
+- **Attachments** — attach images and files to thoughts for richer notes
+- **Completion state syncs to server** — the agent (or other devices) can check off your thoughts
 ### 📚 Library Panel
 > *Every link, citation, and image, auto-organized.*
 All your chat references in one place:

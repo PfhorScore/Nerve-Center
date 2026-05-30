@@ -6,42 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Highlights — 2026-05-29 — README Overhaul, Auth Fixes, Rebrand 🧹
+### Highlights — 2026-05-29/30 — Massive Session 🚀
 
-**README completely rewritten.** New tagline ("Create alongside your agents"), First Launch walkthrough, flow-based Panels section, expanded features (Deep Research, Kanban, MCP, Monitoring, Connect/Security), and trimmed QoL section. Full feature inventory from actual codebase. 3 pushes to GitHub.
+**Message flow bugs fixed (finally!).** Three separate bugs were causing out-of-order messages: empty `chat_final` triggering false recovery, stale stream content bleeding into new responses, and assistant messages being duplicated when `chat_final` arrived after the user sent a new message. Multiple passes across three files — confirmed working after extended testing.
 
-**Auth bugs fixed.** `setup.ts` had a truthy check bug (`!config.NERVE_AUTH` always true since `.env` values are strings). Network errors in `useAuth` now show login page instead of silently authenticating. Login hint cleaned up.
+**Split view (chat + documents).** Open a file while keeping the chat visible side-by-side with a draggable resize handle. Collapse the chat to a thin strip when you need full document width.
 
-**Nerve → Nerve Center rebrand** across all user-facing text: LoginPage, ConnectDialog, UpdateBadge, SettingsDrawer, CronDialog, StatusBar, page title, and startup banner.
+**Thoughts panel overhaul.** Tabs (Active/Done), thought numbers for easy reference, file attachments, and multi-select with batch send. Completion state now syncs to a server-side file (`.thoughts-state.json`) so both you and the agent can check off thoughts.
 
-**Sidebar behavior fixed.** Individual panel collapse no longer collapses the entire right sidebar — only the dedicated toggle does.
+**Onboarding state.** When the gateway is unreachable, Nerve Center shows a clean onboarding screen with diagnostics and quick-fix steps instead of a broken UI.
+
+**One-click Update & Restart.** The update badge now has a button that streams progress via SSE and auto-restarts when complete.
+
+**AgentOS competitive research.** Full architecture analysis, adapter pattern, readiness model, and UI inspiration documented in `docs/BACKEND-ADAPTER.md`.
 
 ### Added
-- README: First Launch walkthrough (8 steps + troubleshooting table)
-- README: SEO-friendly feature sections for Deep Research, Kanban, MCP, Monitoring, Connect, Updates
-- README: "Panels — How Ideas Flow" with workflow station framing
-- README: Screenshot placeholder warning (needs v0.2.0 updates)
-- Thoughts panel: scroll-to-bottom floating button
-- Tab bar: active tab breathing border-bottom animation; inactive tabs get `bg-muted/20`
-- Chat tab: subtle pulsing border glow during generation
+- Split view: chat + document side-by-side with draggable resize handle
+- Chat collapse toggle in split view (hide chat to full-width document)
+- Thoughts panel tabs (Active / Done) with counts
+- Thought numbers (`#1`, `#2`, etc.) on every card
+- File attachments for thoughts (paperclip button)
+- Multi-select mode + batch send for thoughts (Shift+click range select)
+- Server-backed thoughts state (`.thoughts-state.json` — agent can check off thoughts)
+- Onboarding state when gateway is unreachable
+- One-click Update & Restart with SSE progress streaming
+- Ctrl+Enter to send toggle (Settings → Audio)
+- Shift+Enter sends in Ctrl+Enter mode across chat, thoughts, research
+- Doctor CLI command (`npm run doctor`) — checks gateway, server, models
+- Cmd+B sidebar toggle toast notification
+- Tab refresh button (reload file from disk)
+- Window split ratio saved to localStorage
+- Changelog dialog portaled to `document.body` (was broken by `backdrop-filter`)
+- `docs/BACKEND-ADAPTER.md` — backend adapter architecture blueprint
 
 ### Changed
-- README tagline: "Create alongside your agents" with flow-concept blurb
-- README: Features → Deep Research (renamed from AI-Powered Research)
-- README: QoL section trimmed — keepers moved to Clean Input
-- Brand: Nerve → Nerve Center in all user-facing text
-- `HOST` changed from `192.168.12.6` to `0.0.0.0` (local + LAN)
-- `PORT` changed back to `3080` (was `8500`)
-- `FILE_BROWSER_ROOT` set to `/home/pfhor/nerve-center`
-- Default panel layout: Workspace → Thoughts left, Library → Activity right
-- Voice toggle now stops playback immediately when toggled off
+- Research view: Thoughts panel moved to left column
+- Research view sidebar width matches Work view (uses saved `leftSidebarWidth`)
+- Memory panel: refreshed visual design (removed OG Nerve purple/diamond styling)
+- Library images: button instead of link to prevent accidental navigation
+- Message hover buttons: larger (13px icons), more padding, higher opacity
+- README: reordered screenshots to first-time-user flow, added post-install next-steps
+- README: filled Work, Voice, MCP Integration, Agent Monitoring sections
+- Install path: `/nerve` → `/nerve-center`
+- All internal code comments updated to reference Nerve Center
 
 ### Fixed
-- **Message flow ordering** — Multiple passes fixed empty `chat_final` recovery, stream ghost bleed, and assistant message duplication. Confirmed working after extended testing.
-- `setup.ts`: `!config.NERVE_AUTH` → `config.NERVE_AUTH !== 'true'` (string truthy bug)
-- `useAuth.ts`: network errors now show login page instead of `authenticated`
-- Sidebar: panel collapse no longer collapses entire right sidebar
-- Panel migration: v2 cleanup now applies to both sidebars, not just right
+- **Message ordering (multi-pass fix):**
+  - Empty `chat_final` no longer triggers false recovery (was causing double history reload + viewport desync)
+  - `lastStreamHtmlRef` cleared when `isGenerating` transitions (prevents stale content bleed)
+  - `mergeFinalMessages` scans recent 30 messages for matching assistant messages (prevents duplicates)
+- Sidebar: individual panel collapse no longer collapses entire right sidebar
+- Panel migration: memory/agents now filtered from both sidebars, not just right
+
+
 
 ## [Unreleased]
 
