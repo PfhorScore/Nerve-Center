@@ -10,7 +10,6 @@ import {
 } from "react";
 import {
   Activity,
-  BarChart3,
   Settings,
   Radio,
   Users,
@@ -20,7 +19,7 @@ import {
   Search,
 } from "lucide-react";
 import type { ViewMode } from "@/features/command-palette/commands";
-import type { AgentLogEntry, EventEntry, TokenData } from "@/types";
+import type { AgentLogEntry, EventEntry } from "@/types";
 import NerveLogo from "./NerveLogo";
 
 const AgentLog = lazy(() =>
@@ -29,16 +28,11 @@ const AgentLog = lazy(() =>
 const EventLog = lazy(() =>
   import("@/features/activity/EventLog").then((m) => ({ default: m.EventLog })),
 );
-const TokenUsage = lazy(() =>
-  import("@/features/dashboard/TokenUsage").then((m) => ({
-    default: m.TokenUsage,
-  })),
-);
+
 
 /** Identifies which dropdown panel is currently open, or `null` for none. */
 type PanelId =
   | "agent-log"
-  | "usage"
   | "events"
   | "sessions"
   | "workspace"
@@ -66,11 +60,6 @@ const PANEL_CONFIG: Record<Exclude<PanelId, null> | "default", PanelConfig> = {
     heightClass: "max-h-[400px] opacity-100",
     contentClass: "max-h-[400px] overflow-y-auto",
   },
-  usage: {
-    boxClass: "w-[480px] max-w-[calc(100vw-1.067rem)]",
-    heightClass: "max-h-[400px] opacity-100",
-    contentClass: "max-h-[400px] overflow-y-auto",
-  },
   events: {
     boxClass: "w-[480px] max-w-[calc(100vw-1.067rem)]",
     heightClass: "max-h-[400px] opacity-100",
@@ -91,8 +80,6 @@ interface TopBarProps {
   onOpenAgentHub?: () => void;
   /** Agent log entries rendered in the dropdown log panel. */
   agentLogEntries: AgentLogEntry[];
-  /** Token usage data for the usage panel (null while loading). */
-  tokenData: TokenData | null;
   /** Whether the agent-log icon should pulse green to indicate recent activity. */
   logGlow: boolean;
   /** Event log entries for the events panel. */
@@ -128,7 +115,6 @@ export function TopBar({
   onSettings,
   onOpenAgentHub,
   agentLogEntries,
-  tokenData,
   logGlow,
   eventEntries,
   eventsVisible,
@@ -220,12 +206,6 @@ export function TopBar({
     return () => document.removeEventListener("keydown", handleKey);
   }, [visiblePanel]);
 
-  const totalCost = useMemo(() => {
-    if (!tokenData) return null;
-    const cost = tokenData.persistent?.totalCost ?? tokenData.totalCost ?? 0;
-    return "$" + cost.toFixed(2);
-  }, [tokenData]);
-
   const panelConfig = useMemo(() => {
     if (!visiblePanel) return PANEL_CONFIG.default;
     return PANEL_CONFIG[visiblePanel] ?? PANEL_CONFIG.default;
@@ -282,6 +262,18 @@ export function TopBar({
               <Search size={13} aria-hidden="true" />
               <span>Research</span>
             </button>
+            <button
+              onClick={() => onViewModeChange("create")}
+              onMouseEnter={() => setHoveredView("create")}
+              onMouseLeave={() => setHoveredView(null)}
+              aria-label="Switch to create view"
+              aria-pressed={viewMode === "create"}
+              data-active={viewMode === "create"}
+              className="shell-chip min-h-11 flex-1 justify-center text-[0.733rem] uppercase tracking-[0.14em] max-[371px]:min-h-[38px] max-[371px]:gap-1 max-[371px]:px-2 max-[371px]:text-[0.667rem] max-[371px]:tracking-[0.08em] max-[371px]:[&_svg]:size-3 sm:min-h-10 sm:flex-none"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>Create</span>
+            </button>
             {showKanbanView && (
               <button
                 onClick={() => onViewModeChange("kanban")}
@@ -307,8 +299,9 @@ export function TopBar({
                   {hoveredView === 'chat' && <MessageSquare size={12} className="text-primary/60" />}
                   {hoveredView === 'research' && <Search size={12} className="text-primary/60" />}
                   {hoveredView === 'kanban' && <LayoutGrid size={12} className="text-primary/60" />}
+                  {hoveredView === 'create' && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary/60"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>}
                   <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/70">
-                    {hoveredView === 'chat' ? 'Work' : hoveredView === 'research' ? 'Research' : 'Tasks'}
+                    {hoveredView === 'chat' ? 'Work' : hoveredView === 'research' ? 'Research' : hoveredView === 'kanban' ? 'Tasks' : 'Create'}
                   </span>
                 </div>
                 {hoveredView === 'chat' && (
@@ -345,6 +338,22 @@ export function TopBar({
                     <rect x="138" y="8" width="52" height="64" rx="8" fill="var(--color-primary)" opacity="0.1" />
                     <rect x="146" y="16" width="36" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
                     <rect x="146" y="28" width="36" height="14" rx="4" fill="var(--color-muted)" opacity="0.15" />
+                  </svg>
+                )}
+                {hoveredView === 'create' && (
+                  <svg width="100%" height="80" viewBox="0 0 200 80" className="opacity-70">
+                    <rect x="10" y="8" width="90" height="64" rx="8" fill="var(--color-primary)" opacity="0.08" />
+                    <rect x="18" y="16" width="36" height="4" rx="2" fill="var(--color-foreground)" opacity="0.3" />
+                    <rect x="18" y="26" width="50" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.15" />
+                    <rect x="18" y="34" width="70" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.15" />
+                    <rect x="18" y="42" width="40" height="3" rx="1.5" fill="var(--color-foreground)" opacity="0.15" />
+                    <rect x="18" y="56" width="74" height="8" rx="4" fill="var(--color-primary)" opacity="0.2" />
+                    <rect x="110" y="8" width="80" height="64" rx="8" fill="var(--color-muted)" opacity="0.15" />
+                    <rect x="120" y="16" width="24" height="12" rx="4" fill="var(--color-foreground)" opacity="0.2" />
+                    <rect x="150" y="16" width="30" height="12" rx="4" fill="var(--color-foreground)" opacity="0.1" />
+                    <rect x="120" y="34" width="60" height="4" rx="2" fill="var(--color-foreground)" opacity="0.2" />
+                    <rect x="120" y="44" width="40" height="4" rx="2" fill="var(--color-foreground)" opacity="0.12" />
+                    <rect x="120" y="56" width="60" height="8" rx="4" fill="var(--color-primary)" opacity="0.15" />
                   </svg>
                 )}
               </div>
@@ -433,26 +442,6 @@ export function TopBar({
             </button>
           )}
 
-          {/* Usage button */}
-          <button
-            onClick={() => togglePanel("usage")}
-            title="Token Usage"
-            aria-label="Toggle usage panel"
-            aria-expanded={visiblePanel === "usage"}
-            aria-haspopup="true"
-            aria-controls="topbar-panel"
-            data-active={visiblePanel === "usage"}
-            className={buttonBase}
-          >
-            <BarChart3 size={14} aria-hidden="true" />
-            <span className="hidden sm:inline">Usage</span>
-            {totalCost && (
-              <span className="hidden rounded-full bg-background/80 px-2 py-0.5 text-[0.6rem] tabular-nums text-foreground/80 lg:inline-flex">
-                {totalCost}
-              </span>
-            )}
-          </button>
-
           {/* Agent Hub button */}
           {onOpenAgentHub && (
             <button
@@ -498,7 +487,6 @@ export function TopBar({
               <AgentLog entries={agentLogEntries} glow={logGlow} />
             )}
             {visiblePanel === "events" && <EventLog entries={eventEntries} />}
-            {visiblePanel === "usage" && <TokenUsage data={tokenData} />}
             {visiblePanel === "sessions" && sessionsPanel}
             {visiblePanel === "workspace" && workspacePanel}
           </Suspense>

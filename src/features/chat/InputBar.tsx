@@ -8,6 +8,7 @@ import { useSessionContext } from '@/contexts/SessionContext';
 import { useSettings } from '@/contexts/SettingsContext';
 import { MAX_ATTACHMENTS } from '@/lib/constants';
 import { compressImage } from './image-compress';
+import { SlashCommandOverlay } from './SlashCommandOverlay';
 import { formatWorkspacePathAddToChat, mergeAddToChatText } from './addToChat';
 import type {
   FileUploadReference,
@@ -286,6 +287,7 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   const deferredResizeFrameRef = useRef<number | null>(null);
   const deferredResizeSettledFrameRef = useRef<number | null>(null);
   const [draftText, setDraftText] = useState(() => persistedComposerSnapshot.text);
+  const [showSlashOverlay, setShowSlashOverlay] = useState(false);
   const [stagedAttachments, setStagedAttachments] = useState<StagedAttachment[]>(() => persistedComposerSnapshot.stagedAttachments);
   const [uploadConfig, setUploadConfig] = useState<UploadFeatureConfig>(DEFAULT_UPLOAD_FEATURE_CONFIG);
   const [attachmentError, setAttachmentError] = useState<string | null>(() => persistedComposerSnapshot.attachmentError);
@@ -1220,10 +1222,19 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
 
   const handleInput = () => {
     if (!inputRef.current) return;
-    setDraftText(inputRef.current.value);
+    const val = inputRef.current.value;
+    setDraftText(val);
     resetTabCompletion();
     clearVoiceError();
     resizeInput();
+    // Show slash commands overlay when typing / at the start of input
+    if (val === '/') {
+      setShowSlashOverlay(true);
+    } else if (showSlashOverlay && val.startsWith('/') && !val.includes(' ')) {
+      // Keep showing while typing a command
+    } else {
+      setShowSlashOverlay(false);
+    }
   };
 
   const openUploadFilesPicker = useCallback(() => {
@@ -1301,11 +1312,28 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
       />
       {/* Input area — Perplexity-style layout */}
       <div
-        className={`flex flex-col border-t shrink-0 bg-card focus-within:border-t-primary/40 focus-within:shadow-[0_-1px_8px_rgba(232,168,56,0.1)] ${voiceState === 'recording' ? 'border-t-red-500 shadow-[0_-1px_12px_rgba(239,68,68,0.3)]' : 'border-border'}`}
+        className={`flex flex-col border-t shrink-0 bg-card focus-within:border-t-primary/40 focus-within:shadow-[0_-1px_8px_rgba(232,168,56,0.1)] ${voiceState === 'recording' ? 'border-t-red-500 shadow-[0_-1px_12px_rgba(239,68,68,0.3)]' : isGenerating ? 'border-t-primary/30 shadow-[0_-1px_12px_rgba(240,179,93,0.12)]' : 'border-border'}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* Slash commands overlay */}
+        {showSlashOverlay && (
+          <SlashCommandOverlay
+            text={draftText}
+            inputRef={inputRef}
+            onSelect={(cmdText) => {
+              setDraftText(cmdText);
+              if (inputRef.current) {
+                inputRef.current.value = cmdText;
+                inputRef.current.focus();
+                resizeInput();
+              }
+              setShowSlashOverlay(false);
+            }}
+            onClose={() => setShowSlashOverlay(false)}
+          />
+        )}
         {/* /btw background research indicator */}
         {btwText && (
           <div className="mx-3 mt-2">

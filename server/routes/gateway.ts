@@ -15,6 +15,7 @@
 import { Hono } from 'hono';
 import JSON5 from 'json5';
 import { execFile } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { Socket } from 'node:net';
 import { homedir } from 'node:os';
@@ -177,6 +178,17 @@ async function getModelCatalog(): Promise<{ models: GatewayModelInfo[]; error: s
 app.get('/api/gateway/models', rateLimitGeneral, async (c) => {
   const { models, error } = await getModelCatalog();
   return c.json({ models, error, source: 'config' });
+});
+
+/** GET /api/gateway/agents — List configured agents from the gateway config. */
+app.get('/api/gateway/agents', rateLimitGeneral, async (c) => {
+  try {
+    const configPath = resolveOpenClawConfigPath();
+    const raw = readFileSync(configPath, 'utf8');
+    const configData = JSON.parse(raw);
+    const list = configData.agents?.list || [];
+    return c.json({ agents: list.map((a: { id: string }) => a.id) });
+  } catch { return c.json({ agents: [] }); }
 });
 
 /**

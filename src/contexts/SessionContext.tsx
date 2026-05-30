@@ -38,6 +38,7 @@ export interface SpawnSessionOpts {
   cleanup?: SubagentCleanupMode;
   agentName?: string;
   parentSessionKey?: string;
+  agentId?: string;
 }
 
 interface SessionContextValue {
@@ -876,12 +877,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       }
       const thinkingLevel = opts.thinking ?? null;
 
-      await rpc('sessions.patch', {
+      const patchPayload: Record<string, unknown> = {
         key: sessionKey,
         label: rootName,
         model: opts.model,
         thinkingLevel,
-      });
+      };
+      if (opts.agentId) patchPayload.agentId = opts.agentId;
+      await rpc('sessions.patch', patchPayload);
 
       const idempotencyKey = `spawn-root-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       await rpc('chat.send', {

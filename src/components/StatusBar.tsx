@@ -50,7 +50,7 @@ async function fetchServerInfo(): Promise<{ serverTime?: number; gatewayStartedA
  * Shows connection state, server time, session count, gateway uptime,
  * an optional context-window meter, a sparkline, and the app version.
  */
-export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit, rightPanelCollapsed, onToggleRightPanel, onReset }: StatusBarProps) {
+export function StatusBar({ connectionState, sessionCount, sparkline, contextTokens, contextLimit, rightPanelCollapsed, onToggleRightPanel, onReset, isGenerating }: StatusBarProps) {
   useGateway();
   const {
     modelOptions, effortOptions, selectedModel, selectedEffort, selectedEffortLabel,
@@ -147,6 +147,14 @@ export function StatusBar({ connectionState, sessionCount, sparkline, contextTok
           <span className="text-[0.533rem] max-[378px]:text-[0.4375rem]" aria-hidden="true">●</span>
           <span>{statusLabel}</span>
         </span>
+
+        {/* Thinking/working indicator */}
+        {isGenerating && (
+          <span className="inline-flex items-center gap-1 text-primary/70 text-[0.6rem]">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <span className="hidden sm:inline">thinking</span>
+          </span>
+        )}
 
         {/* Server time (hidden on narrow screens) */}
         <span className="hidden text-border md:inline">•</span>

@@ -8,9 +8,12 @@
  * out of the main chat layout and into a dedicated overlay.
  */
 
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Users, X, Upload, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
+import { Users, X, Upload, ChevronDown, BarChart3 } from 'lucide-react';
 import { SubAgentPanel } from './SubAgentPanel';
+import type { TokenData } from '@/types';
+
+const TokenUsage = lazy(() => import('@/features/dashboard/TokenUsage').then(m => ({ default: m.TokenUsage })));
 
 interface AgentHubDrawerProps {
   open: boolean;
@@ -19,6 +22,8 @@ interface AgentHubDrawerProps {
   memoryPanel: React.ReactNode;
   /** List of known agent names for per-agent avatar selection. */
   agentNames?: string[];
+  /** Token usage data for the dashboard section. */
+  tokenData?: TokenData | null;
 }
 
 /**
@@ -28,7 +33,7 @@ interface AgentHubDrawerProps {
  * — backdrop overlay, slide-in-right panel, close on backdrop click
  * or Escape key.
  */
-export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel, agentNames }: AgentHubDrawerProps) {
+export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel, agentNames, tokenData }: AgentHubDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -93,13 +98,32 @@ export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel, agentN
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
 
+          {/* Usage section — collapsed by default */}
+          <details className="border-b border-border/40 group">
+            <summary className="flex items-center gap-2 px-4 py-2 border-b border-border/20 flex items-center justify-between">
+              <BarChart3 size={12} className="text-muted-foreground/40" />
+              Usage &amp; Tokens
+              <span className="ml-auto text-[0.5rem] text-muted-foreground/30 group-open:hidden">▸</span>
+              <span className="ml-auto text-[0.5rem] text-muted-foreground/30 hidden group-open:inline">▾</span>
+            </summary>
+            <div className="px-3 pb-3">
+              {tokenData ? (
+                <Suspense fallback={<div className="p-4 text-[0.667rem] text-muted-foreground">Loading...</div>}>
+                  <TokenUsage data={tokenData} />
+                </Suspense>
+              ) : (
+                <div className="py-4 text-center text-[0.667rem] text-muted-foreground/50">No usage data yet</div>
+              )}
+            </div>
+          </details>
+
           {/* Avatar section */}
           <AvatarSection knownAgents={agentNames} />
 
         {/* Agents section */}
           <div className="border-b border-border/40">
             <div className="px-5 py-3">
-              <h3 className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/60">Active Sessions</h3>
+              <span className="text-xs font-semibold text-muted-foreground/80">Active Sessions</span>
             </div>
             <SubAgentPanel />
             <div className="px-2 pb-3">
@@ -110,7 +134,7 @@ export function AgentHubDrawer({ open, onClose, agentsPanel, memoryPanel, agentN
           {/* Memory section */}
           <div className="border-b border-border/40 flex flex-col">
             <div className="px-5 py-3">
-              <h3 className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/60">Memory &amp; Configuration</h3>
+              <span className="text-xs font-semibold text-muted-foreground/80">Memory &amp; Configuration</span>
             </div>
             <div className="px-2 pb-3 h-[400px] overflow-y-auto">
               {memoryPanel}
@@ -184,7 +208,7 @@ function AvatarSection({ knownAgents }: { knownAgents?: string[] }) {
   return (
     <div className="border-b border-border/40">
       <div className="px-5 py-3">
-        <h3 className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">Avatar</h3>
+        <span className="text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3">Avatar</span>
         <div className="flex items-center gap-4">
           {/* Preview */}
           <div className="size-14 rounded-full border-2 border-border/50 overflow-hidden bg-secondary/30 flex items-center justify-center shrink-0">

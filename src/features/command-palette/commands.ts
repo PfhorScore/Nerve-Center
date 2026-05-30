@@ -3,7 +3,7 @@ import { themes, type ThemeName } from '@/lib/themes';
 import { fonts, type FontName } from '@/lib/fonts';
 import type { TTSProvider } from '@/features/tts/useTTS';
 
-export type ViewMode = 'chat' | 'kanban' | 'research';
+export type ViewMode = 'chat' | 'kanban' | 'research' | 'create';
 
 export interface CommandActions {
   onNewSession: () => void;
@@ -226,6 +226,13 @@ export function createCommands(actions: CommandActions): Command[] {
         action: () => actions.onSetViewMode!('kanban'),
         category: 'kanban' as const,
         keywords: ['kanban', 'task', 'create', 'new', 'add'],
+      },
+      {
+        id: 'open-create',
+        label: 'Open Create View',
+        action: () => actions.onSetViewMode!('create'),
+        category: 'kanban' as const,
+        keywords: ['create', 'design', 'preview', 'live', 'editor', 'canvas', 'build', 'code', 'html'],
       },
     ] : []),
     // Panel toggle commands

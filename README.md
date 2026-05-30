@@ -4,12 +4,12 @@
 
   <p align="center"><strong>More than a chat window.</strong> Nerve Center is a connected workspace built on your <strong>OpenClaw gateway</strong> — where your ideas flow between thought, research, chat, files, and tasks. No app-switching. No copy-paste between tabs. Just you and your agents, building together.</p>
 
-  <a href="docs/screenshot-2.png"><img src="docs/screenshot-2.png" width="45%" alt="Thoughts panel and workspace" /></a>
+  <a href="docs/screenshot-main.png"><img src="docs/screenshot-main.png" width="45%" alt="Thoughts panel and workspace" /></a>
   <br />
-  <a href="docs/screenshot-3.png"><img src="docs/screenshot-3.png" width="45%" alt="Research view and library" /></a>
-  <a href="docs/screenshot-4.png"><img src="docs/screenshot-4.png" width="45%" alt="Custom panel layout" /></a>
+  <a href="docs/screenshot-research.png"><img src="docs/screenshot-research.png" width="45%" alt="Research view and library" /></a>
+  <a href="docs/screenshot-thoughts.png"><img src="docs/screenshot-thoughts.png" width="45%" alt="Custom panel layout" /></a>
   <br />
-  <em>⚠️ Screenshots from v0.1.0 — the v0.2.0 layout has evolved significantly. Fresh ones coming soon.</em>
+  <em>📸 Screenshots from v0.3.0 — showing the current layout with Thoughts v2, Create mode, and Research view.</em>
   <br /><em>Click any image to view full size</em>
 
   <br /><br />
@@ -89,6 +89,8 @@ A full Kanban board for managing work alongside your agent. Not a toy — real c
 - **Quick view** — peek at task details without leaving the board
 - **Configurable columns** — adapt the workflow to match your process
 
+## ✨ Features
+
 ### 📊 Agent Monitoring & Management
 Keep tabs on your agents without context-switching.
 - **Agent Hub** — Central drawer for moderating agents, browsing memory, managing settings
@@ -118,11 +120,11 @@ Extend agents with third-party tools via the Model Context Protocol.
 - **Notifications** — Subtle audio cues for message completion and errors 
 
 ---
-### Workflow
-From Thoughts, to brainstorming, to research, and back again.
-- **Think about...** — Hover any message and send it to the Thoughts panel to capture a note
+### 🔄 Workflow
+From **Thoughts** 🧠, to **brainstorming** 💡, to **research** 🔬, and back again.
+- **Think about this?** — Hover any message and send it to the Thoughts panel to capture a note
 - **Research this** — Highlight text or hover a message to kick off deep research
-- **Discuss this...** — Send a thought straight into the conversation
+- **Discuss this** — Send a thought straight into the conversation
 - **Flow between modes** without context-switching. Your agent follows you between Work, Research, and Tasks.
 ## Panels — How Ideas Flow
 Nerve Center's panels aren't a static dashboard — they're stations in a workflow. **Capture** in Thoughts. **Discuss** in Chat. **Research** deeper. **Save** to files. **Track** with tasks. Each one feeds the next, and your agent moves alongside you.
@@ -173,7 +175,7 @@ Central drawer for managing your agent fleet:
 
 *Tip: Customize the layout further with collapsible sidebars, drag-and-drop panel reordering, and resizable panels.*
 ---
-## First Launch
+## 🚀 First Launch
 Once Nerve Center is running (`node server-dist/index.js` or via the install script), here's your first 5 minutes:
 1. **Open your browser** to `http://localhost:3080`
 2. **Nerve Center auto-detects your gateway** — if OpenClaw is running, you're authenticated

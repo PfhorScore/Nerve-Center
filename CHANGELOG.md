@@ -67,6 +67,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Sidebar: individual panel collapse no longer collapses entire right sidebar
 - Panel migration: memory/agents now filtered from both sidebars, not just right
 
+### Session 2 — May 30 (04:40-08:00) — Create Mode, /btw Fix, Thoughts Audit 🧠
+
+**Create tab prototype shipped.** New 4th view mode with CodeMirror editor, multi-file tabs (HTML/CSS/JS/MD/JSON/PY/YAML/TXT), live HTML preview with debounced iframe rendering, file save to workspace, file open/new, and inline chat sidebar for agent commands.
+
+**Bug fixes.** `/btw` background research pill no longer stuck forever (added `nerve:btw-done` event dispatch + auto-trigger search). Chat auto-scrolls to bottom when new generation starts. Research threads now persist to localStorage immediately on creation (fixes "current thread not in history" bug). Thoughts panel state merge → replace (server is authoritative source of truth).
+
+**UI tweaks.** Usage section moved from TopBar dropdown to collapsible section at top of Agent Hub. Thoughts panel footer shows completion stats ("12/83 complete · 14%"). Esc cancels inline thought editing (already implemented). Structured Q&A directive added to SOUL.md.
+
+**Design/concept.** 5 Meridian UI mockups (workspace, canvas design view, agent hub, create mode, chat peek overlay). Demo tour-guide agent created with full workspace + gateway registration. Design view integration plan with 15-point checklist.
+
+### Added
+- Create tab (4th view mode) with CodeMirror, multi-file tabs, live HTML preview, file save
+- Chat sidebar in Create mode for agent commands while editing
+- Thoughts stats footer (completed/total count + percentage)
+- Thoughts state now server-authoritative (replace instead of merge)
+- Chat auto-scroll forced on new generation start
+- `/btw` research completion now properly dispatches `nerve:btw-done` event
+- Research threads saved to localStorage immediately on creation
+- Demo tour-guide agent with dedicated workspace and gateway registration
+- 'Create' view mode added to ViewMode type, TopBar tabs, and command palette
+
+### Changed
+- Usage section: TopBar dropdown → collapsible Agent Hub section
+- README: restructured Features hierarchy (added `## ✨ Features` umbrella), added emojis to Workflow and First Launch, "Think about..." → "Think about this?"
+- SOUL.md: added "Asking Questions" section for structured Q&A
+- TODO.md: cleaned up and reorganized with realistic time estimates
+
+### Fixed
+- `/btw` Research pill stuck on screen (missing `nerve:btw-done` dispatch)
+- Chat not auto-scrolling to bottom on new response
+- Thoughts state using merge instead of replace (stale localStorage persisted)
+- Research thread not appearing in thread history after refresh
+- Agent Hub "error loading dynamically imported module" (stale chunk cache)
+- Settings-Integrations: duplicate wrench icon (already fixed — test uses Zap, edit uses Wrench)
+
+### Session 2b — Batch 2 (Quick Wins)
+- Scroll-to-top button for Thoughts panel (mirrors scroll-to-bottom)
+- One-click launcher script (`nerve-center.sh`)
+- Ctrl+F search for Thoughts panel (search bar, keyboard shortcut, text filtering)
+- OpenClud update browser notification (fires when version check finds new release)
+- Browser notification on research completion (catches `nerve:btw-done` event)
+- Voice input button for Thoughts (🎤 uses browser SpeechRecognition)
+- Agent Hub section headers styled to match regular panel design
+
+### Changed
+- Thoughts panel tabs: removed `uppercase` CSS → "Active" and "Completed" (sentence case)
+- TopBar: Usage button + panel fully removed (only in Agent Hub now)
+- View mode tab order: Work/Research/Create/Tasks
+- TopBar no longer receives `tokenData` prop (cleanup from Usage removal)
+- UpdateBadge: requests notification permission and fires browser notification
+
+### Added
+- `nerve-center.sh` one-click launcher (checks gateway, starts server, opens browser)
+- VoiceInputButton component for Thoughts panel (browser SpeechRecognition)
+- Thoughts panel: search state + keyboard shortcut for Ctrl+F
+- Agent Hub: `tokenData` prop wired through from App.tsx
+
 
 
 ## [Unreleased]
@@ -495,6 +552,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - File browser no longer overwrites dirty editor content when re-opening an already-open file (PR #85)
 - Infinite scroll no longer stalls after loading older messages (PR #86)
 - `groupToolMessages` and `mergeFinalMessages` no longer mutate shared React state objects (PR #86)
+
+### Session 3 — Release Polish (11:00-11:30)
+
+**Bug fixes.** Research thread tooltip: "Q" → "question". Empty threads no longer appear in sidebar. `/btw` research now creates a new thread instead of appending to current. Completed thoughts tab scrolls to top on switch. Hover toolbar on messages: larger buttons (14px icons, .667rem text), full opacity on hover, more padding. Status bar now shows pulsing "thinking" indicator during generation.
+
+**Changed.** "New Research" → "New Search" default thread title. Thread auto-naming fallback: when Perplexity AI title fails, uses first 60 chars of the query.
+
+### Added
+- Status bar "thinking" indicator with animated pulse dot during generation
+
+### Fixed
+- Research thread tooltip: "Q" → "question" (#114)
+- Empty research threads filtered from sidebar (#115)
+- `/btw` queries now create a dedicated thread instead of appending (#87)
+- Completed thoughts tab: scrolls to top on switch (#86)
+- Message hover toolbar: larger buttons, full opacity, more padding (#16/#34)
+- Research thread auto-naming: falls back to query text when AI title fails
 - Chat message sends use atomic state updates to prevent race conditions with streaming events (PR #86)
 - Stale WebSocket `onclose` handlers no longer kill active connections during reconnect (PR #87)
 - TTS voice flag resets on session switch, preventing phantom auto-speak in new sessions (PR #88)

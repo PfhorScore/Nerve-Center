@@ -56,6 +56,8 @@ interface SettingsContextValue {
   setEditorFontSize: (size: number) => void;
   kanbanVisible: boolean;
   toggleKanbanVisible: () => void;
+  toastsEnabled: boolean;
+  toggleToasts: () => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -188,6 +190,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem(KANBAN_VISIBILITY_STORAGE_KEY);
     return saved !== 'false';
   });
+  const [toastsEnabled, setToastsEnabled] = useState(() => {
+    try { return localStorage.getItem('nerve:toasts') !== 'false'; } catch { return true; }
+  });
+  const toggleToasts = useCallback(() => {
+    setToastsEnabled(prev => {
+      const next = !prev;
+      try { localStorage.setItem('nerve:toasts', String(next)); } catch {}
+      return next;
+    });
+  }, []);
   const { speak } = useTTS(ttsEnabled, ttsProvider, ttsModel || undefined);
   const wakeWordToggleRef = useRef<(() => void) | null>(null);
 
@@ -454,6 +466,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setEditorFontSize,
     kanbanVisible,
     toggleKanbanVisible,
+    toastsEnabled,
+    toggleToasts,
   }), [
     soundEnabled, toggleSound, ttsEnabled, toggleTts, ttsProvider, ttsModel, changeTtsProvider, changeTtsModel, toggleTtsProvider,
     sttProvider, changeSttProvider, sttInputMode, changeSttInputMode, sttModel, changeSttModel,
@@ -464,6 +478,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     commandPaletteButtonVisible, toggleCommandPaletteButtonVisible,
     theme, setTheme, font, setFont,
     fontSize, setFontSize, editorFontSize, setEditorFontSize, kanbanVisible, toggleKanbanVisible,
+    toastsEnabled, toggleToasts,
   ]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

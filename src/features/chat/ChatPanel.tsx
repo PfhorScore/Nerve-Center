@@ -279,6 +279,18 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
   useEffect(scheduleScrollToBottom, [stream.html, scheduleScrollToBottom]);
   useEffect(scrollToBottom, [messages, scrollToBottom]);
 
+  // When a NEW generation starts, always scroll to bottom regardless of autoScroll
+  // so the user sees the beginning of the response. Mid-stream updates still
+  // respect autoScroll so the user can scroll up to read without fighting.
+  useEffect(() => {
+    if (!isGenerating) return;
+    // Force scroll without the autoScroll guard
+    if (scrollRef.current) {
+      const el = scrollRef.current;
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [isGenerating]);
+
   // NOTE: Cmd+F and Escape are now handled globally in App.tsx via useKeyboardShortcuts
 
   // Scroll to current match when it changes
@@ -398,6 +410,11 @@ export const ChatPanel = forwardRef<ChatPanelHandle, ChatPanelProps>(function Ch
           onPrev={search.prevMatch}
           onClose={handleSearchClose}
         />
+      )}
+
+      {/* Generation pulse bar */}
+      {isGenerating && (
+        <div className="shrink-0 h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-pulse" />
       )}
 
       {/* Messages */}

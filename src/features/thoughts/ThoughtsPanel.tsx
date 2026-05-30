@@ -69,6 +69,8 @@ const STATE_FILE = '.thoughts-state.json';
 interface ThoughtsState {
   completed: number[];
   pending: number | null;
+  /** Total completions all-time (not just currently-completed set). */
+  totalCompleted?: number;
 }
 
 async function loadServerState(): Promise<ThoughtsState | null> {
@@ -106,11 +108,13 @@ function loadCompleted(): Set<number> {
 /**
  * Persist completed set to BOTH localStorage (instant) and server (sync).
  */
-function saveCompleted(set: Set<number>) {
+function saveCompleted(set: Set<number>, totalCompleted?: number) {
   const arr = [...set];
   try { localStorage.setItem(COMPLETED_KEY, JSON.stringify(arr)); } catch { /* ignore */ }
   // Fire-and-forget server sync — don't block the UI on file writes.
-  writeServerState({ completed: arr, pending: null });
+  const state: ThoughtsState = { completed: arr, pending: null };
+  if (totalCompleted !== undefined) state.totalCompleted = totalCompleted;
+  writeServerState(state);
 }
 
 /** Load pending index from localStorage. */
@@ -133,6 +137,43 @@ function savePending(idx: number | null) {
   }
 }
 
+/** Simple emoji map for :emoji: style references. */
+const EMOJI_MAP: Record<string, string> = {
+  ':)': '😊', ':-)': '😊', ':(': '😢', ':\'(': '😢',
+  ':D': '😄', ':P': '😛', ';)': '😉',
+  ':rocket:': '🚀', ':fire:': '🔥', ':sparkles:': '✨', ':star:': '⭐',
+  ':heart:': '❤️', ':check:': '✅', ':x:': '❌', ':warning:': '⚠️',
+  ':bulb:': '💡', ':question:': '❓', ':idea:': '💡', ':info:': 'ℹ️',
+  ':thumbsup:': '👍', ':thumbsdown:': '👎', ':clap:': '👏',
+  ':wave:': '👋', ':pray:': '🙏', ':tada:': '🎉',
+  ':nerve:': '⚡', ':brain:': '🧠', ':code:': '💻',
+  ':bug:': '🐛', ':fix:': '🔧', ':ship:': '🚢',
+  ':todo:': '📝', ':done:': '✅', ':wip:': '🚧',
+};
+
+/** Convert markdown-like text + emoji codes to HTML for display. */
+function renderThoughtContent(text: string): string {
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Inline code
+    .replace(/`(.+?)`/g, '<code class="inline-code">$1</code>')
+    // Links
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-primary/70 hover:text-primary underline">$1</a>')
+    // Line breaks
+    .replace(/\n/g, '<br/>');
+  // Emoji codes
+  for (const [code, emoji] of Object.entries(EMOJI_MAP)) {
+    html = html.replace(new RegExp(code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), emoji);
+  }
+  return html;
+}
+
 /**
  * Thought bubble card component.
  */
@@ -151,6 +192,11 @@ function ThoughtCard({
   onResearch,
   copied,
   onCopy,
+  dragIdx,
+  dropIdx,
+  onDragStart,
+  onDropTarget,
+  onMerge,
 }: {
   thought: Thought;
   thoughtNumber: number;
@@ -166,6 +212,11 @@ function ThoughtCard({
   onResearch?: (text: string) => void;
   copied: boolean;
   onCopy: () => void;
+  dragIdx: number | null;
+  dropIdx: number | null;
+  onDragStart: (idx: number | null) => void;
+  onDropTarget: (idx: number | null) => void;
+  onMerge: (from: number, to: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(thought.text);
@@ -186,11 +237,19 @@ function ThoughtCard({
 
   return (
     <div
-      className={`group relative rounded-xl border overflow-hidden transition-none ${
+      draggable={!selectMode}
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(thought.index)); onDragStart(thought.index); }}
+      onDragOver={(e) => { if (dragIdx !== null && dragIdx !== thought.index) { e.preventDefault(); onDropTarget(thought.index); } }}
+      onDragLeave={() => { if (dropIdx === thought.index) onDropTarget(null); }}
+      onDrop={(e) => { e.preventDefault(); if (dragIdx !== null && dragIdx !== thought.index) { onMerge(dragIdx, thought.index); } }}
+      onDragEnd={() => { onDragStart(null); onDropTarget(null); }}
+      className={`group relative rounded-xl border overflow-hidden transition-none cursor-default ${
+        dropIdx === thought.index ? 'ring-2 ring-primary/40 border-primary/30' : ''
+      } ${
         completed
           ? 'border-border/20 bg-muted/10'
           : 'border-border/40 bg-card/30 hover:border-border/60'
-      }`}
+      } ${dragIdx === thought.index ? 'opacity-40' : ''}`}
     >
       <div className="flex items-start gap-1.5 px-2.5 py-2">
         {selectMode ? (
@@ -234,12 +293,11 @@ function ThoughtCard({
           ) : (
             <div
               onClick={startEdit}
-              className={`whitespace-pre-wrap break-words text-sm leading-relaxed cursor-text ${
+              className={`break-words text-sm leading-relaxed cursor-text ${
                 completed ? 'text-muted-foreground/50' : 'text-foreground/80'
               }`}
-            >
-              {thought.text}
-            </div>
+              dangerouslySetInnerHTML={{ __html: renderThoughtContent(thought.text) }}
+            />
           )}
         </div>
 
@@ -292,8 +350,15 @@ function ThoughtCard({
  */
 export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResearch, isGenerating }: ThoughtsPanelProps) {
   const [completed, setCompleted] = useState<Set<number>>(loadCompleted);
+  const [totalCompleted, setTotalCompleted] = useState(0);
+  const totalCompletedRef = useRef(totalCompleted);
+  totalCompletedRef.current = totalCompleted;
   const [pendingIdx, setPendingIdx] = useState<number | null>(() => loadPending());
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dropIdx, setDropIdx] = useState<number | null>(null);
 
   // On mount, try to load completion state from the server-side JSON file.
   // If the server has data that our localStorage doesn't know about (e.g.
@@ -306,13 +371,15 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
       const serverState = await loadServerState();
       if (cancelled || !serverState) return;
 
-      // Merge server completed indices with local state — union wins.
+      // Replace local state with server state — server is source of truth.
+      // localStorage is kept as a fast local cache; the server file is authoritative.
       if (serverState.completed.length > 0) {
-        setCompleted(prev => {
-          const merged = new Set(prev);
-          for (const idx of serverState.completed) merged.add(idx);
-          return merged;
-        });
+        setCompleted(new Set(serverState.completed));
+      } else {
+        setCompleted(new Set());
+      }
+      if (serverState.totalCompleted !== undefined) {
+        setTotalCompleted(serverState.totalCompleted);
       }
       // Server pending index overrides local (agent can mark a thought pending).
       if (serverState.pending !== null) {
@@ -364,6 +431,24 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
+
+  // Ctrl+F / Cmd+F to search thoughts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        // Only intercept if the thoughts panel has focus or no text input is focused
+        const tag = (e.target as HTMLElement)?.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+          e.preventDefault();
+          setSearchQuery(q => q || '');
+          setTimeout(() => searchInputRef.current?.focus(), 0);
+        }
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
   const { ctrlEnterToSend } = useSettings();
 
   /** Handle file attachment for new thought */
@@ -395,18 +480,26 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
     setLastSelectedIdx(index);
   }, [lastSelectedIdx]);
 
-  /** Detect whether user has scrolled up from the bottom. */
+  /** Detect whether user has scrolled up from the bottom or down from the top. */
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
     setShowScrollButton(!atBottom);
+    setShowScrollTopButton(el.scrollTop > 80);
   }, []);
 
   /** Scroll to the bottom of the thought list. */
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, []);
+
+  /** Scroll to the top of the thought list. */
+  const scrollToTop = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
 
@@ -419,9 +512,13 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
   const toggleComplete = useCallback((index: number) => {
     setCompleted((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      saveCompleted(next);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+        setTotalCompleted(c => c + 1);
+      }
+      saveCompleted(next, totalCompletedRef.current + (next.has(index) ? 1 : 0));
       return next;
     });
   }, []);
@@ -450,6 +547,38 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
       saveCompleted(adjusted);
       return adjusted;
     });
+  }, [thoughts, onContentChange, rebuildContent]);
+
+  /** Merge dragged thought into target thought. */
+  const mergeThought = useCallback((fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx) return;
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      // Re-index: remove fromIdx, shift higher indices
+      const adjusted = new Set<number>();
+      for (const v of next) {
+        if (v === fromIdx) continue;
+        let newV = v;
+        if (v > fromIdx) newV--;
+        if (newV >= toIdx && v < fromIdx) newV++; // target shifted? no
+        adjusted.add(newV);
+      }
+      saveCompleted(adjusted);
+      return adjusted;
+    });
+    const source = thoughts.find(t => t.index === fromIdx);
+    const target = thoughts.find(t => t.index === toIdx);
+    if (!source || !target) return;
+    const mergedText = target.text + '\n\n' + source.text;
+    const updated = thoughts
+      .filter(t => t.index !== fromIdx)
+      .map((t, i) => ({
+        index: i,
+        text: t.index === toIdx ? mergedText : t.text,
+      }));
+    onContentChange(rebuildContent(updated));
+    setDragIdx(null);
+    setDropIdx(null);
   }, [thoughts, onContentChange, rebuildContent]);
 
   /** Add a new thought from the input. */
@@ -497,6 +626,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           />
           <div className="flex items-center gap-1">
             <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-2 py-1 rounded-md text-[0.6rem] text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.04] transition-colors" title="Attach file"><Paperclip size={12} /></button>
+            <VoiceInputButton onTranscript={(t) => setNewThought(prev => prev + ' ' + t)} />
             <input ref={fileInputRef} type="file" accept="image/*,.pdf,.md,.txt" className="hidden" onChange={handleFileAttach} />
           </div>
         </div>
@@ -504,15 +634,47 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
     );
   }
 
-  const filteredThoughts = thoughtsTab === 'active' ? thoughts.filter(t => !completed.has(t.index)) : [...thoughts.filter(t => completed.has(t.index))].reverse();
+    // Listen for text sent from chat messages
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (!detail?.text) return;
+      const text = detail.text.slice(0, 500);
+      const updated = [...thoughts, { index: thoughts.length, text }];
+      onContentChange(rebuildContent(updated));
+    };
+    window.addEventListener('nerve:send-to-thoughts', handler);
+    return () => window.removeEventListener('nerve:send-to-thoughts', handler);
+  }, [thoughts, onContentChange]);
+
+  let filteredThoughts = thoughtsTab === 'active' ? thoughts.filter(t => !completed.has(t.index)) : [...thoughts.filter(t => completed.has(t.index))].reverse();
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    filteredThoughts = filteredThoughts.filter(t => t.text.toLowerCase().includes(q));
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Tab bar */}
       <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/20 shrink-0">
-        <button onClick={() => setThoughtsTab('active')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'active' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Active ({thoughts.length - completed.size})</button>
-        {completed.size > 0 && <button onClick={() => setThoughtsTab('completed')} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'completed' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Completed ({completed.size})</button>}
-        <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedThoughts(new Set()); }} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ml-auto ${selectMode ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>{selectMode ? 'Done' : 'Select'}</button>
+        <button onClick={() => setThoughtsTab('active')} className={`text-[0.6rem] font-semibold tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'active' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Active ({thoughts.length - completed.size})</button>
+        {completed.size > 0 && <button onClick={() => { setThoughtsTab('completed'); scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); }} className={`text-[0.6rem] font-semibold tracking-wider px-2 py-0.5 rounded-sm transition-colors ${thoughtsTab === 'completed' ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>Completed ({completed.size})</button>}
+        {searchQuery && (
+          <div className="flex items-center gap-1 ml-auto">
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Escape') { setSearchQuery(''); searchInputRef.current?.blur(); } }}
+              placeholder="Search thoughts…"
+              className="w-32 bg-secondary/40 border border-border/30 rounded px-2 py-0.5 text-[0.6rem] text-foreground outline-none font-mono"
+              autoFocus
+            />
+            <button onClick={() => { setSearchQuery(''); searchInputRef.current?.blur(); }} className="text-[0.55rem] text-muted-foreground/40 hover:text-foreground px-1">✕</button>
+          </div>
+        )}
+        {!searchQuery && <button onClick={() => { setSelectMode(!selectMode); if (selectMode) setSelectedThoughts(new Set()); }} className={`text-[0.6rem] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-sm transition-colors ml-auto ${selectMode ? 'bg-primary/15 text-primary' : 'text-muted-foreground/60 hover:text-foreground'}`}>{selectMode ? 'Done' : 'Select'}</button>}
       </div>
       {/* Thought list */}
       <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-2 space-y-1.5 relative">
@@ -544,6 +706,11 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
             onResearch={onResearch}
             copied={copiedIndex === thought.index}
             onCopy={() => copyThought(thought.index, thought.text)}
+            dragIdx={dragIdx}
+            dropIdx={dropIdx}
+            onDragStart={setDragIdx}
+            onDropTarget={setDropIdx}
+            onMerge={mergeThought}
           />
         ))}
 
@@ -551,6 +718,21 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
         {selectedThoughts.size > 0 && (
           <div className="sticky bottom-2 flex justify-center pointer-events-none">
             <button onClick={sendSelectedThoughts} className="pointer-events-auto inline-flex items-center gap-2 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 transition-colors px-4 py-2 text-[0.667rem] font-semibold uppercase tracking-wider shadow-sm"><Send size={12} /> Send {selectedThoughts.size} thought{selectedThoughts.size > 1 ? 's' : ''} to chat</button>
+          </div>
+        )}
+        {/* Scroll-to-top button */}
+        {showScrollTopButton && selectedThoughts.size === 0 && (
+          <div className="sticky top-2 flex justify-center pointer-events-none z-10">
+            <button
+              onClick={scrollToTop}
+              className="pointer-events-auto size-7 flex items-center justify-center rounded-full bg-muted/80 border border-border/40 text-muted-foreground hover:text-foreground hover:bg-muted shadow-sm transition-all duration-200 animate-in fade-in zoom-in-50"
+              title="Scroll to top"
+              aria-label="Scroll to top"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="18 15 12 9 6 15" />
+              </svg>
+            </button>
           </div>
         )}
         {/* Scroll-to-bottom button */}
@@ -581,7 +763,7 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
             if (ctrlEnterToSend && e.key === 'Enter' && e.shiftKey) { e.preventDefault(); addThought(); }
             if (e.key === 'Escape') setNewThought('');
           }}
-          placeholder="New thought…"
+          placeholder="New thought… (Ctrl+Enter to finish)"
           className="w-full bg-transparent border border-border/30 rounded-lg px-2.5 py-2 text-sm text-foreground/70 placeholder:text-muted-foreground/30 font-mono outline-none resize-none focus:border-primary/40 transition-colors min-h-[60px]"
           rows={3}
         />
@@ -590,6 +772,56 @@ export function ThoughtsPanel({ content, onContentChange, onSendToChat, onResear
           <input ref={fileInputRef} type="file" accept="image/*,.pdf,.md,.txt" className="hidden" onChange={handleFileAttach} />
         </div>
       </div>
+      {/* Stats footer */}
+      <div className="shrink-0 px-3 py-1.5 border-t border-border/20 flex items-center justify-between text-[0.55rem] text-muted-foreground/40">
+        <span>{completed.size}/{thoughts.length} complete</span>
+        <span>{totalCompleted > 0 ? `${totalCompleted} total · ` : ''}{(thoughts.length > 0 ? Math.round(completed.size / thoughts.length * 100) : 0)}%</span>
+      </div>
     </div>
+  );
+}
+
+/** Small voice-to-text button for the thoughts input area. */
+function VoiceInputButton({ onTranscript }: { onTranscript: (t: string) => void }) {
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const toggle = useCallback(() => {
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+    const SR = (window as unknown as Record<string, unknown>).SpeechRecognition ||
+               (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+    if (!SR) return;
+    const recognition = new (SR as new () => SpeechRecognition)();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.onresult = (e: SpeechRecognitionEvent) => {
+      const text = e.results[e.results.length - 1][0].transcript;
+      if (text.trim()) onTranscript(text.trim());
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognition.start();
+    recognitionRef.current = recognition;
+    setListening(true);
+  }, [listening, onTranscript]);
+
+  useEffect(() => () => recognitionRef.current?.stop(), []);
+
+  return (
+    <button
+      onClick={toggle}
+      className={`flex items-center gap-1 px-2 py-1 rounded-md text-[0.6rem] transition-colors ${
+        listening
+          ? 'bg-red/10 text-red animate-pulse'
+          : 'text-muted-foreground/50 hover:text-foreground hover:bg-foreground/[0.04]'
+      }`}
+      title={listening ? 'Stop recording' : 'Voice input'}
+    >
+      🎤
+    </button>
   );
 }

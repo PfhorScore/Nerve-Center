@@ -42,11 +42,21 @@ export function UpdateBadge() {
         if (!res.ok) return;
         const data: VersionCheck = await res.json();
         setVersionInfo(data);
+        if (data.updateAvailable && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Nerve Center Update', {
+            body: `Version ${data.latest} is available`,
+            icon: '/favicon.ico',
+          });
+        }
       } catch {
         // Silently ignore
       }
     };
     check();
+    // Request notification permission on first check if not granted
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     const iv = setInterval(check, CHECK_INTERVAL_MS);
     return () => { ac.abort(); clearInterval(iv); };
   }, []);

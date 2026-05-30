@@ -206,32 +206,44 @@ export function ResearchPanel() {
     return () => clearTimeout(timer);
   }, [activeThreadId]);
 
-  // Handle chat handoff transcript (send to research)
-  useEffect(() => {
-    // Check for direct query first (from "Research this?" tooltip)
-    let directQuery: string | null = null;
-    try { directQuery = sessionStorage.getItem('nerve:research-direct-query'); sessionStorage.removeItem('nerve:research-direct-query'); } catch {}
-    if (directQuery) {
-      setQuery(directQuery.slice(0, 500));
-      return;
-    }
+  // Ref for handleSearch so the direct-query event listener can auto-trigger search
+  const handleSearchRef = useRef<() => void>(() => {});
 
-    // Otherwise check for chat transcript (from 🔬 button)
+  /** Handle chat handoff transcript (send to research) + direct queries from /btw */
+  useEffect(() => {
+    // Check for chat transcript (from 🔬 button) on initial mount
     let transcript: string | null = null;
     try { transcript = sessionStorage.getItem('nerve:research-transcript'); sessionStorage.removeItem('nerve:research-transcript'); } catch {}
-    if (!transcript) return;
-
-    fetch('/api/research/brief', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok && data.data?.brief) setQuery(data.data.brief.slice(0, 500));
-        else setQuery(transcript!.slice(0, 300));
+    if (transcript) {
+      fetch('/api/research/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
       })
-      .catch(() => { if (transcript) setQuery(transcript.slice(0, 300)); });
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok && data.data?.brief) setQuery(data.data.brief.slice(0, 500));
+          else setQuery(transcript!.slice(0, 300));
+        })
+        .catch(() => { if (transcript) setQuery(transcript.slice(0, 300)); });
+    }
+
+    // Listen for direct queries from /btw or "Research this?"
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const text = detail?.text?.trim();
+      if (!text) return;
+      newThread();
+      setQuery(text.slice(0, 500));
+      // Auto-trigger search after state settles
+      setTimeout(() => {
+        handleSearchRef.current();
+      }, 100);
+    };
+    window.addEventListener('nerve:research-direct-query', handler);
+    return () => {
+      window.removeEventListener('nerve:research-direct-query', handler);
+    };
   }, []);
 
   // Rotating placeholder text
@@ -355,7 +367,7 @@ export function ResearchPanel() {
     const id = generateId();
     const thread: ResearchThread = {
       id,
-      title: 'New Research',
+      title: 'New Search',
       createdAt: Date.now(),
       updatedAt: Date.now(),
       entries: [],
@@ -390,12 +402,16 @@ export function ResearchPanel() {
       targetId = generateId();
       const thread: ResearchThread = {
         id: targetId,
-        title: 'New Research',
+        title: 'New Search',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         entries: [],
       };
-      setThreads((prev) => [thread, ...prev]);
+      setThreads((prev) => {
+        const updated = [thread, ...prev];
+        saveThreads(updated);
+        return updated;
+      });
       setActiveThreadId(targetId);
       saveActiveId(targetId);
     }
@@ -419,13 +435,14 @@ export function ResearchPanel() {
 
       const entry: SearchResult = { ...data.data, timestamp: Date.now() };
       const aiTitle = data.data?.aiTitle as string | undefined;
+      const queryTitle = q.slice(0, 60).replace(/[?.:!]+$/, '').trim();
 
       setThreads((prev) => {
         const updated = prev.map((t) => {
           if (t.id !== targetId) return t;
           return {
             ...t,
-            title: aiTitle || t.title,
+            title: aiTitle || queryTitle || t.title,
             entries: [...t.entries, entry],
             updatedAt: Date.now(),
           };
@@ -440,12 +457,27 @@ export function ResearchPanel() {
       setError((err as Error).message);
     } finally {
       setLoading(false);
+      // Notify the InputBar's /btw indicator that research is done
+      window.dispatchEvent(new Event('nerve:btw-done'));
     }
   }, [query, mode, activeThreadId, conversation.length, lastResult]);
 
+  // Keep handleSearch ref in sync for auto-search from direct query
+  useEffect(() => {
+    handleSearchRef.current = handleSearch;
+  }, [handleSearch]);
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !loading) handleSearch();
+      if (e.key === 'Enter' && !loading) {
+        // Respect Shift+Enter and Ctrl+Enter settings
+        if (e.shiftKey || e.ctrlKey || e.metaKey) return;
+        handleSearch();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !loading) {
+        e.preventDefault();
+        handleSearch();
+      }
     },
     [handleSearch, loading],
   );
@@ -632,6 +664,7 @@ export function ResearchPanel() {
                 </div>
               )}
               {threads
+                .filter((t) => t.entries.length > 0)
                 .filter((t) => {
                   if (!historyQuery.trim()) return true;
                   const q = historyQuery.toLowerCase();
@@ -805,7 +838,7 @@ export function ResearchPanel() {
                         <button
                           onClick={() => splitThreadAt(ci)}
                           className="shell-icon-button min-h-5 px-1.5 text-[0.5rem]"
-                          title="Split thread here — move from this Q onward to a new thread"
+                          title="Split thread here — move from this question onward to a new thread"
                         >
                           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="3" x2="18" y2="21" /><line x1="12" y1="3" x2="12" y2="21" /><line x1="6" y1="3" x2="6" y2="21" />

@@ -11,11 +11,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AuthGate } from '@/features/auth'
+import { ToastProvider } from '@/features/notifications/Toast'
 
 createRoot(document.getElementById('root')!).render(
   <ErrorBoundary>
     <StrictMode>
-      <AuthGate />
+      <ToastProvider>
+        <AuthGate />
+      </ToastProvider>
     </StrictMode>
   </ErrorBoundary>,
 )

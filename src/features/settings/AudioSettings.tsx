@@ -722,6 +722,9 @@ export function AudioSettings({
       {/* Input keybinding toggle */}
       <KeyboardInputToggle />
 
+      {/* Toast notifications toggle */}
+      {showOutput && <ToastToggle />}
+
       {/* TTS Provider */}
       {showOutput && (
         <div className="space-y-2">
@@ -1073,6 +1076,24 @@ function KeyboardInputToggle() {
           aria-label="Toggle send keybinding"
         />
       </div>
+    </div>
+  );
+}
+
+/** Toast notification toggle. */
+function ToastToggle() {
+  const { toastsEnabled, toggleToasts } = useSettings();
+  return (
+    <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex flex-col gap-1">
+        <span className="text-sm font-medium text-foreground">Toast notifications</span>
+        <span className="text-xs text-muted-foreground">Show popup notifications for research completions, updates, and errors.</span>
+      </div>
+      <Switch
+        checked={toastsEnabled}
+        onCheckedChange={toggleToasts}
+        aria-label="Toggle toast notifications"
+      />
     </div>
   );
 }

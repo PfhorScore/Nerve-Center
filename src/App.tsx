@@ -207,6 +207,7 @@ function savePanelLayout(layout: PanelLayout) {
 
 // Lazy-loaded view modes
 const KanbanPanel = lazy(() => import('@/features/kanban/KanbanPanel').then(m => ({ default: m.KanbanPanel })));
+const DesignPanel = lazy(() => import('@/features/design/DesignPanel').then(m => ({ default: m.DesignPanel })));
 const MarkdownRenderer = lazy(() => import('@/features/markdown/MarkdownRenderer').then(m => ({ default: m.MarkdownRenderer })));
 
 interface AppProps {
@@ -989,13 +990,39 @@ export default function App({ onLogout }: AppProps) {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.text) {
-        try { sessionStorage.setItem('nerve:research-direct-query', detail.text.slice(0, 500)); } catch {}
+        // Relay to ResearchPanel via custom event (works even when panel is display:none)
+        window.dispatchEvent(new CustomEvent('nerve:research-direct-query', { detail: { text: detail.text.slice(0, 500) } }));
         setViewMode('research');
       }
     };
     window.addEventListener('nerve:send-to-research', handler);
     return () => window.removeEventListener('nerve:send-to-research', handler);
   }, [setViewMode]);
+
+  // Research completion notification
+  useEffect(() => {
+    const handler = () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Research Complete', {
+          body: 'Your research results are ready',
+          icon: '/favicon.ico',
+        });
+      }
+    };
+    window.addEventListener('nerve:btw-done', handler);
+    return () => window.removeEventListener('nerve:btw-done', handler);
+  }, []);
+
+  // Request notification permission on first interaction
+  useEffect(() => {
+    const grant = () => {
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+      document.removeEventListener('click', grant);
+    };
+    document.addEventListener('click', grant, { once: true });
+  }, []);
 
   const openBeadId = useCallback((target: BeadLinkTarget) => {
     const normalizedBeadId = target.beadId.trim();
@@ -1780,7 +1807,7 @@ export default function App({ onLogout }: AppProps) {
     </Suspense>
   );
 
-  const showCompactFileBrowser = isCompactLayout && viewMode !== 'kanban' && viewMode !== 'research' && !fileBrowserCollapsed;
+  const showCompactFileBrowser = isCompactLayout && viewMode !== 'kanban' && viewMode !== 'research' && viewMode !== 'create' && !fileBrowserCollapsed;
 
   // Pulse tab title during generation
   useEffect(() => {
@@ -1894,7 +1921,6 @@ export default function App({ onLogout }: AppProps) {
           onSettings={openSettings}
           onOpenAgentHub={() => setAgentHubOpen(true)}
           agentLogEntries={agentLogEntries}
-          tokenData={tokenData}
           logGlow={logGlow}
           eventEntries={eventEntries}
           eventsVisible={eventsVisible}
@@ -1953,6 +1979,7 @@ export default function App({ onLogout }: AppProps) {
             agentsPanel={drawerAgentsPanel}
             memoryPanel={drawerMemoryPanel}
             agentNames={[agentName, ...new Set(sessions.map(s => getSessionDisplayLabel(s, agentName)).filter(Boolean))]}
+            tokenData={tokenData}
           />
         </Suspense>
       </PanelErrorBoundary>
@@ -2154,12 +2181,19 @@ export default function App({ onLogout }: AppProps) {
             </Suspense>
           </div>
         </div>  {/* end research view */}
+
+        {/* Create view */}
+        <div style={{ display: viewMode === 'create' ? undefined : 'none' }} className="shell-panel boot-panel flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden rounded-[28px]">
+          <Suspense fallback={<div className="flex-1 flex items-center justify-center text-muted-foreground text-xs bg-background">Loading...</div>}>
+            <DesignPanel />
+          </Suspense>
+        </div>
         {isCompactLayout ? (
-          <div className={`shell-panel flex-1 min-w-0 min-h-0 overflow-hidden rounded-[28px] boot-panel${viewMode === 'kanban' || viewMode === 'research' ? ' hidden' : ''}`}>
+          <div className={`shell-panel flex-1 min-w-0 min-h-0 overflow-hidden rounded-[28px] boot-panel${viewMode === 'kanban' || viewMode === 'research' || viewMode === 'create' ? ' hidden' : ''}`}>
             {chatContent}
           </div>
         ) : (
-          <div style={{ display: viewMode === 'kanban' || viewMode === 'research' ? 'none' : 'contents' }}>
+          <div style={{ display: viewMode === 'kanban' || viewMode === 'research' || viewMode === 'create' ? 'none' : 'contents' }}>
             <ResizablePanels
               leftPercent={panelRatio}
               onResize={setPanelRatio}
@@ -2184,6 +2218,7 @@ export default function App({ onLogout }: AppProps) {
           sparkline={sparkline}
           contextTokens={contextTokens}
           contextLimit={contextLimit}
+          isGenerating={isGenerating}
         />
       </div>
 
