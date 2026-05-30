@@ -300,6 +300,8 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
   const [pathPickerCustomRoot, setPathPickerCustomRoot] = useState(() => persistedComposerSnapshot.pathPickerCustomRoot);
   const [sendPulse, setSendPulse] = useState(false);
   const [sendError, setSendError] = useState(false);
+  const [btwText, setBtwText] = useState<string | null>(null);
+  const [btwComplete, setBtwComplete] = useState(false);
   const [previewMarkdown, setPreviewMarkdown] = useState(false);
 
   const uploadsEnabled = isUploadsEnabled(uploadConfig);
@@ -1059,7 +1061,24 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
       }
       setDraftText('');
 
-      await onSend(text || '', inlineAttachments.length > 0 ? inlineAttachments : undefined, uploadPayload);
+      // /btw support: route to research instead of chat
+      const sendText = text || '';
+      if (sendText.startsWith('/btw ') || sendText.startsWith('/BTW ')) {
+        const btwQuery = sendText.slice(5).trim();
+        if (btwQuery) {
+          setBtwText(btwQuery);
+          setBtwComplete(false);
+          window.dispatchEvent(new CustomEvent('nerve:send-to-research', { detail: { text: btwQuery } }));
+          // Listen for research completion
+          const onDone = () => { setBtwComplete(true); setTimeout(() => setBtwText(null), 3000); window.removeEventListener('nerve:btw-done', onDone); };
+          window.addEventListener('nerve:btw-done', onDone, { once: true });
+          clearStagedAttachments();
+          setAttachmentError(null);
+          clearVoiceError();
+          return;
+        }
+      }
+      await onSend(sendText, inlineAttachments.length > 0 ? inlineAttachments : undefined, uploadPayload);
       clearStagedAttachments();
       setAttachmentError(null);
       clearVoiceError();
@@ -1287,6 +1306,21 @@ export const InputBar = forwardRef<InputBarHandle, InputBarProps>(function Input
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* /btw background research indicator */}
+        {btwText && (
+          <div className="mx-3 mt-2">
+            <div className={`flex items-center gap-2 px-3 py-1.5 text-[0.667rem] rounded-lg border animate-in fade-in slide-in-from-top-1 ${btwComplete ? 'text-green bg-green/5 border-green/20' : 'text-primary bg-primary/5 border-primary/20'}`}>
+              {btwComplete ? (
+                <span>✓ Research complete</span>
+              ) : (
+                <>
+                  <Loader2 size={12} className="animate-spin shrink-0" />
+                  <span className="truncate">Researching: {btwText.slice(0, 50)}{btwText.length > 50 ? '…' : ''}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
         {/* Textarea row with left prompt indicator */}
         <div className="flex items-start">
           {voiceState === 'recording' ? (
